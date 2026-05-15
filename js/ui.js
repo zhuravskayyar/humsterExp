@@ -542,7 +542,7 @@ function renderTrainingScreen(state) {
   // Portrait path (fallback when no sprite config)
   const hasSprite = !!getHamsterSpriteConfig(selectedHamster);
   const portraitSrc = getHamsterPortrait(selectedHamster);
-  const dummySpriteSrc = "assets/images/maneken/maneken.png";
+  const dummySpriteSrc = "./assets/images/maneken/maneken.png";
 
   const rarityNames = ["common", "uncommon", "rare", "epic", "legendary"];
 

@@ -1,4 +1,4 @@
-const VERSION = "hamster-exp-v1";
+const VERSION = "hamster-exp-v2";
 const STATIC_CACHE = `${VERSION}-static`;
 const RUNTIME_CACHE = `${VERSION}-runtime`;
 
@@ -36,6 +36,7 @@ const APP_SHELL = [
   "./data/items.json",
   "./data/quests.json",
   "./data/zones.json",
+  "./assets/images/maneken/maneken.png",
   "./icons/icon-192.png",
   "./icons/icon-512.png"
 ];
