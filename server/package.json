@@ -1,0 +1,15 @@
+{
+  "name": "hamster-exp-push-server",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "generate-keys": "node -e \"import('web-push').then(({default:wp})=>{const k=wp.generateVAPIDKeys();console.log('VAPID_PUBLIC_KEY='+k.publicKey+'\\nVAPID_PRIVATE_KEY='+k.privateKey)})\""
+  },
+  "engines": { "node": ">=18" },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "web-push": "^3.6.7"
+  }
+}

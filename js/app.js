@@ -15,6 +15,63 @@ let deferredInstallPrompt = null;
 let bootPromise = null;
 let expeditionReminderTimer = null;
 
+// ── Push notification server ──────────────────────────────────────────────────
+// After deploying server/ to Render, paste your URL here (no trailing slash).
+const PUSH_SERVER = ""; // e.g. "https://hamster-push.onrender.com"
+
+let _pushSub = null;
+let _pingTimer = null;
+
+function _urlBase64ToUint8Array(base64String) {
+  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+  return Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
+}
+
+async function _initPush() {
+  if (!PUSH_SERVER) return;
+  if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;
+  if (Notification.permission !== "granted") return;
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    let sub = await reg.pushManager.getSubscription();
+    if (!sub) {
+      const resp = await fetch(`${PUSH_SERVER}/vapid-public-key`);
+      if (!resp.ok) return;
+      const { publicKey } = await resp.json();
+      sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: _urlBase64ToUint8Array(publicKey),
+      });
+    }
+    _pushSub = sub;
+    _startPingLoop();
+  } catch (err) {
+    console.warn("[push] init failed:", err.message);
+  }
+}
+
+async function _sendPing() {
+  if (!PUSH_SERVER || !_pushSub || !gameState) return;
+  const active = (gameState.expeditions ?? [])
+    .filter((e) => e.status === "active")
+    .map((e) => ({ id: e.id, endTime: e.endTime, zoneName: findZone(e.zoneId)?.name ?? e.zoneId }));
+  try {
+    await fetch(`${PUSH_SERVER}/ping`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ subscription: _pushSub.toJSON(), expeditions: active }),
+    });
+  } catch { /* network error — ignore */ }
+}
+
+function _startPingLoop() {
+  if (!PUSH_SERVER) return;
+  if (_pingTimer) clearInterval(_pingTimer);
+  _pingTimer = setInterval(_sendPing, 20_000);
+  void _sendPing();
+}
+
 const uiRefs = {
   landing: null,
   app: null,
@@ -101,6 +158,7 @@ async function startGame() {
     bootPromise = boot().finally(() => {
       syncExpeditionReminder();
       updateNotificationUi();
+      void _initPush();
     });
   }
   await bootPromise;
@@ -143,6 +201,7 @@ async function handleNotifyClick() {
 
   if (permission === "granted") {
     setInstallHint("Сповіщення дозволені. Повернись пізніше, і гра нагадає про готову експедицію.");
+    void _initPush();
     return;
   }
 
