@@ -114,6 +114,24 @@ export const SPRITE_CONFIG = {
       fps: 10,
     },
   },
+  krykhta: {
+    idle: {
+      src: "assets/images/hamsters/krykhta/idle/krykhta_idle_normalized.png",
+      frames: 4,
+      totalW: 2898,
+      h: 604,
+      anchorX: 362,
+      fps: 7,
+    },
+    attack: {
+      src: "assets/images/hamsters/krykhta/attack/krykhta_attack_normalized.png",
+      frames: 4,
+      totalW: 1448,
+      h: 1086,
+      anchorX: 181,
+      fps: 10,
+    },
+  },
 };
 
 export const CANVAS_DISPLAY_H = 78; // px – display height of the canvas

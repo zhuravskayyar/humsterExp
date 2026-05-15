@@ -166,9 +166,9 @@
     "trait": "Лікує цукровою пов'язкою",
     "status": "available",
     "slug": "krykhta",
-    "portrait": null,
-    "gachaImage": null,
-    "image": null,
+    "portrait": "assets/images/hamsters/krykhta/portret/krykhta.png",
+    "gachaImage": "assets/images/hamsters/krykhta/portret/krykhta_gacha.png",
+    "image": "assets/images/hamsters/krykhta/portret/krykhta.png",
     "constellationLevel": 0,
     "constellations": [
       { "level": 1, "name": "М'який бинт", "description": "-8% шанс травми.", "effect": { "type": "injury_resist", "value": 8 } },
