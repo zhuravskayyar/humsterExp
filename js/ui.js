@@ -542,9 +542,8 @@ function renderTrainingScreen(state) {
   // Portrait path (fallback when no sprite config)
   const hasSprite = !!getHamsterSpriteConfig(selectedHamster);
   const portraitSrc = getHamsterPortrait(selectedHamster);
+  const dummySpriteSrc = "assets/images/maneken/maneken.png";
 
-  const dummyEmojis = ["🪆", "🪆", "🤺", "🥊", "💀"];
-  const dummyEmoji = dummyEmojis[dummy.level - 1] ?? "🪆";
   const rarityNames = ["common", "uncommon", "rare", "epic", "legendary"];
 
   return `
@@ -592,7 +591,11 @@ function renderTrainingScreen(state) {
           </div>
 
           <div class="arena-dummy-wrap">
-            <div class="dummy-figure ${isAttacking ? "dummy-hit" : ""}">${dummyEmoji}</div>
+            <img
+              class="dummy-figure ${isAttacking ? "dummy-hit" : ""}"
+              src="${dummySpriteSrc}"
+              alt="Манекен"
+            >
           </div>
         </div>
 
