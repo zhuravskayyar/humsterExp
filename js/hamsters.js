@@ -15,10 +15,10 @@ export function setHamsterStatus(state, hamsterIds, status) {
     if (hamsterIds.includes(hamster.id)) {
       hamster.status = status;
       if (status === "injured") {
-        hamster.recoverAt = Date.now() + 30 * 60 * 1000;
+        hamster.recoverAt = Date.now() + 5 * 60 * 1000;
       }
       if (status === "resting") {
-        hamster.recoverAt = Date.now() + 10 * 60 * 1000;
+        hamster.recoverAt = Date.now() + 5 * 60 * 1000;
       }
       if (status === "available") {
         delete hamster.recoverAt;
