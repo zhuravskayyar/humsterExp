@@ -217,6 +217,13 @@ async function handleTryClick() {
     _showIosModal();
   }
 
+  // Auto-request notification permission while we still have the user gesture
+  if ("Notification" in window && Notification.permission === "default") {
+    const permission = await Notification.requestPermission();
+    updateNotificationUi();
+    if (permission === "granted") void _initPush();
+  }
+
   await startGame();
 }
 
@@ -226,11 +233,16 @@ async function handleNotifyClick() {
     return;
   }
 
+  if (Notification.permission === "denied") {
+    setInstallHint("Сповіщення заблоковано браузером. Дозволь у налаштуваннях сайту.");
+    return;
+  }
+
   const permission = await Notification.requestPermission();
   updateNotificationUi();
 
   if (permission === "granted") {
-    setInstallHint("Сповіщення дозволені. Повернись пізніше, і гра нагадає про готову експедицію.");
+    setInstallHint("Сповіщення дозволені.");
     void _initPush();
     return;
   }
@@ -254,15 +266,21 @@ function updateInstallUi() {
 function updateNotificationUi() {
   if (!uiRefs.notifyButton) return;
   if (!("Notification" in window)) {
-    uiRefs.notifyButton.textContent = "Сповіщення недоступні";
-    uiRefs.notifyButton.disabled = true;
+    uiRefs.notifyButton.hidden = true;
     return;
   }
 
+  if (Notification.permission === "granted") {
+    uiRefs.notifyButton.hidden = true;
+    return;
+  }
+
+  uiRefs.notifyButton.hidden = false;
   uiRefs.notifyButton.disabled = false;
-  uiRefs.notifyButton.textContent = Notification.permission === "granted"
-    ? "Сповіщення увімкнені"
+  uiRefs.notifyButton.textContent = Notification.permission === "denied"
+    ? "Сповіщення заблоковано"
     : "Увімкнути сповіщення";
+  uiRefs.notifyButton.disabled = Notification.permission === "denied";
 }
 
 function setInstallHint(message) {
