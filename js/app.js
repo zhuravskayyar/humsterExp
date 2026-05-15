@@ -189,9 +189,26 @@ async function startGame() {
       syncExpeditionReminder();
       updateNotificationUi();
       void _initPush();
+      _schedulePermissionOnFirstClick();
     });
   }
   await bootPromise;
+}
+
+// Request notification permission on the first click inside the game
+// (needed when the game auto-launches and handleTryClick never ran)
+function _schedulePermissionOnFirstClick() {
+  if (!("Notification" in window)) return;
+  if (Notification.permission !== "default") return;
+
+  const handler = async () => {
+    document.removeEventListener("click", handler, { capture: true });
+    if (Notification.permission !== "default") return;
+    const permission = await Notification.requestPermission();
+    updateNotificationUi();
+    if (permission === "granted") void _initPush();
+  };
+  document.addEventListener("click", handler, { capture: true, once: true });
 }
 
 function revealGameShell() {
