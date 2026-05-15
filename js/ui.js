@@ -9,7 +9,7 @@ import { getHamsterPortrait, getHamsterSlug, getHamsterSpriteConfig } from "./ha
 import { getInventoryGroups } from "./inventory.js";
 import { runtimeState } from "./state.js";
 import { getDummyConfig, getNextDummyConfig, canUpgradeDummy } from "./training.js";
-import { attachTrainingCanvas, detachTrainingCanvas, CANVAS_DISPLAY_H } from "./sprite.js";
+import { attachTrainingCanvas, detachTrainingCanvas, CANVAS_DISPLAY_H, attachDummyCanvas, detachDummyCanvas, CANVAS_DUMMY_H } from "./sprite.js";
 
 const navItems = [
   { route: "base",        icon: "base",      labelKey: "base" },
@@ -27,23 +27,37 @@ export function renderApp(state) {
     ${renderModal(state)}
     ${renderToasts()}
   `;
-  _syncTrainingCanvas(state);
+  _syncTrainingCanvases(state);
 }
 
-function _syncTrainingCanvas(state) {
+function _syncTrainingCanvases(state) {
+  // ── Hamster canvas ───────────────────────────────────────────────────────
   const canvas = document.querySelector("#training-sprite-canvas");
   if (!canvas) {
     detachTrainingCanvas();
-    return;
+  } else {
+    const sid = runtimeState.trainingHamsterId;
+    if (sid) {
+      const ham = state?.hamsters?.find((h) => h.id === sid);
+      if (ham) {
+        const slug = getHamsterSlug(ham);
+        if (slug && getHamsterSpriteConfig(ham)) {
+          const isAttacking = !!(runtimeState.lastHitInfo?.timestamp && Date.now() - runtimeState.lastHitInfo.timestamp < 260);
+          attachTrainingCanvas(canvas, slug, isAttacking);
+        }
+      }
+    }
   }
-  const sid = runtimeState.trainingHamsterId;
-  if (!sid) return;
-  const ham = state?.hamsters?.find((h) => h.id === sid);
-  if (!ham) return;
-  const slug = getHamsterSlug(ham);
-  if (!slug || !getHamsterSpriteConfig(ham)) return;
-  const isAttacking = !!(runtimeState.lastHitInfo?.timestamp && Date.now() - runtimeState.lastHitInfo.timestamp < 260);
-  attachTrainingCanvas(canvas, slug, isAttacking);
+
+  // ── Dummy canvas ─────────────────────────────────────────────────────────
+  const dummyCanvas = document.querySelector("#training-dummy-canvas");
+  if (!dummyCanvas) {
+    detachDummyCanvas();
+  } else {
+    const isBeingHit = !!(runtimeState.lastHitInfo?.timestamp && Date.now() - runtimeState.lastHitInfo.timestamp < 450);
+    dummyCanvas.classList.toggle("dummy-hit", isBeingHit);
+    attachDummyCanvas(dummyCanvas, isBeingHit);
+  }
 }
 
 export function pushToast(message) {
@@ -542,8 +556,6 @@ function renderTrainingScreen(state) {
   // Portrait path (fallback when no sprite config)
   const hasSprite = !!getHamsterSpriteConfig(selectedHamster);
   const portraitSrc = getHamsterPortrait(selectedHamster);
-  const dummySpriteSrc = "./assets/images/maneken/maneken.png";
-
   const rarityNames = ["common", "uncommon", "rare", "epic", "legendary"];
 
   return `
@@ -591,11 +603,8 @@ function renderTrainingScreen(state) {
           </div>
 
           <div class="arena-dummy-wrap">
-            <img
-              class="dummy-figure ${isAttacking ? "dummy-hit" : ""}"
-              src="${dummySpriteSrc}"
-              alt="Манекен"
-            >
+            <canvas id="training-dummy-canvas"
+              style="height:${CANVAS_DUMMY_H}px;display:block;image-rendering:pixelated"></canvas>
           </div>
         </div>
 

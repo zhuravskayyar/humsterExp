@@ -278,3 +278,132 @@ function _draw() {
 
   _ctx.drawImage(img, sx, sy, fw, fh, dx, 0, drawW, _dH);
 }
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ── Dummy (mannequin) canvas animator ────────────────────────────────────────
+// Single spritesheet: 4 frames in a row (idle, windup, impact, recovery).
+// idle  → show frame 0 (static)
+// hit   → play frames 0→1→2→3 once at 10 fps, then return to idle
+// ══════════════════════════════════════════════════════════════════════════════
+
+export const DUMMY_SPRITE_CONFIG = {
+  src:    "assets/images/maneken/maneken.png",
+  totalW: 2509,
+  h:      732,
+  frames: 4,
+  fps:    10,   // hit animation: 4 frames × 100 ms ≈ 400 ms
+};
+
+export const CANVAS_DUMMY_H = 90; // px – display height
+
+// ── Private dummy state ───────────────────────────────────────────────────────
+let _dummyVer  = 0;
+let _dummyRaf  = null;
+let _dummyCtx  = null;
+let _dummyDW   = 0;
+let _dummyImg  = null;
+let _dummyAnim = { mode: "idle", frame: 0, lastTs: 0 };
+
+// ── Public API ────────────────────────────────────────────────────────────────
+
+/**
+ * Attach (or re-attach) the mannequin canvas animator.
+ * @param {HTMLCanvasElement} canvas
+ * @param {boolean} triggerHit – start/continue the hit animation
+ */
+export async function attachDummyCanvas(canvas, triggerHit = false) {
+  const myVer = ++_dummyVer;
+  if (_dummyRaf !== null) { cancelAnimationFrame(_dummyRaf); _dummyRaf = null; }
+
+  let img;
+  try {
+    img = await _loadImg(DUMMY_SPRITE_CONFIG.src);
+  } catch (e) {
+    console.warn(e.message);
+    return;
+  }
+
+  if (myVer !== _dummyVer || !canvas.isConnected) return;
+
+  // ── Canvas sizing ─────────────────────────────────────────────────────────
+  const fw    = DUMMY_SPRITE_CONFIG.totalW / DUMMY_SPRITE_CONFIG.frames; // 627.25
+  const scale = CANVAS_DUMMY_H / DUMMY_SPRITE_CONFIG.h;
+  const drawW = Math.ceil(fw * scale);
+
+  _dummyDW  = drawW;
+  _dummyImg = img;
+
+  const dpr = window.devicePixelRatio || 1;
+  canvas.style.width  = drawW + "px";
+  canvas.style.height = CANVAS_DUMMY_H + "px";
+  canvas.width  = Math.round(drawW * dpr);
+  canvas.height = Math.round(CANVAS_DUMMY_H * dpr);
+
+  _dummyCtx = canvas.getContext("2d");
+  _dummyCtx.scale(dpr, dpr);
+  _dummyCtx.imageSmoothingEnabled = false;
+
+  // ── Trigger hit if requested and not already playing ──────────────────────
+  if (triggerHit && _dummyAnim.mode !== "hit") {
+    _dummyAnim = { mode: "hit", frame: 0, lastTs: 0 };
+  }
+
+  _dummyDraw();
+
+  if (_dummyAnim.mode === "hit") {
+    _dummyRaf = requestAnimationFrame(_dummyTick);
+  }
+}
+
+/** Stop and release the mannequin canvas. */
+export function detachDummyCanvas() {
+  if (_dummyRaf !== null) { cancelAnimationFrame(_dummyRaf); _dummyRaf = null; }
+  _dummyCtx = null;
+}
+
+// ── Dummy animation loop ──────────────────────────────────────────────────────
+
+function _dummyTick(ts) {
+  if (!_dummyCtx || !_dummyImg) return;
+
+  const frameDur = 1000 / DUMMY_SPRITE_CONFIG.fps;
+  if (_dummyAnim.lastTs === 0) _dummyAnim.lastTs = ts;
+
+  if (ts - _dummyAnim.lastTs >= frameDur) {
+    const steps = Math.floor((ts - _dummyAnim.lastTs) / frameDur);
+    _dummyAnim.frame  += steps;
+    _dummyAnim.lastTs += steps * frameDur;
+
+    if (_dummyAnim.frame >= DUMMY_SPRITE_CONFIG.frames) {
+      // Hit animation finished → back to idle, stop RAF
+      _dummyAnim = { mode: "idle", frame: 0, lastTs: 0 };
+      _dummyDraw();
+      _dummyRaf = null;
+      return;
+    }
+
+    _dummyDraw();
+  }
+
+  _dummyRaf = requestAnimationFrame(_dummyTick);
+}
+
+function _dummyDraw() {
+  if (!_dummyCtx || !_dummyImg) return;
+
+  const fw    = DUMMY_SPRITE_CONFIG.totalW / DUMMY_SPRITE_CONFIG.frames;
+  const fh    = DUMMY_SPRITE_CONFIG.h;
+  const scale = CANVAS_DUMMY_H / fh;
+  const drawW = fw * scale;
+
+  const frame = _dummyAnim.mode === "idle" ? 0 : Math.min(_dummyAnim.frame, DUMMY_SPRITE_CONFIG.frames - 1);
+
+  _dummyCtx.clearRect(0, 0, _dummyDW, CANVAS_DUMMY_H);
+  _dummyCtx.drawImage(
+    _dummyImg,
+    frame * fw, 0,           // source x, y
+    fw,         fh,           // source w, h
+    0,          0,            // dest x, y
+    drawW,      CANVAS_DUMMY_H, // dest w, h
+  );
+}

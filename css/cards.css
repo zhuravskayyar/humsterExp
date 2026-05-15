@@ -641,11 +641,9 @@ textarea.save-text {
 /* Dummy */
 .dummy-figure {
   display: block;
-  width: clamp(110px, 24vw, 170px);
-  height: auto;
   user-select: none;
   pointer-events: none;
-  filter: drop-shadow(0 8px 16px rgba(83, 48, 28, 0.18));
+  filter: drop-shadow(0 6px 14px rgba(83, 48, 28, 0.22));
 }
 .dummy-figure.dummy-hit {
   animation: dummyShake 220ms ease both;
