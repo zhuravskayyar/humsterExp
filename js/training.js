@@ -56,11 +56,9 @@ export function hitDummy(state, hamsterId) {
     state.training.damageProgress -= dummy.hpPerRound;
     state.training.totalRounds = (state.training.totalRounds ?? 0) + 1;
 
-    // 50% шанс на золото (2–6 монет)
-    if (Math.random() < 0.5) {
-      goldAwarded = Math.floor(Math.random() * 5) + 2;
-      state.resources.gold = (state.resources.gold ?? 0) + goldAwarded;
-    }
+    // Золото гарантовано кожного раунду (2–6 монет)
+    goldAwarded = Math.floor(Math.random() * 5) + 2;
+    state.resources.gold = (state.resources.gold ?? 0) + goldAwarded;
     // 10% шанс на їжу
     if (Math.random() < 0.1) {
       foodAwarded = Math.floor(Math.random() * 3) + 1;
@@ -109,4 +107,46 @@ export function stopAutoAttack() {
 
 export function isAutoAttackRunning() {
   return _autoAttackTimer !== null;
+}
+
+// ── Офлайн-тренування ────────────────────────────────
+/**
+ * Обчислює нагороди за тренування, що тривало поки гравець був відсутній.
+ * Повертає { rounds, booksAwarded, goldAwarded, elapsed } або null.
+ */
+export function processOfflineTraining(state) {
+  const t = state.training;
+  if (!t?.activeHamsterId || !t?.offlineSince || !t?.offlineDps) return null;
+
+  const hamster = state.hamsters?.find((h) => h.id === t.activeHamsterId);
+  if (!hamster || hamster.status !== "available") {
+    t.offlineSince = null;
+    t.offlineDps = null;
+    return null;
+  }
+
+  const elapsed = Date.now() - t.offlineSince;
+  t.offlineSince = null;
+  t.offlineDps = null;
+
+  if (elapsed < 2000) return null; // менше 2 с — ігнорувати
+
+  const dummy = getDummyConfig(state);
+  const totalDamage = elapsed * (t.offlineDps ?? 0);
+  const rawProgress = (t.damageProgress ?? 0) + totalDamage;
+  const rounds = Math.floor(rawProgress / dummy.hpPerRound);
+
+  t.damageProgress = rawProgress % dummy.hpPerRound;
+
+  if (rounds <= 0) return null;
+
+  const booksAwarded = rounds * dummy.rewardBooks;
+  // Для офлайн-фарму використовуємо середнє значення (4 монети/раунд замість рандому)
+  const goldAwarded = rounds * 4;
+
+  state.resources.xpBooks = (state.resources.xpBooks ?? 0) + booksAwarded;
+  state.resources.gold = (state.resources.gold ?? 0) + goldAwarded;
+  t.totalRounds = (t.totalRounds ?? 0) + rounds;
+
+  return { rounds, booksAwarded, goldAwarded, elapsed };
 }

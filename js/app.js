@@ -3,12 +3,12 @@ import { collectPassiveIncome, upgradeColony } from "./colony.js";
 import { equipItem, salvageEquipment, unequipSlot, upgradeEquipment } from "./equipment.js";
 import { launchExpedition, updateExpeditionStatuses, claimExpedition } from "./expeditions.js";
 import { rollGacha } from "./gacha.js";
-import { levelUpHamster, recoverHamsters } from "./hamsters.js";
+import { getHamsterEffectiveStats, levelUpHamster, recoverHamsters } from "./hamsters.js";
 import { navigate } from "./router.js";
 import { exportSave, importSave, loadGame, resetGame, saveGame } from "./save.js";
 import { gameState, runtimeState } from "./state.js";
 import { claimQuest, resetDailyQuestsIfNeeded, syncQuestProgress } from "./quests.js";
-import { hitDummy, upgradeDummy, getDummyConfig, startAutoAttack, stopAutoAttack } from "./training.js";
+import { hitDummy, processOfflineTraining, upgradeDummy, getDummyConfig, startAutoAttack, stopAutoAttack } from "./training.js";
 import { closeModal, openModal, pushToast, renderApp, updateLiveTimers } from "./ui.js";
 
 let deferredInstallPrompt = null;
@@ -113,8 +113,24 @@ async function boot() {
     processPassiveUpdates(state);
     resetDailyQuestsIfNeeded(state);
     syncQuestProgress(state);
+    // Офлайн-тренування: зарахувати час поки гравець був відсутній
+    const offlineBoot = processOfflineTraining(state);
+    // Відновити тренування після перезавантаження
+    const savedTrainId = state.training?.activeHamsterId ?? null;
+    if (savedTrainId) {
+      const trainH = state.hamsters.find((h) => h.id === savedTrainId && h.status === "available");
+      if (trainH) {
+        runtimeState.trainingHamsterId = savedTrainId;
+      } else {
+        state.training.activeHamsterId = null;
+      }
+    }
     saveGame(state);
     renderApp(state);
+    if (offlineBoot) {
+      pushToast(`💤 Тренування: ${offlineBoot.rounds} раундів · 📚 +${offlineBoot.booksAwarded} · 💛 +${offlineBoot.goldAwarded}`);
+    }
+    if (runtimeState.trainingHamsterId) startAutoAttack(doTrainingAttack);
     bindEvents();
     startTicker();
   } catch (error) {
@@ -306,10 +322,36 @@ function setInstallHint(message) {
   }
 }
 
+function _saveTrainingPause() {
+  if (!gameState || !runtimeState.trainingHamsterId) return;
+  const hamster = gameState.hamsters.find((h) => h.id === runtimeState.trainingHamsterId);
+  if (!hamster || hamster.status !== "available") return;
+  const stats = getHamsterEffectiveStats(hamster, gameState);
+  gameState.training.offlineSince = Date.now();
+  gameState.training.offlineDps = stats.attack / 1300;
+  saveGame(gameState);
+}
+
 function handleVisibilityRefresh() {
-  if (document.visibilityState !== "visible" || !gameState) return;
+  if (!gameState) return;
+
+  if (document.visibilityState === "hidden") {
+    _saveTrainingPause();
+    return;
+  }
+
+  if (document.visibilityState !== "visible") return;
+
+  // Офлайн-тренування: зарахувати час відсутності
+  const offlineResult = processOfflineTraining(gameState);
+  if (offlineResult) {
+    saveGame(gameState);
+    if (runtimeState.trainingHamsterId) startAutoAttack(doTrainingAttack);
+    pushToast(`💤 Тренування: ${offlineResult.rounds} раундів · 📚 +${offlineResult.booksAwarded} · 💛 +${offlineResult.goldAwarded}`);
+  }
+
   const changed = processPassiveUpdates(gameState);
-  if (changed) {
+  if (changed || offlineResult) {
     syncQuestProgress(gameState);
     renderApp(gameState);
     return;
@@ -329,6 +371,8 @@ function doTrainingAttack() {
   if (!hamster || hamster.status !== "available") {
     stopAutoAttack();
     runtimeState.trainingHamsterId = null;
+    gameState.training.activeHamsterId = null;
+    saveGame(gameState);
     if (runtimeState.route === "training") renderApp(gameState);
     return;
   }
@@ -463,6 +507,8 @@ function handleClick(event) {
         return;
       }
       runtimeState.trainingHamsterId = target.dataset.hamsterId;
+      gameState.training.activeHamsterId = target.dataset.hamsterId;
+      saveGame(gameState);
       startAutoAttack(doTrainingAttack);
     }
 

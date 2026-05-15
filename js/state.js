@@ -90,7 +90,10 @@ export function createDefaultState(data) {
     training: {
       dummyLevel: 1,
       damageProgress: 0,
-      totalRounds: 0
+      totalRounds: 0,
+      activeHamsterId: null,
+      offlineSince: null,
+      offlineDps: null
     },
     settings: {
       language: "ua",
