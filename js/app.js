@@ -77,7 +77,8 @@ const uiRefs = {
   app: null,
   tryButton: null,
   notifyButton: null,
-  installHint: null
+  installHint: null,
+  iosModal: null
 };
 
 async function boot() {
@@ -109,6 +110,10 @@ function initSite() {
   uiRefs.tryButton = document.querySelector("#tryBtn");
   uiRefs.notifyButton = document.querySelector("#notifyBtn");
   uiRefs.installHint = document.querySelector("#installHint");
+  uiRefs.iosModal = document.querySelector("#iosInstallModal");
+
+  document.querySelector("#iosModalClose")?.addEventListener("click", _closeIosModal);
+  document.querySelector("#iosModalOk")?.addEventListener("click", _closeIosModal);
 
   uiRefs.tryButton?.addEventListener("click", handleTryClick);
   uiRefs.notifyButton?.addEventListener("click", handleNotifyClick);
@@ -184,7 +189,7 @@ async function handleTryClick() {
         : "Гру можна встановити пізніше або просто грати в браузері."
     );
   } else if (isIOS() && !isStandaloneMode()) {
-    setInstallHint("На iPhone відкрий цей сайт у Safari, натисни Поділитися і вибери Додати на головний екран.");
+    _showIosModal();
   }
 
   await startGame();
@@ -638,6 +643,16 @@ async function notifyAboutCompletedExpeditions(expeditions) {
 
 function isStandaloneMode() {
   return window.matchMedia?.("(display-mode: standalone)").matches || window.navigator.standalone === true;
+}
+
+function _showIosModal() {
+  if (!uiRefs.iosModal) return;
+  uiRefs.iosModal.removeAttribute("hidden");
+}
+
+function _closeIosModal() {
+  if (!uiRefs.iosModal) return;
+  uiRefs.iosModal.setAttribute("hidden", "hidden");
 }
 
 function isIOS() {

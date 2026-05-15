@@ -264,3 +264,93 @@
     max-width: 480px;
   }
 }
+
+/* ── iOS install modal ───────────────────────────────────────── */
+.ios-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, .55);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  z-index: 9999;
+  padding: 0 .75rem .75rem;
+}
+
+.ios-modal[hidden] { display: none; }
+
+.ios-modal-box {
+  background: var(--bg-panel, #2b1d16);
+  border: 1.5px solid rgba(140, 90, 50, .4);
+  border-radius: 1.1rem 1.1rem 0 0;
+  padding: 1.25rem 1.25rem 1rem;
+  width: 100%;
+  max-width: 420px;
+  color: var(--text-main, #f0e6da);
+}
+
+.ios-modal-close {
+  float: right;
+  background: none;
+  border: none;
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
+  color: var(--leather-light, #a07060);
+  padding: 0 .2rem;
+}
+
+.ios-modal-box h3 {
+  margin: 0 0 .4rem;
+  font-size: 1rem;
+}
+
+.ios-modal-lead {
+  font-size: .82rem;
+  color: var(--leather-light, #b09080);
+  margin: 0 0 .9rem;
+  line-height: 1.4;
+}
+
+.ios-steps {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 .9rem;
+  display: flex;
+  flex-direction: column;
+  gap: .65rem;
+}
+
+.ios-steps li {
+  display: flex;
+  align-items: center;
+  gap: .65rem;
+  font-size: .88rem;
+  line-height: 1.35;
+}
+
+.ios-step-icon {
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(140, 90, 50, .2);
+  border-radius: .5rem;
+  flex-shrink: 0;
+  color: var(--glow, #f4c542);
+}
+
+.ios-step-plus { font-size: 1.3rem; font-weight: 700; }
+.ios-step-check { font-size: 1.1rem; }
+
+.ios-modal-note {
+  font-size: .72rem;
+  color: var(--leather-light, #806050);
+  margin: 0 0 .9rem;
+}
+
+.ios-modal-ok {
+  width: 100%;
+  padding: .65rem;
+}
