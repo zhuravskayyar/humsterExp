@@ -2,6 +2,25 @@
 
 Mobile-first browser idle / expedition management MVP built with plain HTML, CSS, and JavaScript.
 
+## Deploy to GitHub Pages
+
+This repository can be deployed as a static PWA through GitHub Pages.
+
+Expected URL:
+
+https://zhuravskayyar.github.io/humsterExp/
+
+How it works:
+
+- Push to the `main` branch.
+- GitHub Actions runs `.github/workflows/deploy-pages.yml`.
+- The repository is published to GitHub Pages without a build step.
+
+If Pages is not enabled yet in the repository settings, open GitHub:
+
+- `Settings` -> `Pages`
+- `Source` -> `GitHub Actions`
+
 ## Run locally
 
 Use a local web server so JSON data can be fetched without `file://` CORS issues.
