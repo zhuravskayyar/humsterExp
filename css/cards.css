@@ -1,0 +1,740 @@
+.panel,
+.card,
+.building-card,
+.hamster-card,
+.zone-card,
+.inventory-card,
+.quest-card,
+.expedition-slot,
+.upgrade-card,
+.gacha-result-card {
+  border: var(--border);
+  border-radius: var(--radius);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.24), rgba(138, 90, 50, 0.08)),
+    var(--card);
+  box-shadow: var(--shadow);
+}
+
+.panel,
+.card {
+  padding: 14px;
+}
+
+.hero-panel {
+  position: relative;
+  overflow: hidden;
+  padding: 18px;
+  border: var(--border);
+  border-radius: 20px;
+  background:
+    linear-gradient(135deg, rgba(83, 48, 28, 0.85), rgba(110, 71, 44, 0.72)),
+    var(--leather);
+  box-shadow: var(--shadow);
+  color: var(--text-on-dark);
+}
+
+.hero-panel p,
+.hero-panel .muted {
+  color: rgba(246, 231, 199, 0.78);
+}
+
+.hero-panel strong,
+.hero-panel h1,
+.hero-panel h2 {
+  color: var(--text-on-dark);
+}
+
+.hero-panel::after {
+  content: "";
+  position: absolute;
+  right: 18px;
+  bottom: -14px;
+  color: rgba(246, 231, 199, 0.08);
+  font-size: 5rem;
+  font-weight: 900;
+}
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.stat {
+  padding: 8px;
+  border-radius: 14px;
+  border: 1px solid rgba(83, 48, 28, 0.18);
+  background: rgba(83, 48, 28, 0.08);
+  text-align: center;
+}
+
+.stat span {
+  display: block;
+  color: var(--text-muted);
+  font-size: 0.68rem;
+}
+
+.stat strong {
+  font-size: 0.92rem;
+}
+
+.building-card,
+.expedition-slot,
+.quest-card,
+.upgrade-card,
+.gacha-result-card {
+  padding: 12px;
+}
+
+.building-card {
+  display: grid;
+  grid-template-columns: 42px 1fr;
+  gap: 10px;
+}
+
+.building-icon,
+.hamster-portrait,
+.item-icon {
+  display: grid;
+  place-items: center;
+  border: 2px solid rgba(83, 48, 28, 0.5);
+  border-radius: 16px;
+  background:
+    radial-gradient(circle at 30% 25%, rgba(255, 255, 255, 0.35), transparent 45%),
+    var(--parchment-dark);
+  font-weight: 900;
+}
+
+.building-icon {
+  width: 42px;
+  height: 42px;
+  color: var(--accent);
+}
+
+.hamster-card {
+  display: grid;
+  grid-template-columns: 72px 1fr;
+  gap: 12px;
+  padding: 12px;
+}
+
+.hamster-portrait {
+  width: 72px;
+  height: 72px;
+  border-radius: 22px;
+  font-size: 2rem;
+  overflow: hidden;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.hamster-portrait-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+  display: block;
+  image-rendering: pixelated;
+}
+
+.hamster-portrait-fallback {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.zone-card {
+  padding: 14px;
+  cursor: pointer;
+}
+
+.zone-card.is-active {
+  border-color: var(--accent);
+  background:
+    linear-gradient(135deg, rgba(199, 137, 53, 0.2), rgba(255, 255, 255, 0.12)),
+    var(--card);
+}
+
+.inventory-card {
+  display: grid;
+  grid-template-columns: 50px 1fr;
+  gap: 10px;
+  padding: 10px;
+}
+
+.equipment-inline {
+  display: grid;
+  grid-template-columns: 50px 1fr;
+  gap: 10px;
+  padding: 10px 0;
+}
+
+.item-icon {
+  width: 50px;
+  height: 50px;
+  color: var(--accent-2);
+}
+
+.tag-row,
+.duration-row,
+.team-grid,
+.constellation-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.constellation-row {
+  margin: 8px 0;
+  gap: 6px;
+}
+
+.constellation-node {
+  display: inline-grid;
+  width: 26px;
+  height: 26px;
+  place-items: center;
+  border: 2px solid rgba(83, 48, 28, 0.25);
+  border-radius: 50%;
+  background: rgba(83, 48, 28, 0.08);
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-weight: 900;
+}
+
+.constellation-node.is-active {
+  border-color: var(--accent);
+  background: rgba(199, 137, 53, 0.22);
+  color: var(--accent);
+}
+
+.upgrade-card {
+  display: grid;
+  gap: 10px;
+}
+
+.gacha-result-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  min-height: 96px;
+  overflow: hidden;
+  background:
+    linear-gradient(135deg, rgba(199, 137, 53, 0.18), transparent),
+    var(--card);
+}
+
+.gacha-result-card.is-prize::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(115deg, transparent 0 36%, rgba(255, 238, 163, 0.26) 48%, transparent 62% 100%);
+  pointer-events: none;
+}
+
+.gacha-result-art {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  width: 52px;
+  height: 52px;
+  place-items: center;
+  overflow: hidden;
+  border: 2px solid rgba(83, 48, 28, 0.32);
+  border-radius: 14px;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.32), rgba(63, 111, 106, 0.12)),
+    var(--parchment-dark);
+  color: var(--accent-2);
+}
+
+.gacha-result-art img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+  image-rendering: pixelated;
+}
+
+.gacha-result-art span {
+  display: grid;
+  place-items: center;
+}
+
+.gacha-result-info {
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+}
+
+.gacha-result-info h3 {
+  overflow-wrap: anywhere;
+}
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(83, 48, 28, 0.16);
+  background: rgba(83, 48, 28, 0.08);
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.rarity-common { color: var(--common); }
+.rarity-uncommon { color: var(--uncommon); }
+.rarity-rare { color: var(--rare); }
+.rarity-epic { color: var(--epic); }
+.rarity-legendary { color: var(--legendary); }
+.rarity-mythic { color: var(--mythic); }
+
+.rarity-frame-common { border-color: rgba(184, 155, 115, 0.45); }
+.rarity-frame-uncommon { border-color: rgba(128, 185, 90, 0.58); }
+.rarity-frame-rare { border-color: rgba(95, 212, 232, 0.6); }
+.rarity-frame-epic { border-color: rgba(142, 91, 214, 0.72); }
+.rarity-frame-legendary { border-color: rgba(244, 154, 60, 0.72); }
+.rarity-frame-mythic { border-color: rgba(240, 107, 201, 0.72); }
+
+.timer-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 30px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(63, 111, 106, 0.24);
+  background: rgba(63, 111, 106, 0.12);
+  color: var(--accent-2);
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.progress {
+  height: 10px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(83, 48, 28, 0.22);
+}
+
+.progress span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--wood), var(--accent));
+}
+
+textarea.save-text {
+  width: 100%;
+  min-height: 160px;
+  resize: vertical;
+  border: 2px solid rgba(83, 48, 28, 0.22);
+  border-radius: 16px;
+  background: rgba(246, 231, 199, 0.72);
+  color: var(--text-main);
+  padding: 12px;
+}
+
+/* ── Empty states ─────────────────────────────── */
+.empty-state {
+  display: grid;
+  place-items: center;
+  gap: 6px;
+  padding: 28px 16px;
+  border: var(--border);
+  border-radius: var(--radius);
+  background: var(--card);
+  text-align: center;
+}
+
+.empty-icon {
+  color: var(--wood-dark);
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+/* ── Hamster status badge variants ─────────────── */
+.tag.status-available   { background: rgba(106, 143, 78, 0.22);  color: var(--success); }
+.tag.status-in_expedition { background: rgba(95, 212, 232, 0.18); color: var(--accent-2); }
+.tag.status-injured     { background: rgba(201, 75, 61, 0.2);    color: var(--danger); }
+.tag.status-resting     { background: rgba(244, 197, 66, 0.18);  color: var(--accent); }
+
+/* ── Shop placeholder item card ─────────────────── */
+.shop-item-card {
+  padding: 14px 10px;
+  border: var(--border);
+  border-radius: 18px;
+  background: rgba(83, 48, 28, 0.06);
+  text-align: center;
+  font-size: 1.6rem;
+  line-height: 1.4;
+}
+
+/* ── Rarity glow enhancements ───────────────────── */
+.rarity-frame-epic      { border-color: rgba(142, 91, 214, 0.72);  box-shadow: var(--shadow), 0 0 10px rgba(142, 91, 214, 0.14); }
+.rarity-frame-legendary { border-color: rgba(244, 154, 60, 0.72);  box-shadow: var(--shadow), 0 0 14px rgba(244, 154, 60, 0.2); }
+.rarity-frame-mythic    { border-color: rgba(240, 107, 201, 0.72); box-shadow: var(--shadow), 0 0 14px rgba(240, 107, 201, 0.2); }
+
+/* ── Hero panel per-screen decoration ───────────── */
+.hero-gacha {
+  background:
+    linear-gradient(135deg, rgba(43, 29, 22, 0.98), rgba(45, 85, 79, 0.92)),
+    repeating-linear-gradient(120deg, rgba(255, 255, 255, 0.05) 0 1px, transparent 1px 13px),
+    var(--leather);
+}
+
+.hero-gacha p,
+.hero-gacha .muted {
+  color: rgba(255, 244, 214, 0.9);
+}
+
+.hero-gacha > * {
+  position: relative;
+  z-index: 1;
+}
+
+.hero-gacha::after { content: ""; }
+
+/* ── Shiny (Світяшки) counter ───────────────────── */
+.shiny-counter {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: rgba(244, 197, 66, 0.18);
+  border: 1px solid rgba(244, 197, 66, 0.35);
+  color: var(--accent);
+  font-size: 1.05rem;
+  font-weight: 900;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+
+/* ── Gacha pity progress bar ─────────────────────── */
+.gacha-pity-bar {
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(43, 29, 22, 0.5);
+  overflow: hidden;
+  margin: 8px 0 2px;
+}
+
+.gacha-pity-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--accent), var(--glow), var(--accent-2));
+  transition: width 400ms ease;
+  min-width: 4px;
+}
+
+.gacha-pity-note {
+  margin: 4px 0 10px;
+  color: rgba(246, 231, 199, 0.78);
+  font-size: 0.78rem;
+}
+
+.gacha-economy-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 8px 0 12px;
+}
+
+.hero-panel .gacha-economy-row .tag {
+  border-color: rgba(246, 231, 199, 0.18);
+  background: rgba(246, 231, 199, 0.12);
+  color: var(--text-on-dark);
+}
+
+/* ── Gacha result grid ───────────────────────────── */
+.gacha-result-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+/* ── Expedition result banner ────────────────────── */
+.result-banner {
+  padding: 14px;
+  border: var(--border);
+  border-radius: var(--radius);
+  background: linear-gradient(135deg, rgba(106, 143, 78, 0.18), transparent), var(--card);
+  box-shadow: var(--shadow), 0 0 12px rgba(106, 143, 78, 0.15);
+  margin-bottom: 4px;
+  animation: screenEnter 0.25s ease both;
+}
+
+.chance-meter {
+  height: 8px;
+  overflow: hidden;
+  margin-bottom: 10px;
+  border-radius: 999px;
+  background: rgba(83, 48, 28, 0.18);
+}
+
+.chance-meter span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--danger), var(--accent), var(--accent-3));
+  transition: width 180ms ease;
+}
+
+/* ── Training screen ─────────────────────────────── */
+.training-title-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 6px 0 4px;
+}
+.training-title-row h2 { margin: 0; font-size: 1.1rem; }
+
+/* Arena */
+.training-arena {
+  display: flex;
+  flex-direction: column;
+  padding: 10px 4px 0;
+  margin-bottom: 8px;
+  overflow: visible;
+  gap: 4px;
+}
+
+/* Один спільний контейнер — хомяк ліворуч, манекен праворуч, нічого між ними */
+.arena-stage {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  overflow: visible;
+  min-height: 92px;
+  padding: 10px 12px 6px;
+  border: 1px solid rgba(83, 48, 28, 0.18);
+  border-radius: 16px;
+  background:
+    linear-gradient(180deg, rgba(63, 111, 106, 0.1), rgba(83, 48, 28, 0.08)),
+    rgba(234, 216, 180, 0.42);
+}
+
+.arena-canvas-wrap {
+  flex: 0 0 auto;
+  overflow: visible;
+  display: flex;
+  align-items: flex-end;
+  /* без рамки та фону */
+}
+
+#training-sprite-canvas {
+  display: block;
+  overflow: visible;
+}
+
+.arena-dummy-wrap {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+/* Число вилітає поверх сцени — абсолютна позиція по центру */
+.arena-center {
+  position: absolute;
+  left: 50%;
+  top: 38%;
+  transform: translateX(-50%);
+  pointer-events: none;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+/* Підписи нижче */
+.arena-labels-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 0 6px 4px;
+}
+
+.arena-side-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.arena-sprite-wrap {
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  overflow: hidden;
+  background: rgba(255,255,255,0.04);
+}
+
+.arena-sprite {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+
+.arena-empty-wrap {
+  /* порожній стан — без рамки */
+  opacity: 0.4;
+}
+
+.arena-empty-icon { font-size: 1.8rem; }
+
+.arena-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  max-width: 90px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.arena-stat {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+.arena-vs {
+  font-size: 0.75rem;
+  font-weight: 900;
+  color: var(--text-muted);
+  letter-spacing: 0.06em;
+  opacity: 0.5;
+}
+
+.arena-damage {
+  font-size: 1.5rem;
+  font-weight: 900;
+  color: #e74c3c;
+  text-shadow: 0 2px 8px rgba(231,76,60,0.5);
+  animation: floatUp 600ms ease forwards;
+}
+
+.arena-reward {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--accent);
+  background: rgba(244,197,66,0.14);
+  padding: 2px 8px;
+  border-radius: 999px;
+  animation: popIn 180ms ease both;
+}
+
+/* Dummy */
+.dummy-figure {
+  font-size: 2.2rem;
+  line-height: 1;
+  user-select: none;
+}
+.dummy-figure.dummy-hit {
+  animation: dummyShake 220ms ease both;
+}
+
+/* HP bar */
+.training-hp-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.training-hp-bar {
+  flex: 1;
+  height: 10px;
+  background: rgba(83, 48, 28, 0.18);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.training-hp-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #e74c3c, #c0392b);
+  border-radius: 999px;
+  transition: width 160ms ease;
+}
+
+.training-hp-text {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Tabs */
+.training-tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.training-tab-btn {
+  flex: 1;
+  padding: 8px 4px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  border: 1px solid rgba(83, 48, 28, 0.18);
+  border-radius: 14px;
+  background: rgba(83, 48, 28, 0.06);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background 120ms, color 120ms, border-color 120ms;
+}
+
+.training-tab-btn.active {
+  background: var(--accent);
+  color: #1a1a1a;
+  border-color: var(--accent);
+}
+
+.training-tab-content > .card {
+  margin-bottom: 10px;
+}
+
+/* Auto-attack status badge */
+.auto-attack-badge {
+  text-align: center;
+  padding: 8px 12px;
+  border-radius: var(--radius);
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  background: rgba(83, 48, 28, 0.06);
+  border: 1px dashed rgba(83, 48, 28, 0.28);
+  margin-bottom: 2px;
+}
+.auto-attack-badge.active {
+  color: #7ec850;
+  border-color: #7ec85060;
+  background: rgba(126, 200, 80, 0.07);
+}
+
+/* Hit button */
+.hit-btn {
+  width: 100%;
+  padding: 13px;
+  font-size: 1rem;
+  margin-bottom: 2px;
+}
+
+.hit-btn:active:not(:disabled) {
+  transform: scale(0.97);
+  transition: transform 60ms ease;
+}

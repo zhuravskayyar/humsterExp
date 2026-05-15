@@ -1,0 +1,157 @@
+@keyframes modalIn {
+  from {
+    opacity: 0;
+    transform: translateY(22px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes toastIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes rareShine {
+  0%,
+  100% {
+    box-shadow: var(--shadow);
+  }
+  50% {
+    box-shadow: 0 0 0 2px rgba(244, 197, 66, 0.38), 0 0 24px rgba(95, 212, 232, 0.28);
+  }
+}
+
+@keyframes hamsterBounce {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+@keyframes screenEnter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes completedPulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(106, 143, 78, 0.55);
+  }
+  60% {
+    box-shadow: 0 0 0 6px rgba(106, 143, 78, 0);
+  }
+}
+
+@keyframes progressShimmer {
+  from {
+    background-position: -200% center;
+  }
+  to {
+    background-position: 200% center;
+  }
+}
+
+@keyframes dummyShake {
+  0%   { transform: translateX(0) rotate(0deg); }
+  20%  { transform: translateX(-6px) rotate(-4deg); }
+  45%  { transform: translateX(6px) rotate(3deg); }
+  70%  { transform: translateX(-4px) rotate(-2deg); }
+  100% { transform: translateX(0) rotate(0deg); }
+}
+
+@keyframes hamsterAttack {
+  0%   { transform: translateX(0) scale(1) rotate(0deg); }
+  25%  { transform: translateX(8px) scale(1.08) rotate(-5deg); }
+  55%  { transform: translateX(16px) scale(1.13) rotate(-10deg); }
+  78%  { transform: translateX(4px) scale(1.04) rotate(-3deg); }
+  100% { transform: translateX(0) scale(1) rotate(0deg); }
+}
+
+@keyframes hamsterIdle {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50%       { transform: translateY(-3px) scale(1.02); }
+}
+
+@keyframes popIn {
+  from { transform: scale(0.6); opacity: 0; }
+  to   { transform: scale(1);   opacity: 1; }
+}
+
+@keyframes floatUp {
+  0%   { transform: translateY(0)    scale(1.1); opacity: 1; }
+  60%  { transform: translateY(-20px) scale(1);   opacity: 1; }
+  100% { transform: translateY(-40px) scale(0.85); opacity: 0; }
+}
+
+.modal {
+  animation: modalIn 180ms ease-out;
+}
+
+.toast {
+  animation: toastIn 160ms ease-out;
+}
+
+.screen {
+  animation: screenEnter 200ms ease-out;
+}
+
+.rarity-frame-rare,
+.rarity-frame-epic,
+.rarity-frame-legendary,
+.rarity-frame-mythic {
+  animation: rareShine 2.8s ease-in-out infinite;
+}
+
+.hamster-card:hover .hamster-portrait {
+  animation: hamsterBounce 420ms ease-in-out;
+}
+
+/* Completed expedition — pulsing green badge */
+.expedition-slot[data-status="completed"] .timer-badge {
+  background: rgba(106, 143, 78, 0.22);
+  color: var(--success);
+  animation: completedPulse 1.4s ease-out infinite;
+}
+
+/* Active expedition progress shimmer */
+.expedition-slot[data-status="active"] .progress span {
+  background: linear-gradient(
+    90deg,
+    var(--accent) 0%,
+    var(--accent-2) 50%,
+    var(--accent) 100%
+  );
+  background-size: 200% 100%;
+  animation: progressShimmer 2.2s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 1ms !important;
+  }
+}
+

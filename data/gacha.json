@@ -1,0 +1,21 @@
+{
+  "banners": [
+    {
+      "id": "standard",
+      "name": "📬 Нічна Пошта",
+      "description": "Поштар прийшов опівночі з валізою. Може, там хом'як. Може, запчастини. Гарантуємо 5⭐ через 24 листи, а після 18-го шанс починає рости.",
+      "cost": {
+        "single": { "shiny": 10 },
+        "ten": { "shiny": 80 }
+      },
+      "hamsterChance": 20,
+      "hamsterStars": { "4": 85, "5": 15 },
+      "itemStars": { "1": 35, "2": 27, "3": 20, "4": 13, "5": 5 },
+      "pity": {
+        "fiveStarEvery": 24,
+        "softPityStart": 18,
+        "softPityBonusPerPull": 6
+      }
+    }
+  ]
+}

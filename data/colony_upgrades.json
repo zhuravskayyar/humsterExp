@@ -1,0 +1,38 @@
+[
+  {
+    "id": "passive_income",
+    "name": "Комірки запасів",
+    "description": "Пасивно приносить їжу, дерево і монети, навіть коли гра закрита.",
+    "maxLevel": 5,
+    "baseCost": { "wood": 45, "coins": 35 },
+    "costGrowth": 1.65,
+    "effect": { "type": "passive_income", "foodPerMin": 2, "woodPerMin": 1, "coinsPerMin": 1 }
+  },
+  {
+    "id": "expedition_speed",
+    "name": "Тунельні санчата",
+    "description": "Скорочує час усіх експедицій.",
+    "maxLevel": 5,
+    "baseCost": { "wood": 35, "metal": 20, "coins": 40 },
+    "costGrowth": 1.7,
+    "effect": { "type": "expedition_speed", "percentPerLevel": 5 }
+  },
+  {
+    "id": "multicast",
+    "name": "Сигнальні свистки",
+    "description": "Додає multicast-слоти: можна вести кілька експедицій одночасно.",
+    "maxLevel": 3,
+    "baseCost": { "metal": 35, "plastic": 25, "coins": 80 },
+    "costGrowth": 2,
+    "effect": { "type": "expedition_slots", "slotsPerLevel": 1 }
+  },
+  {
+    "id": "gacha_luck",
+    "name": "Сирний маяк",
+    "description": "Підвищує шанс 5-зіркових нагород у гачі.",
+    "maxLevel": 5,
+    "baseCost": { "shiny": 1, "coins": 120 },
+    "costGrowth": 1.85,
+    "effect": { "type": "gacha_luck", "percentPerLevel": 2 }
+  }
+]

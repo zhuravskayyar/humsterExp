@@ -1,0 +1,125 @@
+.btn,
+.icon-btn,
+.select-pill {
+  min-height: 44px;
+  border: 0;
+  cursor: pointer;
+  transition: transform 120ms ease, filter 120ms ease, background 120ms ease;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 11px 14px;
+  border: 2px solid rgba(62, 35, 21, 0.72);
+  border-radius: 12px;
+  background:
+    linear-gradient(180deg, #D9AA62, #B87934);
+  box-shadow: inset 0 -3px 0 rgba(62, 35, 21, 0.26), 0 5px 0 rgba(62, 35, 21, 0.18);
+  color: #2A1710;
+  font-size: 0.95rem;
+  font-weight: 900;
+  text-align: center;
+}
+
+.btn.secondary {
+  background:
+    linear-gradient(180deg, #7B5234, #4B2E1E);
+  color: var(--text-on-dark);
+}
+
+.btn.ghost {
+  border-color: rgba(83, 48, 28, 0.28);
+  background: rgba(83, 48, 28, 0.08);
+  box-shadow: none;
+  color: var(--text-main);
+}
+
+.btn.danger-btn {
+  background: var(--danger);
+  color: #fff8ea;
+}
+
+.btn:disabled,
+.select-pill:disabled {
+  cursor: not-allowed;
+  filter: grayscale(0.8) brightness(0.72);
+  transform: none;
+}
+
+/* Хомяк, який зараз у вилазці — напівпрозорий з синім акцентом */
+.select-pill.pill-in_expedition,
+.select-pill.pill-resting {
+  opacity: 0.72;
+  border-color: rgba(40, 120, 200, 0.45);
+  background: rgba(40, 120, 200, 0.08);
+}
+
+.select-pill.pill-injured {
+  opacity: 0.72;
+  border-color: rgba(164, 59, 45, 0.45);
+  background: rgba(164, 59, 45, 0.08);
+}
+
+.btn:not(:disabled):hover {
+  filter: brightness(1.1);
+}
+
+.icon-btn:not(:disabled):hover {
+  background: rgba(83, 48, 28, 0.12);
+  border-color: rgba(83, 48, 28, 0.38);
+}
+
+.select-pill:not(:disabled):hover {
+  border-color: rgba(83, 48, 28, 0.38);
+  background: rgba(83, 48, 28, 0.12);
+}
+
+.btn:not(:disabled):active,
+.icon-btn:not(:disabled):active,
+.select-pill:not(:disabled):active {
+  transform: translateY(2px) scale(0.99);
+}
+
+.icon-btn {
+  display: inline-grid;
+  width: 44px;
+  min-width: 44px;
+  place-items: center;
+  border: 2px solid rgba(83, 48, 28, 0.22);
+  border-radius: 12px;
+  background: rgba(83, 48, 28, 0.08);
+  color: var(--text-main);
+  font-weight: 900;
+}
+
+.hero-panel .icon-btn {
+  border-color: rgba(246, 231, 199, 0.28);
+  background: rgba(246, 231, 199, 0.12);
+  color: var(--text-on-dark);
+}
+
+.select-pill {
+  padding: 9px 12px;
+  border: 2px solid rgba(83, 48, 28, 0.22);
+  border-radius: 999px;
+  background: rgba(83, 48, 28, 0.08);
+  color: var(--text-main);
+  font-size: 0.85rem;
+  font-weight: 850;
+}
+
+.select-pill.is-active,
+.select-pill.active {
+  border-color: var(--accent);
+  background: rgba(199, 137, 53, 0.2);
+  color: var(--accent);
+}
+
+.button-row {
+  display: flex;
+  gap: 8px;
+}

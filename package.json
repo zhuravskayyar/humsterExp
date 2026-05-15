@@ -1,0 +1,12 @@
+{
+  "name": "hamster-expeditions",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "serve": "python -m http.server 5173",
+    "check": "node --check js/app.js",
+    "normalize-sprites": "python ./scripts/normalize-sprites.py",
+    "validate-assets": "node ./scripts/validate-assets.mjs"
+  }
+}

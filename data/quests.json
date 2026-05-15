@@ -1,0 +1,38 @@
+[
+  {
+    "id": "send_3_expeditions",
+    "title": "Відправити 3 експедиції",
+    "type": "daily",
+    "target": 3,
+    "progress": 0,
+    "metric": "expeditionsStarted",
+    "reward": { "coins": 25, "shiny": 5 }
+  },
+  {
+    "id": "collect_100_food",
+    "title": "Зібрати 100 їжі",
+    "type": "daily",
+    "target": 100,
+    "progress": 0,
+    "metric": "foodCollected",
+    "reward": { "wood": 20, "shiny": 3 }
+  },
+  {
+    "id": "finish_without_injury",
+    "title": "Повернутися без травм",
+    "type": "story",
+    "target": 1,
+    "progress": 0,
+    "metric": "cleanReturns",
+    "reward": { "food": 40, "shiny": 8 }
+  },
+  {
+    "id": "find_rare_item",
+    "title": "Знайти рідкісний предмет",
+    "type": "achievement",
+    "target": 1,
+    "progress": 0,
+    "metric": "rareItemsFound",
+    "reward": { "shiny": 10 }
+  }
+]

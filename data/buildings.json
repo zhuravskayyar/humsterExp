@@ -1,0 +1,10 @@
+[
+  { "id": "storage", "name": "Комора", "level": 1, "icon": "storage", "description": "Зберігає ресурси і секретні крихти." },
+  { "id": "kitchen", "name": "Кухня", "level": 1, "icon": "kitchen", "description": "Повільно збирає їжу з безпечних маршрутів." },
+  { "id": "workshop", "name": "Майстерня", "level": 1, "icon": "workshop", "description": "Місце для спорядження з кришок і дроту." },
+  { "id": "barracks", "name": "Казарма", "level": 1, "icon": "barracks", "description": "Тут хом'яки тренуються не гризти інструкції." },
+  { "id": "map", "name": "Карта експедицій", "level": 1, "icon": "map", "description": "Показує великі небезпеки маленькими позначками." },
+  { "id": "lab", "name": "Лабораторія мутацій", "level": 0, "icon": "lab", "description": "Закрита до майбутнього оновлення." },
+  { "id": "market", "name": "Ринок", "level": 0, "icon": "market", "description": "Обмін без реальних платежів у MVP." },
+  { "id": "nest", "name": "Гніздо", "level": 0, "icon": "nest", "description": "Майбутнє місце для нових хом'яків." }
+]

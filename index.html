@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="uk">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#2B1D16">
+    <meta name="description" content="Hamster Expeditions — браузерна гра про вилазки хом'яків, здобич, прокачку бази та короткі сесії зі встановленням як застосунку.">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Hamster Expeditions">
+    <title>Hamster Expeditions</title>
+    <link rel="manifest" href="./manifest.json">
+    <link rel="apple-touch-icon" href="./icons/icon-192.png">
+    <link rel="stylesheet" href="./css/style.css">
+    <link rel="stylesheet" href="./css/layout.css">
+    <link rel="stylesheet" href="./css/buttons.css">
+    <link rel="stylesheet" href="./css/cards.css">
+    <link rel="stylesheet" href="./css/animations.css">
+  </head>
+  <body>
+    <div class="page-shell">
+      <main id="landing" class="landing-shell">
+        <section class="landing-hero">
+          <div class="landing-copy">
+            <p class="landing-kicker">PWA idle adventure</p>
+            <h1>Hamster Expeditions</h1>
+            <p class="landing-lead">Збирай загін хом'яків, відправляй його у вилазки, прокачуй нору та повертайся за трофеями кілька разів на день.</p>
+            <div class="landing-actions">
+              <button id="tryBtn" class="btn landing-cta">Спробувати</button>
+              <button id="notifyBtn" class="btn secondary">Увімкнути сповіщення</button>
+            </div>
+            <p id="installHint" class="landing-hint">Android запропонує встановлення, а на iPhone з'явиться підказка як додати гру на головний екран.</p>
+          </div>
+
+          <aside class="landing-preview">
+            <div class="preview-card preview-card-main">
+              <p class="preview-label">Ритм гри</p>
+              <strong>2-4 короткі сесії на день</strong>
+              <p>Запустив експедицію, закрив, повернувся за ресурсами і новими бійцями.</p>
+            </div>
+            <div class="preview-grid">
+              <div class="preview-card">
+                <span>Експедиції</span>
+                <strong>Кухня, підвал, комора</strong>
+              </div>
+              <div class="preview-card">
+                <span>Прогрес</span>
+                <strong>Гача, тренування, колонія</strong>
+              </div>
+            </div>
+          </aside>
+        </section>
+
+        <section class="landing-section">
+          <div class="section-heading">
+            <p class="landing-kicker">Про гру</p>
+            <h2>Коротка історія нори</h2>
+          </div>
+          <div class="story-grid">
+            <article class="story-card">
+              <h3>Маленький загін, велика здобич</h3>
+              <p>У кожного хом'яка свій клас, параметри й роль у команді. Комбінуй швидкість, удачу, бій і переносимість луту.</p>
+            </article>
+            <article class="story-card">
+              <h3>Прогрес без довгих сесій</h3>
+              <p>Гра спроєктована під мобільний ритм: відкрив, відправив у вилазку, забрав нагороду, підкрутив базу і пішов далі.</p>
+            </article>
+            <article class="story-card">
+              <h3>PWA-режим</h3>
+              <p>Сайт можна встановити як застосунок, запускати з домашнього екрана і повертатися до гри майже як у нативному клієнті.</p>
+            </article>
+          </div>
+        </section>
+
+        <section class="landing-section landing-section-accent">
+          <div class="section-heading">
+            <p class="landing-kicker">Що всередині</p>
+            <h2>Основа першої версії</h2>
+          </div>
+          <div class="feature-grid">
+            <article class="feature-card">
+              <h3>Встановлення в один тап</h3>
+              <p>Кнопка "Спробувати" ловить системний install prompt там, де браузер це підтримує.</p>
+            </article>
+            <article class="feature-card">
+              <h3>Офлайн-обгортка</h3>
+              <p>Core-файли та вже відкриті ресурси кешуються service worker-ом, тому гра швидше повертається після першого запуску.</p>
+            </article>
+            <article class="feature-card">
+              <h3>Локальні нагадування</h3>
+              <p>Коли експедиція завершиться і браузер ще тримає застосунок живим, гра покаже локальне сповіщення.</p>
+            </article>
+          </div>
+        </section>
+      </main>
+
+      <div id="app" class="game-shell" hidden>
+        <main class="boot-screen">
+          <div class="boot-logo">HE</div>
+          <h1>Hamster Expeditions</h1>
+          <p>Завантаження нори...</p>
+        </main>
+      </div>
+    </div>
+    <script type="module" src="./js/app.js"></script>
+  </body>
+</html>

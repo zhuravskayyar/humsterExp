@@ -1,0 +1,47 @@
+[
+  {
+    "id": "kitchen",
+    "name": "Кухня гігантів",
+    "level": 1,
+    "danger": 12,
+    "baseChance": 62,
+    "requiredPower": 16,
+    "maxTeam": 2,
+    "minDurationMs": 300000,
+    "maxDurationMs": 900000,
+    "resources": ["food", "plastic", "fabric", "gold", "xpBooks"],
+    "enemies": ["людина-гігант", "кіт"],
+    "rareChance": 8,
+    "description": "Тепле місце з крихтами, пакетами та ризиком бути поміченими біля плити."
+  },
+  {
+    "id": "pantry",
+    "name": "Комора",
+    "level": 2,
+    "danger": 24,
+    "baseChance": 56,
+    "requiredPower": 26,
+    "maxTeam": 3,
+    "minDurationMs": 900000,
+    "maxDurationMs": 2700000,
+    "resources": ["food", "wood", "fabric", "gold", "xpBooks"],
+    "enemies": ["павук", "щур"],
+    "rareChance": 12,
+    "description": "Темні полиці, мішки крупи і старі ящики. Тут більше луту, але маршрути тісні."
+  },
+  {
+    "id": "basement",
+    "name": "Підвал",
+    "level": 3,
+    "danger": 36,
+    "baseChance": 50,
+    "requiredPower": 38,
+    "maxTeam": 3,
+    "minDurationMs": 1800000,
+    "maxDurationMs": 5400000,
+    "resources": ["metal", "wood", "shiny", "gold", "ore", "xpBooks"],
+    "enemies": ["щур", "тарган-мутант"],
+    "rareChance": 18,
+    "description": "Холодна територія труб, банок і дивних відблисків під сходами."
+  }
+]
