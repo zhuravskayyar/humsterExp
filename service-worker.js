@@ -81,6 +81,25 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
+  // JS та CSS — network-first: завжди беремо свіжу версію, кеш — лише офлайн-резерв
+  const isCode = /\.(js|css)(\?.*)?$/.test(url.pathname);
+  if (isCode) {
+    event.respondWith((async () => {
+      try {
+        const response = await fetch(request);
+        if (response.ok) {
+          const cache = await caches.open(STATIC_CACHE);
+          cache.put(request, response.clone());
+        }
+        return response;
+      } catch {
+        return (await caches.match(request)) || Response.error();
+      }
+    })());
+    return;
+  }
+
+  // Решта (зображення, JSON тощо) — cache-first
   event.respondWith((async () => {
     const cached = await caches.match(request);
     const networkPromise = fetch(request)
