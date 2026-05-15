@@ -96,6 +96,24 @@ export const SPRITE_CONFIG = {
       fps: 12,         // full attack ≈ 500 ms
     },
   },
+  iskra: {
+    idle: {
+      src: "assets/images/hamsters/iskra/idle/iskra_idle_normalized.png",
+      frames: 4,
+      totalW: 2508,
+      h: 627,
+      anchorX: 314,
+      fps: 7,
+    },
+    attack: {
+      src: "assets/images/hamsters/iskra/attack/iskra_attack_normalized.png",
+      frames: 4,
+      totalW: 2172,
+      h: 724,
+      anchorX: 272,
+      fps: 10,
+    },
+  },
 };
 
 export const CANVAS_DISPLAY_H = 78; // px – display height of the canvas

@@ -196,9 +196,9 @@
     "trait": "Світиться під старими лампами",
     "status": "available",
     "slug": "iskra",
-    "portrait": null,
-    "gachaImage": null,
-    "image": null,
+    "portrait": "assets/images/hamsters/iskra/portret/iskra.png",
+    "gachaImage": "assets/images/hamsters/iskra/portret/iskra_gacha.png",
+    "image": "assets/images/hamsters/iskra/portret/iskra.png",
     "constellationLevel": 0,
     "constellations": [
       { "level": 1, "name": "Світляний слід", "description": "+3 удача.", "effect": { "type": "stat", "stat": "luck", "value": 3 } },
