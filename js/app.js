@@ -17,7 +17,7 @@ let expeditionReminderTimer = null;
 
 // ── Push notification server ──────────────────────────────────────────────────
 // After deploying server/ to Render, paste your URL here (no trailing slash).
-const PUSH_SERVER = ""; // e.g. "https://hamster-push.onrender.com"
+const PUSH_SERVER = "https://humsterexp.onrender.com";
 
 let _pushSub = null;
 let _pingTimer = null;
