@@ -29,21 +29,46 @@ function _urlBase64ToUint8Array(base64String) {
 }
 
 async function _initPush() {
-  if (!PUSH_SERVER) return;
-  if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;
-  if (Notification.permission !== "granted") return;
+  if (!PUSH_SERVER) { console.log("[push] disabled (PUSH_SERVER empty)"); return; }
+  if (!("serviceWorker" in navigator) || !("PushManager" in window)) { console.log("[push] not supported"); return; }
+  if (Notification.permission !== "granted") { console.log("[push] permission:", Notification.permission); return; }
   try {
     const reg = await navigator.serviceWorker.ready;
+
+    // Fetch server's current VAPID public key
+    const resp = await fetch(`${PUSH_SERVER}/vapid-public-key`);
+    if (!resp.ok) { console.warn("[push] vapid-public-key fetch failed:", resp.status); return; }
+    const { publicKey } = await resp.json();
+    console.log("[push] server VAPID key:", publicKey.slice(0, 12) + "…");
+
     let sub = await reg.pushManager.getSubscription();
+
+    // If subscription exists but was made with a different VAPID key — resubscribe
+    if (sub) {
+      const existingKey = sub.options?.applicationServerKey;
+      const newKeyBytes = _urlBase64ToUint8Array(publicKey);
+      const existingB64 = existingKey
+        ? btoa(String.fromCharCode(...new Uint8Array(existingKey)))
+        : null;
+      const newB64 = btoa(String.fromCharCode(...newKeyBytes));
+      if (existingB64 !== newB64) {
+        console.log("[push] VAPID key changed — resubscribing");
+        await sub.unsubscribe();
+        sub = null;
+      }
+    }
+
     if (!sub) {
-      const resp = await fetch(`${PUSH_SERVER}/vapid-public-key`);
-      if (!resp.ok) return;
-      const { publicKey } = await resp.json();
+      console.log("[push] creating new subscription…");
       sub = await reg.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: _urlBase64ToUint8Array(publicKey),
       });
+      console.log("[push] subscribed:", sub.endpoint.slice(-20));
+    } else {
+      console.log("[push] existing subscription OK");
     }
+
     _pushSub = sub;
     _startPingLoop();
   } catch (err) {
