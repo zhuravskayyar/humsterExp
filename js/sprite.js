@@ -126,9 +126,9 @@ export const SPRITE_CONFIG = {
     attack: {
       src: "assets/images/hamsters/krykhta/attack/krykhta_attack_normalized.png",
       frames: 4,
-      totalW: 1448,
-      h: 1086,
-      anchorX: 181,
+      totalW: 1791,
+      h: 516,
+      anchorX: 224,
       fps: 10,
     },
   },
