@@ -247,7 +247,7 @@ function registerServiceWorker() {
     _onSwUpdateReady();
   });
 
-  navigator.serviceWorker.register("./service-worker.js").catch((error) => {
+  navigator.serviceWorker.register("./service-worker.js", { updateViaCache: "none" }).catch((error) => {
     console.error("Service worker registration failed", error);
   });
 }

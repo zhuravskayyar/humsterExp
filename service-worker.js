@@ -1,4 +1,4 @@
-const VERSION = "hamster-exp-v29";
+const VERSION = "hamster-exp-v30";
 const STATIC_CACHE = `${VERSION}-static`;
 const RUNTIME_CACHE = `${VERSION}-runtime`;
 
@@ -87,8 +87,8 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // JS та CSS — network-first: завжди беремо свіжу версію, кеш — лише офлайн-резерв
-  const isCode = /\.(js|css)(\?.*)?$/.test(url.pathname);
+  // JS, CSS, JSON — network-first: завжди беремо свіжу версію, кеш — лише офлайн-резерв
+  const isCode = /\.(js|css|json)(\?.*)?$/.test(url.pathname);
   if (isCode) {
     event.respondWith((async () => {
       try {
