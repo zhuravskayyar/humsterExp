@@ -1,10 +1,10 @@
 [
-  { "id": "storage", "name": "Комора", "level": 1, "icon": "storage", "description": "Зберігає ресурси і секретні крихти." },
-  { "id": "kitchen", "name": "Кухня", "level": 1, "icon": "kitchen", "description": "Повільно збирає їжу з безпечних маршрутів." },
-  { "id": "workshop", "name": "Майстерня", "level": 1, "icon": "workshop", "description": "Місце для спорядження з кришок і дроту." },
-  { "id": "barracks", "name": "Казарма", "level": 1, "icon": "barracks", "description": "Тут хом'яки тренуються не гризти інструкції." },
-  { "id": "map", "name": "Карта експедицій", "level": 1, "icon": "map", "description": "Показує великі небезпеки маленькими позначками." },
-  { "id": "lab", "name": "Лабораторія мутацій", "level": 0, "icon": "lab", "description": "Закрита до майбутнього оновлення." },
-  { "id": "market", "name": "Ринок", "level": 0, "icon": "market", "description": "Обмін без реальних платежів у MVP." },
-  { "id": "nest", "name": "Гніздо", "level": 0, "icon": "nest", "description": "Майбутнє місце для нових хом'яків." }
+  { "id": "storage", "name": "Комора", "level": 1, "icon": "storage", "description": "Сортує трофеї, показує запаси й допомагає швидко забрати пасивний дохід." },
+  { "id": "kitchen", "name": "Кухня", "level": 1, "icon": "kitchen", "description": "Готує сухпайки для загонів і нарощує пасивний дохід нори." },
+  { "id": "workshop", "name": "Майстерня", "level": 1, "icon": "workshop", "description": "Тут спорядження одягають, прокачують і розбирають на корисну руду." },
+  { "id": "barracks", "name": "Казарма", "level": 1, "icon": "barracks", "description": "Тренує вільних хом'яків на манекені й перетворює час на схованки XP." },
+  { "id": "map", "name": "Карта експедицій", "level": 1, "icon": "map", "description": "Керує маршрутами, швидкістю повернення та кількістю одночасних загонів." },
+  { "id": "lab", "name": "Лабораторія мутацій", "level": 1, "icon": "lab", "description": "Підкручує сирний маяк, щоб листи частіше приносили рідкісних бійців." },
+  { "id": "market", "name": "Ринок", "level": 1, "icon": "market", "description": "Міняє зайве насіння на світяшки для листів без реальних платежів." },
+  { "id": "nest", "name": "Гніздо", "level": 1, "icon": "nest", "description": "Показує колекцію хом'яків і веде до листів, якщо загону потрібне поповнення." }
 ]

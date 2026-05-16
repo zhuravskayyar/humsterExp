@@ -10,18 +10,18 @@ export const dataStore = {
 };
 
 export const resourceMeta = {
-  food: { label: "Їжа", icon: "food" },
-  wood: { label: "Дерево", icon: "wood" },
-  metal: { label: "Метал", icon: "metal" },
-  fabric: { label: "Тканина", icon: "fabric" },
-  plastic: { label: "Пластик", icon: "plastic" },
+  food: { label: "Крихти", icon: "food" },
+  wood: { label: "Тріски", icon: "wood" },
+  metal: { label: "Скріпки", icon: "metal" },
+  fabric: { label: "Нитки", icon: "fabric" },
+  plastic: { label: "Кришечки", icon: "plastic" },
   shiny: { label: "Світяшки", icon: "shiny" },
-  coins: { label: "Монети", icon: "coins" },
-  cheese: { label: "Преміум-сир", icon: "cheese" },
-  gold: { label: "Золото", icon: "coins" },
+  coins: { label: "Насіння", icon: "seed" },
+  cheese: { label: "Сир", icon: "cheese" },
+  gold: { label: "Насіння", icon: "seed" },
   xpBooks: { label: "Схованки", icon: "quests" },
-  ore: { label: "Руда", icon: "metal" },
-  crystals: { label: "Кристал", icon: "gacha" }
+  ore: { label: "Камінці", icon: "metal" },
+  crystals: { label: "Скельця", icon: "shiny" }
 };
 
 export const i18n = {

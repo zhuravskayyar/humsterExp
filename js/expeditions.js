@@ -225,8 +225,10 @@ function buildLoot(zone, event, durationMultiplier, carryMultiplier, lootMultipl
   const resources = {};
   const constellationMultiplier = 1 + team.lootBonus / 100;
   for (const resource of zone.resources) {
-    const base = resource === "shiny" ? randomInt(0, 1) : resource === "xpBooks" ? randomInt(1, 3) : resource === "ore" ? randomInt(3, 8) : resource === "gold" ? randomInt(10, 24) : randomInt(12, 28);
-    const amount = Math.floor(base * durationMultiplier * carryMultiplier * lootMultiplier * constellationMultiplier);
+    const base = resource === "shiny" ? randomInt(1, 3) : resource === "xpBooks" ? randomInt(1, 3) : resource === "ore" ? randomInt(3, 8) : resource === "gold" ? randomInt(10, 24) : randomInt(12, 28);
+    const amount = resource === "shiny"
+      ? Math.max(1, Math.round(base * durationMultiplier * lootMultiplier * constellationMultiplier))
+      : Math.floor(base * durationMultiplier * carryMultiplier * lootMultiplier * constellationMultiplier);
     if (amount > 0) resources[resource] = (resources[resource] ?? 0) + amount;
   }
 

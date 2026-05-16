@@ -56,7 +56,7 @@ export function hitDummy(state, hamsterId) {
     state.training.damageProgress -= dummy.hpPerRound;
     state.training.totalRounds = (state.training.totalRounds ?? 0) + 1;
 
-    // Золото гарантовано кожного раунду (2–6 монет)
+    // Насіння гарантовано кожного раунду.
     goldAwarded = Math.floor(Math.random() * 5) + 2;
     state.resources.gold = (state.resources.gold ?? 0) + goldAwarded;
     // 10% шанс на їжу
@@ -141,7 +141,7 @@ export function processOfflineTraining(state) {
   if (rounds <= 0) return null;
 
   const booksAwarded = rounds * dummy.rewardBooks;
-  // Для офлайн-фарму використовуємо середнє значення (4 монети/раунд замість рандому)
+  // Для офлайн-фарму використовуємо середнє значення насіння за раунд.
   const goldAwarded = rounds * 4;
 
   state.resources.xpBooks = (state.resources.xpBooks ?? 0) + booksAwarded;

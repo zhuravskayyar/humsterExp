@@ -1,4 +1,4 @@
-export const SAVE_VERSION = 4;
+export const SAVE_VERSION = 6;
 
 export const DEFAULT_EQUIPMENT_SLOTS = Object.freeze({
   weapon: null,
@@ -23,7 +23,8 @@ export const runtimeState = {
   expeditionResult: null,
   trainingHamsterId: null,
   lastHitInfo: null,
-  trainingTab: "fight"
+  trainingTab: "fight",
+  onboardingStep: null
 };
 
 export function createDefaultState(data) {
@@ -52,9 +53,8 @@ export function createDefaultState(data) {
       fabric: 30,
       plastic: 10,
       shiny: 80,
-      coins: 100,
       cheese: 0,
-      gold: 120,
+      gold: 220,
       xpBooks: 8,
       ore: 25,
       crystals: 0
@@ -95,6 +95,12 @@ export function createDefaultState(data) {
       offlineSince: null,
       offlineDps: null
     },
+    onboarding: {
+      version: 1,
+      completed: false,
+      currentStep: 0,
+      completedAt: null
+    },
     settings: {
       language: "ua",
       sound: true,
@@ -122,6 +128,11 @@ export function mergeWithDefaults(savedState, data) {
     settings: { ...defaults.settings, ...savedState.settings },
     stats: { ...defaults.stats, ...savedState.stats }
   };
+  const legacyCoins = Number(savedState.resources?.coins ?? 0);
+  if (legacyCoins > 0) {
+    merged.resources.gold = (merged.resources.gold ?? 0) + legacyCoins;
+  }
+  delete merged.resources.coins;
 
   merged.hamsters = mergeHamsters(defaults.hamsters, savedState.hamsters, data.hamsters);
   merged.equipment = Array.isArray(savedState.equipment) ? mergeEquipment(savedState.equipment, data.items) : defaults.equipment;
@@ -144,6 +155,7 @@ export function mergeWithDefaults(savedState, data) {
   };
   merged.gacha = { ...defaults.gacha, ...savedState.gacha };
   merged.training = { ...defaults.training, ...(savedState.training ?? {}) };
+  merged.onboarding = { ...defaults.onboarding, ...(savedState.onboarding ?? {}) };
   merged.version = SAVE_VERSION;
 
   return merged;

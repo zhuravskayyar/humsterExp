@@ -21,12 +21,12 @@
     "image": "assets/images/hamsters/bublyk/portret/bublyk.png",
     "constellationLevel": 0,
     "constellations": [
-      { "level": 1, "name": "Глибокі кишені", "description": "+2 вантажність.", "effect": { "type": "stat", "stat": "carry", "value": 2 } },
-      { "level": 2, "name": "Крихтова карта", "description": "+8% лут з експедицій.", "effect": { "type": "loot_bonus", "value": 8 } },
-      { "level": 3, "name": "Смак запасів", "description": "+1 їжа за хвилину пасивного доходу.", "effect": { "type": "passive_income", "resource": "food", "value": 1 } },
-      { "level": 4, "name": "Великий мішечок", "description": "+3 вантажність.", "effect": { "type": "stat", "stat": "carry", "value": 3 } },
-      { "level": 5, "name": "Польовий комірник", "description": "+10% лут з експедицій.", "effect": { "type": "loot_bonus", "value": 10 } },
-      { "level": 6, "name": "Король запасів", "description": "+2 вантажність і +2 удача.", "effect": { "type": "multi_stat", "stats": { "carry": 2, "luck": 2 } } }
+      { "level": 1, "name": "Глибокі кишені", "description": "Бублик виносить більше здобичі з кожної вилазки.", "effect": { "type": "stat", "stat": "carry", "value": 2 } },
+      { "level": 2, "name": "Крихтова карта", "description": "Загін краще помічає сховані запаси на маршруті.", "effect": { "type": "loot_bonus", "value": 8 } },
+      { "level": 3, "name": "Смак запасів", "description": "Нора пасивно поповнюється крихтами.", "effect": { "type": "passive_income", "resource": "food", "value": 1 } },
+      { "level": 4, "name": "Великий мішечок", "description": "Повернення з вилазок стає щедрішим завдяки більшому запасу місця.", "effect": { "type": "stat", "stat": "carry", "value": 3 } },
+      { "level": 5, "name": "Польовий комірник", "description": "Бублик краще сортує трофеї ще до повернення.", "effect": { "type": "loot_bonus", "value": 10 } },
+      { "level": 6, "name": "Король запасів", "description": "Вилазки Бублика приносять більше здобичі й частіше знаходять корисні дрібниці.", "effect": { "type": "multi_stat", "stats": { "carry": 2, "luck": 2 } } }
     ]
   },
   {
@@ -51,12 +51,12 @@
     "image": "assets/images/hamsters/pixel/portret/pixel.png",
     "constellationLevel": 0,
     "constellations": [
-      { "level": 1, "name": "Тихі лапки", "description": "+2 швидкість.", "effect": { "type": "stat", "stat": "speed", "value": 2 } },
-      { "level": 2, "name": "Короткий маршрут", "description": "+4% швидкість експедицій.", "effect": { "type": "expedition_speed", "value": 4 } },
-      { "level": 3, "name": "Сканер щілин", "description": "+5% шанс рідкісного луту.", "effect": { "type": "rare_bonus", "value": 5 } },
-      { "level": 4, "name": "Біг по плінтусу", "description": "+3 швидкість.", "effect": { "type": "stat", "stat": "speed", "value": 3 } },
-      { "level": 5, "name": "Невидимий маршрут", "description": "-8% шанс травми.", "effect": { "type": "injury_resist", "value": 8 } },
-      { "level": 6, "name": "Піксельний прорив", "description": "+3 швидкість і +2 удача.", "effect": { "type": "multi_stat", "stats": { "speed": 3, "luck": 2 } } }
+      { "level": 1, "name": "Тихі лапки", "description": "Піксель швидше проходить знайомі ділянки маршруту.", "effect": { "type": "stat", "stat": "speed", "value": 2 } },
+      { "level": 2, "name": "Короткий маршрут", "description": "Усі вилазки з ним повертаються трохи швидше.", "effect": { "type": "expedition_speed", "value": 4 } },
+      { "level": 3, "name": "Сканер щілин", "description": "Піксель частіше помічає рідкісні знахідки в темних місцях.", "effect": { "type": "rare_bonus", "value": 5 } },
+      { "level": 4, "name": "Біг по плінтусу", "description": "Маршрути з Пікселем стають стабільнішими й швидшими.", "effect": { "type": "stat", "stat": "speed", "value": 3 } },
+      { "level": 5, "name": "Невидимий маршрут", "description": "Загін рідше потрапляє в небезпечні місця.", "effect": { "type": "injury_resist", "value": 8 } },
+      { "level": 6, "name": "Піксельний прорив", "description": "Піксель веде загін швидко й точніше знаходить цінну здобич.", "effect": { "type": "multi_stat", "stats": { "speed": 3, "luck": 2 } } }
     ]
   },
   {
@@ -81,12 +81,12 @@
     "image": "assets/images/hamsters/hryzun/portret/hryzun.png",
     "constellationLevel": 0,
     "constellations": [
-      { "level": 1, "name": "Зуби сталі", "description": "+2 сила.", "effect": { "type": "stat", "stat": "power", "value": 2 } },
-      { "level": 2, "name": "Кришка вперед", "description": "-7% шанс травми.", "effect": { "type": "injury_resist", "value": 7 } },
-      { "level": 3, "name": "Таранний біг", "description": "+2 витривалість.", "effect": { "type": "stat", "stat": "stamina", "value": 2 } },
-      { "level": 4, "name": "Залізний писк", "description": "+3 сила.", "effect": { "type": "stat", "stat": "power", "value": 3 } },
-      { "level": 5, "name": "Охоронець загону", "description": "-10% шанс травми.", "effect": { "type": "injury_resist", "value": 10 } },
-      { "level": 6, "name": "Щит нори", "description": "+3 сила і +2 витривалість.", "effect": { "type": "multi_stat", "stats": { "power": 3, "stamina": 2 } } }
+      { "level": 1, "name": "Зуби сталі", "description": "Гризун впевненіше проходить силові перешкоди.", "effect": { "type": "stat", "stat": "power", "value": 2 } },
+      { "level": 2, "name": "Кришка вперед", "description": "Він приймає небезпеку на себе й знижує ризик травм.", "effect": { "type": "injury_resist", "value": 7 } },
+      { "level": 3, "name": "Таранний біг", "description": "Гризун довше тримає темп у важких маршрутах.", "effect": { "type": "stat", "stat": "stamina", "value": 2 } },
+      { "level": 4, "name": "Залізний писк", "description": "Перешкоди ламаються швидше, коли він у загоні.", "effect": { "type": "stat", "stat": "power", "value": 3 } },
+      { "level": 5, "name": "Охоронець загону", "description": "Загін значно рідше повертається пораненим.", "effect": { "type": "injury_resist", "value": 10 } },
+      { "level": 6, "name": "Щит нори", "description": "Гризун стає опорою загону на небезпечних маршрутах.", "effect": { "type": "multi_stat", "stats": { "power": 3, "stamina": 2 } } }
     ]
   },
   {
@@ -111,12 +111,12 @@
     "image": "assets/images/hamsters/pliushka/portret/pliushka.png",
     "constellationLevel": 0,
     "constellations": [
-      { "level": 1, "name": "Блискучий нюх", "description": "+3 удача.", "effect": { "type": "stat", "stat": "luck", "value": 3 } },
-      { "level": 2, "name": "Сирний фарт", "description": "+7% шанс рідкісного луту.", "effect": { "type": "rare_bonus", "value": 7 } },
-      { "level": 3, "name": "Монетка під лапою", "description": "+1 монета за хвилину пасивного доходу.", "effect": { "type": "passive_income", "resource": "coins", "value": 1 } },
-      { "level": 4, "name": "Щаслива петля", "description": "+4 удача.", "effect": { "type": "stat", "stat": "luck", "value": 4 } },
-      { "level": 5, "name": "Рідкісний запах", "description": "+10% шанс рідкісного луту.", "effect": { "type": "rare_bonus", "value": 10 } },
-      { "level": 6, "name": "Зірка нори", "description": "+4 удача і +8% лут.", "effect": { "type": "compound", "effects": [{ "type": "stat", "stat": "luck", "value": 4 }, { "type": "loot_bonus", "value": 8 }] } }
+      { "level": 1, "name": "Блискучий нюх", "description": "Плюшка частіше знаходить корисні дрібниці.", "effect": { "type": "stat", "stat": "luck", "value": 3 } },
+      { "level": 2, "name": "Сирний фарт", "description": "Рідкісні знахідки помітніше тягнуться до загону.", "effect": { "type": "rare_bonus", "value": 7 } },
+      { "level": 3, "name": "Насінина під лапою", "description": "Нора пасивно поповнюється насінням.", "effect": { "type": "passive_income", "resource": "gold", "value": 1 } },
+      { "level": 4, "name": "Щаслива петля", "description": "Плюшка краще виводить загін до цінних знахідок.", "effect": { "type": "stat", "stat": "luck", "value": 4 } },
+      { "level": 5, "name": "Рідкісний запах", "description": "Вона ще краще відчуває приховані рідкісні предмети.", "effect": { "type": "rare_bonus", "value": 10 } },
+      { "level": 6, "name": "Зірка нори", "description": "Вилазки з Плюшкою стають помітно щедрішими.", "effect": { "type": "compound", "effects": [{ "type": "stat", "stat": "luck", "value": 4 }, { "type": "loot_bonus", "value": 8 }] } }
     ]
   },
   {
@@ -141,12 +141,12 @@
     "image": "assets/images/hamsters/shurup/portret/shurup.png",
     "constellationLevel": 0,
     "constellations": [
-      { "level": 1, "name": "Дріт у лапі", "description": "+2 витривалість.", "effect": { "type": "stat", "stat": "stamina", "value": 2 } },
-      { "level": 2, "name": "Змащені санчата", "description": "+5% швидкість експедицій.", "effect": { "type": "expedition_speed", "value": 5 } },
-      { "level": 3, "name": "Майстер схованок", "description": "+6% лут з експедицій.", "effect": { "type": "loot_bonus", "value": 6 } },
-      { "level": 4, "name": "Ремонт на бігу", "description": "-9% шанс травми.", "effect": { "type": "injury_resist", "value": 9 } },
-      { "level": 5, "name": "Тунельна логіка", "description": "+5% швидкість експедицій.", "effect": { "type": "expedition_speed", "value": 5 } },
-      { "level": 6, "name": "Головний інженер", "description": "+2 сила, +2 швидкість, +2 витривалість.", "effect": { "type": "multi_stat", "stats": { "power": 2, "speed": 2, "stamina": 2 } } }
+      { "level": 1, "name": "Дріт у лапі", "description": "Шуруп довше тримає темп у складних тунелях.", "effect": { "type": "stat", "stat": "stamina", "value": 2 } },
+      { "level": 2, "name": "Змащені санчата", "description": "Він скорочує час повернення загону.", "effect": { "type": "expedition_speed", "value": 5 } },
+      { "level": 3, "name": "Майстер схованок", "description": "Шуруп краще відкриває приховані комірки з трофеями.", "effect": { "type": "loot_bonus", "value": 6 } },
+      { "level": 4, "name": "Ремонт на бігу", "description": "Поламані перепони рідше закінчуються травмами.", "effect": { "type": "injury_resist", "value": 9 } },
+      { "level": 5, "name": "Тунельна логіка", "description": "Маршрути з Шурупом повертаються швидше.", "effect": { "type": "expedition_speed", "value": 5 } },
+      { "level": 6, "name": "Головний інженер", "description": "Шуруп одночасно підсилює темп, витривалість і силові рішення загону.", "effect": { "type": "multi_stat", "stats": { "power": 2, "speed": 2, "stamina": 2 } } }
     ]
   },
   {
@@ -171,12 +171,12 @@
     "image": "assets/images/hamsters/krykhta/portret/krykhta.png",
     "constellationLevel": 0,
     "constellations": [
-      { "level": 1, "name": "М'який бинт", "description": "-8% шанс травми.", "effect": { "type": "injury_resist", "value": 8 } },
-      { "level": 2, "name": "Польова аптечка", "description": "+2 витривалість.", "effect": { "type": "stat", "stat": "stamina", "value": 2 } },
-      { "level": 3, "name": "Солодке лікування", "description": "+1 їжа за хвилину пасивного доходу.", "effect": { "type": "passive_income", "resource": "food", "value": 1 } },
-      { "level": 4, "name": "Швидка перев'язка", "description": "-10% шанс травми.", "effect": { "type": "injury_resist", "value": 10 } },
-      { "level": 5, "name": "Пульс загону", "description": "+3 витривалість.", "effect": { "type": "stat", "stat": "stamina", "value": 3 } },
-      { "level": 6, "name": "Лікар нори", "description": "+3 витривалість і +2 удача.", "effect": { "type": "multi_stat", "stats": { "stamina": 3, "luck": 2 } } }
+      { "level": 1, "name": "М'який бинт", "description": "Крихта знижує ризик травм у загоні.", "effect": { "type": "injury_resist", "value": 8 } },
+      { "level": 2, "name": "Польова аптечка", "description": "Загін довше витримує важкі маршрути.", "effect": { "type": "stat", "stat": "stamina", "value": 2 } },
+      { "level": 3, "name": "Солодке лікування", "description": "Нора пасивно поповнюється крихтами.", "effect": { "type": "passive_income", "resource": "food", "value": 1 } },
+      { "level": 4, "name": "Швидка перев'язка", "description": "Небезпечні події рідше залишають загін пораненим.", "effect": { "type": "injury_resist", "value": 10 } },
+      { "level": 5, "name": "Пульс загону", "description": "Крихта допомагає довше тримати маршрут без зупинок.", "effect": { "type": "stat", "stat": "stamina", "value": 3 } },
+      { "level": 6, "name": "Лікар нори", "description": "Загін із Крихтою стабільніший і краще знаходить корисні дрібниці.", "effect": { "type": "multi_stat", "stats": { "stamina": 3, "luck": 2 } } }
     ]
   },
   {
@@ -201,12 +201,12 @@
     "image": "assets/images/hamsters/iskra/portret/iskra.png",
     "constellationLevel": 0,
     "constellations": [
-      { "level": 1, "name": "Світляний слід", "description": "+3 удача.", "effect": { "type": "stat", "stat": "luck", "value": 3 } },
-      { "level": 2, "name": "Мутантний ривок", "description": "+5% швидкість експедицій.", "effect": { "type": "expedition_speed", "value": 5 } },
-      { "level": 3, "name": "Іскри в темряві", "description": "+8% шанс рідкісного луту.", "effect": { "type": "rare_bonus", "value": 8 } },
-      { "level": 4, "name": "Нестабільна сила", "description": "+3 сила.", "effect": { "type": "stat", "stat": "power", "value": 3 } },
-      { "level": 5, "name": "Радіантний мішок", "description": "+10% лут з експедицій.", "effect": { "type": "loot_bonus", "value": 10 } },
-      { "level": 6, "name": "Міф нори", "description": "+3 сила, +3 швидкість, +3 удача.", "effect": { "type": "multi_stat", "stats": { "power": 3, "speed": 3, "luck": 3 } } }
+      { "level": 1, "name": "Світляний слід", "description": "Іскра краще знаходить цінні відблиски в темряві.", "effect": { "type": "stat", "stat": "luck", "value": 3 } },
+      { "level": 2, "name": "Мутантний ривок", "description": "Її світло пришвидшує повернення загону.", "effect": { "type": "expedition_speed", "value": 5 } },
+      { "level": 3, "name": "Іскри в темряві", "description": "Рідкісні предмети легше помітити на темних маршрутах.", "effect": { "type": "rare_bonus", "value": 8 } },
+      { "level": 4, "name": "Нестабільна сила", "description": "Іскра сильніше проходить небезпечні перешкоди.", "effect": { "type": "stat", "stat": "power", "value": 3 } },
+      { "level": 5, "name": "Радіантний мішок", "description": "Вилазки з Іскрою повертають більше трофеїв.", "effect": { "type": "loot_bonus", "value": 10 } },
+      { "level": 6, "name": "Міф нори", "description": "Іскра стає універсальним провідником для складних вилазок.", "effect": { "type": "multi_stat", "stats": { "power": 3, "speed": 3, "luck": 3 } } }
     ]
   },
   {
@@ -231,12 +231,12 @@
     "image": null,
     "constellationLevel": 0,
     "constellations": [
-      { "level": 1, "name": "Тіньова лапа", "description": "+3 швидкість.", "effect": { "type": "stat", "stat": "speed", "value": 3 } },
-      { "level": 2, "name": "Безшумний старт", "description": "+6% швидкість експедицій.", "effect": { "type": "expedition_speed", "value": 6 } },
-      { "level": 3, "name": "Око в темряві", "description": "+6% шанс рідкісного луту.", "effect": { "type": "rare_bonus", "value": 6 } },
-      { "level": 4, "name": "Маршрут без слідів", "description": "-8% шанс травми.", "effect": { "type": "injury_resist", "value": 8 } },
-      { "level": 5, "name": "Секретна стежка", "description": "+6% швидкість експедицій.", "effect": { "type": "expedition_speed", "value": 6 } },
-      { "level": 6, "name": "Невидимий провідник", "description": "+4 швидкість і +3 удача.", "effect": { "type": "multi_stat", "stats": { "speed": 4, "luck": 3 } } }
+      { "level": 1, "name": "Тіньова лапа", "description": "Тінь швидше прослизає через складні ділянки.", "effect": { "type": "stat", "stat": "speed", "value": 3 } },
+      { "level": 2, "name": "Безшумний старт", "description": "Вилазки з Тінню стартують і повертаються швидше.", "effect": { "type": "expedition_speed", "value": 6 } },
+      { "level": 3, "name": "Око в темряві", "description": "Тінь частіше помічає рідкісну здобич.", "effect": { "type": "rare_bonus", "value": 6 } },
+      { "level": 4, "name": "Маршрут без слідів", "description": "Загін рідше привертає небезпеку.", "effect": { "type": "injury_resist", "value": 8 } },
+      { "level": 5, "name": "Секретна стежка", "description": "Тінь відкриває коротші маршрути для загону.", "effect": { "type": "expedition_speed", "value": 6 } },
+      { "level": 6, "name": "Невидимий провідник", "description": "Він веде загін швидко й точніше знаходить цінні речі.", "effect": { "type": "multi_stat", "stats": { "speed": 4, "luck": 3 } } }
     ]
   }
 ]

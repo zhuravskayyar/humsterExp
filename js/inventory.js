@@ -1,6 +1,7 @@
 export function addResources(state, resources) {
   for (const [resource, amount] of Object.entries(resources)) {
-    state.resources[resource] = (state.resources[resource] ?? 0) + amount;
+    const targetResource = resource === "coins" ? "gold" : resource;
+    state.resources[targetResource] = (state.resources[targetResource] ?? 0) + amount;
   }
 }
 

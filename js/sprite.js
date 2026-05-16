@@ -135,6 +135,7 @@ export const SPRITE_CONFIG = {
 };
 
 export const CANVAS_DISPLAY_H = 78; // px – display height of the canvas
+export const CANVAS_PREVIEW_H = 170; // px – display height for character overview
 
 // ── Image cache ────────────────────────────────────────────────────────────
 const _imgCache = new Map();
@@ -313,6 +314,93 @@ function _draw() {
   const sy = Math.floor(frameIndex / cols) * fh;
 
   _ctx.drawImage(img, sx, sy, fw, fh, dx, 0, drawW, _dH);
+}
+
+let _previewVer = 0;
+let _previewRaf = null;
+let _previewCtx = null;
+let _previewDW = 0;
+let _previewImg = null;
+let _previewCfg = null;
+let _previewAnim = { frame: 0, lastTs: 0, slug: null };
+
+export async function attachPreviewCanvas(canvas, slug) {
+  const myVer = ++_previewVer;
+  if (_previewRaf !== null) { cancelAnimationFrame(_previewRaf); _previewRaf = null; }
+
+  const config = SPRITE_CONFIG[slug]?.idle;
+  if (!config) return;
+
+  let img;
+  try {
+    img = await _loadImg(config.src);
+  } catch (e) {
+    console.warn(e.message);
+    return;
+  }
+
+  if (myVer !== _previewVer || !canvas.isConnected) return;
+
+  const metrics = _getFrameMetrics(config, CANVAS_PREVIEW_H);
+  _previewDW = Math.ceil(metrics.drawW);
+  _previewImg = img;
+  _previewCfg = config;
+
+  const dpr = window.devicePixelRatio || 1;
+  canvas.style.width = _previewDW + "px";
+  canvas.style.height = CANVAS_PREVIEW_H + "px";
+  canvas.width = Math.round(_previewDW * dpr);
+  canvas.height = Math.round(CANVAS_PREVIEW_H * dpr);
+
+  _previewCtx = canvas.getContext("2d");
+  _previewCtx.scale(dpr, dpr);
+  _previewCtx.imageSmoothingEnabled = false;
+
+  if (_previewAnim.slug !== slug) {
+    _previewAnim = { frame: 0, lastTs: 0, slug };
+  } else {
+    _previewAnim.lastTs = 0;
+  }
+
+  _previewDraw();
+  if (!window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches) {
+    _previewRaf = requestAnimationFrame(_previewTick);
+  }
+}
+
+export function detachPreviewCanvas() {
+  if (_previewRaf !== null) { cancelAnimationFrame(_previewRaf); _previewRaf = null; }
+  _previewCtx = null;
+}
+
+function _previewTick(ts) {
+  if (!_previewCtx || !_previewCfg) return;
+
+  const frameDur = 1000 / _previewCfg.fps;
+  if (_previewAnim.lastTs === 0 || ts - _previewAnim.lastTs > frameDur * _previewCfg.frames * 3) {
+    _previewAnim.lastTs = ts;
+  }
+
+  if (ts - _previewAnim.lastTs >= frameDur) {
+    const steps = Math.floor((ts - _previewAnim.lastTs) / frameDur);
+    _previewAnim.frame = (_previewAnim.frame + steps) % _previewCfg.frames;
+    _previewAnim.lastTs += steps * frameDur;
+    _previewDraw();
+  }
+
+  _previewRaf = requestAnimationFrame(_previewTick);
+}
+
+function _previewDraw() {
+  if (!_previewCtx || !_previewCfg || !_previewImg) return;
+
+  const { fw, fh, cols, drawW } = _getFrameMetrics(_previewCfg, CANVAS_PREVIEW_H);
+  const frameIndex = _previewAnim.frame % _previewCfg.frames;
+  const sx = (frameIndex % cols) * fw;
+  const sy = Math.floor(frameIndex / cols) * fh;
+
+  _previewCtx.clearRect(0, 0, _previewDW, CANVAS_PREVIEW_H);
+  _previewCtx.drawImage(_previewImg, sx, sy, fw, fh, 0, 0, drawW, CANVAS_PREVIEW_H);
 }
 
 // ══════════════════════════════════════════════════════════════════════════════

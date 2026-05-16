@@ -6,11 +6,11 @@
     "target": 3,
     "progress": 0,
     "metric": "expeditionsStarted",
-    "reward": { "coins": 25, "shiny": 5 }
+    "reward": { "gold": 25, "shiny": 5 }
   },
   {
     "id": "collect_100_food",
-    "title": "Зібрати 100 їжі",
+    "title": "Зібрати 100 крихт",
     "type": "daily",
     "target": 100,
     "progress": 0,

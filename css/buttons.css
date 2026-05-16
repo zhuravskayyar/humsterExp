@@ -31,6 +31,13 @@
   color: var(--text-on-dark);
 }
 
+.btn.is-ready-action {
+  border-color: rgba(76, 45, 18, 0.78);
+  background:
+    linear-gradient(180deg, #F4C542, #C78935);
+  animation: readyActionPulse 1.8s ease-in-out infinite;
+}
+
 .btn.ghost {
   border-color: rgba(83, 48, 28, 0.28);
   background: rgba(83, 48, 28, 0.08);

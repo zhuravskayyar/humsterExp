@@ -93,7 +93,7 @@ function rollHamster(state, stars) {
     };
   }
 
-  const refund = existing.stars === 5 ? { shiny: 8, coins: 160 } : { shiny: 4, coins: 90 };
+  const refund = existing.stars === 5 ? { shiny: 8, gold: 160 } : { shiny: 4, gold: 90 };
   addResources(state, refund);
   return {
     type: "hamster",

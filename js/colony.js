@@ -44,7 +44,7 @@ export function upgradeColony(state, upgradeId) {
 
 export function getColonyStats(state) {
   const stats = {
-    passiveIncomePerMin: { food: 0, wood: 0, coins: 0 },
+    passiveIncomePerMin: { food: 0, wood: 0, gold: 0 },
     expeditionSpeedPercent: 0,
     expeditionSlots: 1,
     gachaLuckPercent: 0
@@ -57,7 +57,7 @@ export function getColonyStats(state) {
     if (upgrade.effect.type === "passive_income") {
       stats.passiveIncomePerMin.food += (upgrade.effect.foodPerMin ?? 0) * level;
       stats.passiveIncomePerMin.wood += (upgrade.effect.woodPerMin ?? 0) * level;
-      stats.passiveIncomePerMin.coins += (upgrade.effect.coinsPerMin ?? 0) * level;
+      stats.passiveIncomePerMin.gold += ((upgrade.effect.goldPerMin ?? 0) + (upgrade.effect.coinsPerMin ?? 0)) * level;
     }
 
     if (upgrade.effect.type === "expedition_speed") {
@@ -75,7 +75,8 @@ export function getColonyStats(state) {
 
   const collectionIncome = getCollectionPassiveIncome(state);
   for (const [resource, amount] of Object.entries(collectionIncome)) {
-    stats.passiveIncomePerMin[resource] = (stats.passiveIncomePerMin[resource] ?? 0) + amount;
+    const targetResource = resource === "coins" ? "gold" : resource;
+    stats.passiveIncomePerMin[targetResource] = (stats.passiveIncomePerMin[targetResource] ?? 0) + amount;
   }
 
   return stats;

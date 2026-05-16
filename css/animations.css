@@ -102,6 +102,161 @@
   100% { transform: translateY(-40px) scale(0.85); opacity: 0; }
 }
 
+@keyframes tutorialCardIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes tutorialTargetPulse {
+  0%,
+  100% {
+    box-shadow: var(--shadow), 0 0 0 0 rgba(244, 197, 66, 0.42);
+  }
+  55% {
+    box-shadow: var(--shadow), 0 0 0 8px rgba(244, 197, 66, 0);
+  }
+}
+
+@keyframes readyActionPulse {
+  0%,
+  100% {
+    filter: brightness(1);
+    transform: translateY(0);
+  }
+  50% {
+    filter: brightness(1.08);
+    transform: translateY(-1px);
+  }
+}
+
+@keyframes guideSweep {
+  0%,
+  42% {
+    opacity: 0;
+    transform: translateX(-65%);
+  }
+  52% {
+    opacity: 1;
+  }
+  74%,
+  100% {
+    opacity: 0;
+    transform: translateX(65%);
+  }
+}
+
+@keyframes cardRise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes resourcePop {
+  0% { transform: scale(0.96); }
+  100% { transform: scale(1); }
+}
+
+@keyframes navNudge {
+  0%,
+  100% { transform: translateY(0); }
+  50% { transform: translateY(-2px); }
+}
+
+@keyframes hitFlash {
+  0% { opacity: 0; transform: scaleX(0.2); }
+  30% { opacity: 1; transform: scaleX(1); }
+  100% { opacity: 0; transform: scaleX(1.2); }
+}
+
+@keyframes shinyTwinkle {
+  0%,
+  100% {
+    box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.14), 0 0 0 rgba(244, 197, 66, 0);
+  }
+  50% {
+    box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.14), 0 0 18px rgba(244, 197, 66, 0.42);
+  }
+}
+
+@keyframes shinySweep {
+  from {
+    transform: translateX(-130%) skewX(-18deg);
+  }
+  to {
+    transform: translateX(130%) skewX(-18deg);
+  }
+}
+
+@keyframes routeSweep {
+  from {
+    transform: translateX(-110%);
+    opacity: 0;
+  }
+  20%,
+  70% {
+    opacity: 1;
+  }
+  to {
+    transform: translateX(110%);
+    opacity: 0;
+  }
+}
+
+@keyframes completedBounce {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  35% {
+    transform: translateY(-2px) rotate(-1deg);
+  }
+  70% {
+    transform: translateY(1px) rotate(1deg);
+  }
+}
+
+@keyframes selectedZoneBreath {
+  0%,
+  100% {
+    box-shadow: var(--shadow), 0 0 0 rgba(199, 137, 53, 0);
+  }
+  50% {
+    box-shadow: var(--shadow), 0 0 20px rgba(199, 137, 53, 0.22);
+  }
+}
+
+@keyframes gachaGlowOrbit {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes prizePop {
+  0% {
+    transform: scale(0.96) rotate(-1deg);
+  }
+  50% {
+    transform: scale(1.02) rotate(1deg);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+  }
+}
+
 .modal {
   animation: modalIn 180ms ease-out;
 }
@@ -112,6 +267,48 @@
 
 .screen {
   animation: screenEnter 200ms ease-out;
+}
+
+.guide-card,
+.stack > .hamster-card,
+.stack > .zone-card,
+.stack > .quest-card,
+.stack > .upgrade-card,
+.stack > .inventory-card,
+.gacha-result-card {
+  animation: cardRise 180ms ease-out both;
+}
+
+.stack > :nth-child(2),
+.gacha-result-grid > :nth-child(2) {
+  animation-delay: 35ms;
+}
+
+.stack > :nth-child(3),
+.gacha-result-grid > :nth-child(3) {
+  animation-delay: 70ms;
+}
+
+.stack > :nth-child(n+4),
+.gacha-result-grid > :nth-child(n+4) {
+  animation-delay: 105ms;
+}
+
+.resource-chip strong {
+  animation: resourcePop 160ms ease-out;
+}
+
+.resource-chip.resource-shiny,
+.shiny-counter {
+  animation: shinyTwinkle 2.6s ease-in-out infinite;
+}
+
+.nav-button.is-active .nav-icon {
+  animation: navNudge 1.8s ease-in-out infinite;
+}
+
+.zone-card.is-active {
+  animation: selectedZoneBreath 2.4s ease-in-out infinite;
 }
 
 .rarity-frame-rare,
@@ -132,6 +329,10 @@
   animation: completedPulse 1.4s ease-out infinite;
 }
 
+.expedition-slot[data-status="completed"] {
+  animation: completedBounce 1.8s ease-in-out infinite;
+}
+
 /* Active expedition progress shimmer */
 .expedition-slot[data-status="active"] .progress span {
   background: linear-gradient(
@@ -144,6 +345,36 @@
   animation: progressShimmer 2.2s linear infinite;
 }
 
+.expedition-slot[data-status="active"]::after {
+  animation: routeSweep 2.5s ease-in-out infinite;
+}
+
+.hero-gacha::after {
+  animation: gachaGlowOrbit 16s linear infinite;
+}
+
+.gacha-result-card.is-prize {
+  animation: prizePop 420ms ease-out both, rareShine 2.8s ease-in-out infinite;
+}
+
+.arena-stage.has-fighter {
+  box-shadow: inset 0 -10px 24px rgba(63, 111, 106, 0.12);
+}
+
+.arena-stage.has-hit::before {
+  content: "";
+  position: absolute;
+  left: 36%;
+  right: 18%;
+  top: 36%;
+  height: 3px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, rgba(244, 197, 66, 0.9), transparent);
+  transform-origin: left center;
+  animation: hitFlash 220ms ease-out both;
+  pointer-events: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -154,4 +385,3 @@
     transition-duration: 1ms !important;
   }
 }
-

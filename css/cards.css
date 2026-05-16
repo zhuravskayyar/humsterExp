@@ -87,10 +87,42 @@
   padding: 12px;
 }
 
+.expedition-slot {
+  position: relative;
+  overflow: hidden;
+}
+
+.expedition-slot::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 42%;
+  background:
+    linear-gradient(90deg, transparent, rgba(255, 244, 214, 0.22), transparent),
+    radial-gradient(circle at 35% 38%, rgba(63, 111, 106, 0.28) 0 4px, transparent 5px),
+    radial-gradient(circle at 68% 62%, rgba(199, 137, 53, 0.24) 0 4px, transparent 5px);
+  opacity: 0;
+  pointer-events: none;
+}
+
 .building-card {
+  position: relative;
   display: grid;
-  grid-template-columns: 42px 1fr;
-  gap: 10px;
+  grid-template-columns: 46px minmax(0, 1fr);
+  gap: 11px;
+  overflow: hidden;
+}
+
+.building-card.is-active::after {
+  content: "";
+  position: absolute;
+  inset: auto 12px 0 58px;
+  height: 3px;
+  border-radius: 999px 999px 0 0;
+  background: linear-gradient(90deg, var(--accent-2), var(--glow), var(--accent));
+  opacity: 0.55;
 }
 
 .building-icon,
@@ -107,9 +139,40 @@
 }
 
 .building-icon {
-  width: 42px;
-  height: 42px;
+  width: 46px;
+  height: 46px;
   color: var(--accent);
+}
+
+.building-content {
+  min-width: 0;
+}
+
+.building-role {
+  margin-bottom: 2px;
+  color: var(--accent-2);
+  font-size: 0.66rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.building-stat-row {
+  margin: 8px 0 10px;
+}
+
+.building-actions {
+  flex-wrap: wrap;
+}
+
+.building-actions .btn {
+  flex: 1 1 150px;
+}
+
+.building-actions .select-pill {
+  flex: 1 1 126px;
+  min-height: 40px;
+  text-align: center;
 }
 
 .hamster-card {
@@ -144,6 +207,287 @@
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.character-overview {
+  display: grid;
+  grid-template-columns: 86px minmax(0, 1fr) 94px;
+  grid-template-areas:
+    "constellation stage stats"
+    "slots slots slots";
+  gap: 8px;
+  padding: 10px;
+  border: var(--border);
+  border-radius: var(--radius);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.24), rgba(83, 48, 28, 0.08)),
+    var(--card);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.character-constellation-panel,
+.character-stats-panel,
+.character-stage {
+  min-width: 0;
+  border: 1px solid rgba(83, 48, 28, 0.16);
+  border-radius: 12px;
+  background: rgba(83, 48, 28, 0.06);
+}
+
+.character-constellation-panel {
+  grid-area: constellation;
+  padding: 7px;
+}
+
+.character-stage {
+  grid-area: stage;
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  padding: 8px;
+  text-align: center;
+}
+
+.character-stats-panel {
+  grid-area: stats;
+  display: grid;
+  align-content: start;
+  gap: 7px;
+  padding: 7px;
+}
+
+.character-stats-panel > .tag {
+  width: 100%;
+  justify-content: center;
+  border-radius: 10px;
+  font-size: 0.58rem;
+  line-height: 1.1;
+  text-align: center;
+  white-space: normal;
+}
+
+.panel-label {
+  margin: 0 0 6px;
+  color: var(--accent-2);
+  font-size: 0.62rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.character-constellation-list,
+.character-stat-list {
+  display: grid;
+  gap: 6px;
+}
+
+.character-constellation {
+  display: grid;
+  gap: 2px;
+  min-height: 52px;
+  padding: 6px;
+  border: 1px solid rgba(83, 48, 28, 0.16);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.18);
+  color: var(--text-muted);
+}
+
+.character-constellation.is-active {
+  border-color: rgba(199, 137, 53, 0.55);
+  background: rgba(199, 137, 53, 0.18);
+  color: var(--text-main);
+}
+
+.character-constellation span,
+.character-slot span {
+  font-size: 0.58rem;
+  font-weight: 900;
+  color: var(--accent-2);
+}
+
+.character-constellation strong {
+  overflow: hidden;
+  font-size: 0.62rem;
+  line-height: 1.1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.character-constellation small {
+  display: -webkit-box;
+  overflow: hidden;
+  color: var(--text-muted);
+  font-size: 0.54rem;
+  line-height: 1.15;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.character-stage-art {
+  display: grid;
+  place-items: end center;
+  min-height: 174px;
+  overflow: hidden;
+}
+
+.character-preview-canvas {
+  display: block;
+  max-width: 100%;
+  height: auto !important;
+  image-rendering: pixelated;
+}
+
+.character-preview-img,
+.character-preview-fallback {
+  width: min(100%, 172px);
+  aspect-ratio: 1;
+  border-radius: 18px;
+  object-fit: cover;
+  object-position: center top;
+  image-rendering: pixelated;
+}
+
+.character-preview-fallback {
+  display: grid;
+  place-items: center;
+  background: rgba(83, 48, 28, 0.1);
+  color: var(--accent-2);
+}
+
+.character-stage-meta {
+  display: grid;
+  gap: 6px;
+}
+
+.character-stage-meta h3 {
+  margin: 0;
+  font-size: 0.86rem;
+  line-height: 1.15;
+}
+
+.character-cost-row {
+  justify-content: center;
+}
+
+.character-stat-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  min-height: 24px;
+  padding: 4px 5px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.character-stat-row span {
+  overflow: hidden;
+  color: var(--text-muted);
+  font-size: 0.58rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.character-stat-row strong {
+  font-size: 0.72rem;
+}
+
+.character-slot-row {
+  grid-area: slots;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.character-slot {
+  display: grid;
+  place-items: center;
+  gap: 3px;
+  min-width: 0;
+  min-height: 70px;
+  padding: 6px 3px;
+  border: 1px solid rgba(83, 48, 28, 0.18);
+  border-radius: 12px;
+  background: rgba(83, 48, 28, 0.08);
+  color: var(--text-main);
+  cursor: pointer;
+}
+
+.character-slot:disabled {
+  cursor: default;
+  opacity: 0.62;
+}
+
+.character-slot.is-filled {
+  border-color: rgba(199, 137, 53, 0.48);
+  background: rgba(199, 137, 53, 0.16);
+}
+
+.character-slot strong {
+  max-width: 100%;
+  overflow: hidden;
+  font-size: 0.6rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.character-equipment-panel .section-header {
+  margin-bottom: 8px;
+}
+
+.compact-stack {
+  gap: 8px;
+}
+
+.character-equipment-row {
+  display: grid;
+  grid-template-columns: 98px minmax(0, 1fr);
+  gap: 8px;
+  padding: 10px;
+  border: var(--border);
+  border-radius: var(--radius);
+  background: var(--card);
+}
+
+.character-equipment-row > div {
+  min-width: 0;
+}
+
+.character-equipment-row strong {
+  display: block;
+  overflow: hidden;
+  font-size: 0.84rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.character-equipment-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.character-equipment-actions .select-pill {
+  min-height: 34px;
+  padding: 7px 9px;
+  font-size: 0.72rem;
+}
+
+@media (max-width: 380px) {
+  .character-overview {
+    grid-template-columns: minmax(0, 1fr) 96px;
+    grid-template-areas:
+      "stage stage"
+      "constellation stats"
+      "slots slots";
+  }
+
+  .character-constellation-panel {
+    max-height: 230px;
+    overflow: auto;
+  }
 }
 
 .zone-card {
@@ -385,6 +729,8 @@ textarea.save-text {
 
 /* ── Hero panel per-screen decoration ───────────── */
 .hero-gacha {
+  position: relative;
+  overflow: hidden;
   background:
     linear-gradient(135deg, rgba(43, 29, 22, 0.98), rgba(45, 85, 79, 0.92)),
     repeating-linear-gradient(120deg, rgba(255, 255, 255, 0.05) 0 1px, transparent 1px 13px),
@@ -401,10 +747,25 @@ textarea.save-text {
   z-index: 1;
 }
 
-.hero-gacha::after { content: ""; }
+.hero-gacha::after {
+  content: "";
+  position: absolute;
+  width: 190px;
+  height: 190px;
+  right: -86px;
+  top: -86px;
+  border-radius: 50%;
+  border: 1px dashed rgba(244, 197, 66, 0.24);
+  background:
+    radial-gradient(circle, rgba(244, 197, 66, 0.18) 0 2px, transparent 3px),
+    radial-gradient(circle at 70% 30%, rgba(246, 231, 199, 0.2) 0 3px, transparent 4px);
+  pointer-events: none;
+}
 
 /* ── Shiny (Світяшки) counter ───────────────────── */
 .shiny-counter {
+  position: relative;
+  overflow: hidden;
   display: inline-flex;
   align-items: center;
   gap: 5px;
@@ -417,6 +778,16 @@ textarea.save-text {
   font-weight: 900;
   letter-spacing: 0.01em;
   white-space: nowrap;
+}
+
+.shiny-counter::after {
+  content: "";
+  position: absolute;
+  inset: -35% 40%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.62), transparent);
+  transform: translateX(-130%) skewX(-18deg);
+  animation: shinySweep 2.8s ease-in-out infinite;
+  pointer-events: none;
 }
 
 /* ── Gacha pity progress bar ─────────────────────── */
@@ -464,6 +835,8 @@ textarea.save-text {
 
 /* ── Expedition result banner ────────────────────── */
 .result-banner {
+  position: relative;
+  overflow: hidden;
   padding: 14px;
   border: var(--border);
   border-radius: var(--radius);
@@ -471,6 +844,133 @@ textarea.save-text {
   box-shadow: var(--shadow), 0 0 12px rgba(106, 143, 78, 0.15);
   margin-bottom: 4px;
   animation: screenEnter 0.25s ease both;
+}
+
+.result-banner::after {
+  content: "";
+  position: absolute;
+  inset: -20% 45%;
+  background: linear-gradient(90deg, transparent, rgba(244, 197, 66, 0.38), transparent);
+  transform: translateX(-130%) skewX(-18deg);
+  animation: shinySweep 2.4s ease-out 1;
+  pointer-events: none;
+}
+
+/* ── Player guidance ───────────────────────────────── */
+.guide-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: 46px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  margin-top: 14px;
+  padding: 12px;
+  overflow: hidden;
+  border: var(--border);
+  border-radius: var(--radius);
+  background:
+    linear-gradient(135deg, rgba(63, 111, 106, 0.14), rgba(244, 197, 66, 0.1)),
+    var(--card);
+  box-shadow: var(--shadow);
+}
+
+.guide-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(115deg, transparent 0 42%, rgba(255, 255, 255, 0.2) 50%, transparent 58% 100%);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.guide-card.is-ready::before {
+  animation: guideSweep 2.8s ease-in-out infinite;
+}
+
+.guide-icon {
+  display: grid;
+  width: 46px;
+  height: 46px;
+  place-items: center;
+  border: 2px solid rgba(63, 111, 106, 0.28);
+  border-radius: 16px;
+  background: rgba(63, 111, 106, 0.12);
+  color: var(--accent-2);
+}
+
+.guide-copy {
+  min-width: 0;
+}
+
+.guide-kicker {
+  margin-bottom: 2px;
+  color: var(--accent-2);
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.guide-copy h2 {
+  margin-bottom: 4px;
+}
+
+.guide-copy p:last-child {
+  margin-bottom: 0;
+}
+
+.guide-card > .btn {
+  grid-column: 1 / -1;
+}
+
+.expedition-guide {
+  grid-template-columns: minmax(0, 1fr);
+  margin-top: 0;
+}
+
+.step-rail {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 6px 0 8px;
+}
+
+.step-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 5px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(83, 48, 28, 0.16);
+  background: rgba(83, 48, 28, 0.06);
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-weight: 900;
+}
+
+.step-pill.is-done {
+  border-color: rgba(79, 122, 63, 0.28);
+  background: rgba(79, 122, 63, 0.14);
+  color: var(--success);
+}
+
+.step-pill.is-current {
+  border-color: rgba(199, 137, 53, 0.38);
+  background: rgba(199, 137, 53, 0.18);
+  color: var(--accent);
+}
+
+.tutorial-target {
+  position: relative;
+  z-index: 2;
+  outline: 3px solid rgba(244, 197, 66, 0.62);
+  outline-offset: 3px;
+  animation: tutorialTargetPulse 1.35s ease-in-out infinite;
+}
+
+.nav-button.tutorial-nav-target {
+  background: rgba(244, 197, 66, 0.2);
+  color: #FFE3A6;
 }
 
 .chance-meter {

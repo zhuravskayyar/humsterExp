@@ -1,5 +1,5 @@
 import { loadData, dataStore, findZone } from "./data.js";
-import { collectPassiveIncome, upgradeColony } from "./colony.js";
+import { canAfford, collectPassiveIncome, spendResources, upgradeColony } from "./colony.js";
 import { equipItem, salvageEquipment, unequipSlot, upgradeEquipment } from "./equipment.js";
 import { launchExpedition, updateExpeditionStatuses, claimExpedition } from "./expeditions.js";
 import { rollGacha } from "./gacha.js";
@@ -14,6 +14,23 @@ import { closeModal, openModal, pushToast, renderApp, updateLiveTimers } from ".
 let deferredInstallPrompt = null;
 let bootPromise = null;
 let expeditionReminderTimer = null;
+
+const TUTORIAL_STEP_ROUTES = [
+  "base",
+  "base",
+  "expeditions",
+  "expeditions",
+  "expeditions",
+  "expeditions",
+  "expeditions",
+  "training",
+  "training",
+  "gacha"
+];
+const MARKET_SHINY_TRADE = Object.freeze({
+  cost: { gold: 90 },
+  reward: { shiny: 10 }
+});
 
 // ── Push notification server ──────────────────────────────────────────────────
 // After deploying server/ to Render, paste your URL here (no trailing slash).
@@ -126,9 +143,10 @@ async function boot() {
       }
     }
     saveGame(state);
+    syncOnboardingRuntime(state);
     renderApp(state);
     if (offlineBoot) {
-      pushToast(`💤 Тренування: ${offlineBoot.rounds} раундів · 📚 +${offlineBoot.booksAwarded} · 💛 +${offlineBoot.goldAwarded}`);
+      pushToast(`Тренування: ${offlineBoot.rounds} раундів · схованки +${offlineBoot.booksAwarded} · насіння +${offlineBoot.goldAwarded}`);
     }
     if (runtimeState.trainingHamsterId) startAutoAttack(doTrainingAttack);
     bindEvents();
@@ -347,7 +365,7 @@ function handleVisibilityRefresh() {
   if (offlineResult) {
     saveGame(gameState);
     if (runtimeState.trainingHamsterId) startAutoAttack(doTrainingAttack);
-    pushToast(`💤 Тренування: ${offlineResult.rounds} раундів · 📚 +${offlineResult.booksAwarded} · 💛 +${offlineResult.goldAwarded}`);
+    pushToast(`Тренування: ${offlineResult.rounds} раундів · схованки +${offlineResult.booksAwarded} · насіння +${offlineResult.goldAwarded}`);
   }
 
   const changed = processPassiveUpdates(gameState);
@@ -382,11 +400,11 @@ function doTrainingAttack() {
     saveGame(gameState);
     if (result.booksAwarded > 0) {
       const extras = [];
-      if (result.goldAwarded > 0) extras.push(`💛 +${result.goldAwarded}`);
-      if (result.foodAwarded > 0) extras.push(`🍞 +${result.foodAwarded}`);
-      if (result.oreAwarded > 0) extras.push(`⛏️ +${result.oreAwarded}`);
+      if (result.goldAwarded > 0) extras.push(`насіння +${result.goldAwarded}`);
+      if (result.foodAwarded > 0) extras.push(`крихти +${result.foodAwarded}`);
+      if (result.oreAwarded > 0) extras.push(`камінці +${result.oreAwarded}`);
       const extrasStr = extras.length ? ` · ${extras.join(" · ")}` : "";
-      pushToast(`📚 +${result.booksAwarded} схованок${extrasStr}`);
+      pushToast(`Схованки +${result.booksAwarded}${extrasStr}`);
     }
   }
   // Перемальовуємо UI лише на екрані тренування
@@ -415,6 +433,26 @@ function handleClick(event) {
       if (target.dataset.route === "training" && runtimeState.trainingHamsterId) {
         startAutoAttack(doTrainingAttack);
       }
+    }
+
+    if (action === "tutorial-next") {
+      setTutorialStep(getCurrentTutorialStep() + 1);
+    }
+
+    if (action === "tutorial-prev") {
+      setTutorialStep(getCurrentTutorialStep() - 1);
+    }
+
+    if (action === "tutorial-skip") {
+      finishTutorial(true);
+    }
+
+    if (action === "tutorial-finish") {
+      finishTutorial(false);
+    }
+
+    if (action === "restart-onboarding") {
+      restartTutorial();
     }
 
     if (action === "select-zone") {
@@ -450,7 +488,7 @@ function handleClick(event) {
       if (hamster.level % 10 === 0) {
         const shinyBonus = hamster.level / 10;
         gameState.resources.shiny = (gameState.resources.shiny ?? 0) + shinyBonus;
-        toastMsg += ` · ✨ +${shinyBonus} світяшок!`;
+        toastMsg += ` · світяшки +${shinyBonus}`;
       }
       saveAndToast(toastMsg);
     }
@@ -521,7 +559,7 @@ function handleClick(event) {
       if (success) {
         const dummy = getDummyConfig(gameState);
         saveGame(gameState);
-        pushToast(`🔨 Манекен покращено до рівня ${dummy.level}!`);
+        pushToast(`Манекен покращено до рівня ${dummy.level}`);
       }
     }
 
@@ -542,6 +580,16 @@ function handleClick(event) {
         saveAndToast("Пасивний дохід зібрано");
       } else {
         pushToast("Пасивний дохід ще накопичується");
+      }
+    }
+
+    if (action === "trade-market-shiny") {
+      if (!canAfford(gameState, MARKET_SHINY_TRADE.cost)) {
+        pushToast("На ринку бракує насіння для обміну");
+      } else {
+        spendResources(gameState, MARKET_SHINY_TRADE.cost);
+        gameState.resources.shiny = (gameState.resources.shiny ?? 0) + MARKET_SHINY_TRADE.reward.shiny;
+        saveAndToast(`Ринок: світяшки +${MARKET_SHINY_TRADE.reward.shiny}`);
       }
     }
 
@@ -598,11 +646,14 @@ function handleClick(event) {
         runtimeState.showSettings = false;
         runtimeState.gachaResults = [];
         runtimeState.expeditionResult = null;
+        runtimeState.onboardingStep = 0;
         closeModal();
         syncExpeditionReminder();
         pushToast("Прогрес скинуто");
       }
     }
+
+    advanceTutorialForAction(action, target);
   } catch (error) {
     pushToast(error.message);
     console.error(error);
@@ -638,15 +689,15 @@ function toggleHamster(hamsterId) {
 
 function getExpeditionShinyBonus(result) {
   const base = {
-    rare_find: 3,
-    full_success: 2,
-    special_event: 2,
-    partial_success: 1,
-    injury: 1,
-    ambush: 1,
-    failure: 1
-  }[result.type] ?? 1;
-  const durationBonus = Math.max(0, Math.min(2, Math.floor(result.durationMultiplier ?? 1) - 1));
+    rare_find: 7,
+    special_event: 5,
+    full_success: 4,
+    partial_success: 3,
+    injury: 2,
+    ambush: 2,
+    failure: 2
+  }[result.type] ?? 2;
+  const durationBonus = Math.max(0, Math.min(4, Math.round(((result.durationMultiplier ?? 1) - 1) * 2)));
   return base + durationBonus;
 }
 
@@ -683,6 +734,96 @@ function saveAndToast(message) {
   syncQuestProgress(gameState);
   saveGame(gameState);
   pushToast(message);
+}
+
+function syncOnboardingRuntime(state) {
+  if (state.onboarding?.completed) {
+    runtimeState.onboardingStep = null;
+    return;
+  }
+
+  const step = normalizeTutorialStep(state.onboarding?.currentStep ?? 0);
+  runtimeState.onboardingStep = step;
+  navigate(TUTORIAL_STEP_ROUTES[step] ?? "base");
+}
+
+function getCurrentTutorialStep() {
+  return normalizeTutorialStep(runtimeState.onboardingStep ?? gameState?.onboarding?.currentStep ?? 0);
+}
+
+function setTutorialStep(nextStep) {
+  if (!gameState) return;
+  if (nextStep >= TUTORIAL_STEP_ROUTES.length) {
+    finishTutorial(false);
+    return;
+  }
+
+  const step = normalizeTutorialStep(nextStep);
+  ensureOnboardingState();
+  gameState.onboarding.currentStep = step;
+  runtimeState.onboardingStep = step;
+  navigate(TUTORIAL_STEP_ROUTES[step] ?? "base");
+  saveGame(gameState);
+}
+
+function advanceTutorialForAction(action, target) {
+  if (!gameState || gameState.onboarding?.completed) return;
+  const step = getCurrentTutorialStep();
+
+  const matched = (
+    (step === 1 && action === "nav" && target.dataset.route === "expeditions") ||
+    (step === 2 && action === "select-zone") ||
+    (step === 3 && action === "select-duration") ||
+    (step === 4 && action === "toggle-hamster" && runtimeState.selectedHamsterIds.length > 0) ||
+    (step === 5 && action === "launch-expedition") ||
+    (step === 6 && action === "nav" && target.dataset.route === "training") ||
+    (step === 7 && action === "select-training-hamster") ||
+    (step === 8 && action === "nav" && target.dataset.route === "gacha")
+  );
+
+  if (matched) {
+    setTutorialStep(step + 1);
+  }
+}
+
+function finishTutorial(skipped) {
+  if (!gameState) return;
+  ensureOnboardingState();
+  gameState.onboarding.completed = true;
+  gameState.onboarding.currentStep = 0;
+  gameState.onboarding.completedAt = Date.now();
+  gameState.onboarding.skipped = Boolean(skipped);
+  runtimeState.onboardingStep = null;
+  saveGame(gameState);
+  pushToast(skipped ? "Навчання сховано. Його можна повторити в налаштуваннях." : "Навчання завершено. Час у вилазку!");
+}
+
+function restartTutorial() {
+  if (!gameState) return;
+  ensureOnboardingState();
+  gameState.onboarding.completed = false;
+  gameState.onboarding.currentStep = 0;
+  gameState.onboarding.completedAt = null;
+  gameState.onboarding.skipped = false;
+  runtimeState.showSettings = false;
+  runtimeState.onboardingStep = 0;
+  navigate("base");
+  saveGame(gameState);
+}
+
+function ensureOnboardingState() {
+  gameState.onboarding = {
+    version: 1,
+    completed: false,
+    currentStep: 0,
+    completedAt: null,
+    ...(gameState.onboarding ?? {})
+  };
+}
+
+function normalizeTutorialStep(step) {
+  const numericStep = Number.isFinite(Number(step)) ? Number(step) : 0;
+  return Math.max(0, Math.min(TUTORIAL_STEP_ROUTES.length - 1, numericStep));
 }
 
 function syncExpeditionReminder() {
