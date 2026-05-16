@@ -14,6 +14,7 @@ import { closeModal, openModal, pushToast, renderApp, updateLiveTimers } from ".
 let deferredInstallPrompt = null;
 let bootPromise = null;
 let expeditionReminderTimer = null;
+let _hadSwController = false;
 let inactivityReminderTimer = null;
 const INACTIVITY_DELAY_MS = 2 * 60 * 60 * 1000;
 const INACTIVITY_KEY = "hamster_last_active_ms";
@@ -193,6 +194,23 @@ function initSite() {
   }
 }
 
+function _onSwUpdateReady() {
+  if (sessionStorage.getItem("swUpdateShown")) return;
+  sessionStorage.setItem("swUpdateShown", "1");
+
+  if (isIOS() && isStandaloneMode()) {
+    // iOS standalone: save will be lost on reinstall — show export modal
+    if (gameState) {
+      openModal("ios-update", { saveText: exportSave(gameState) });
+      renderApp(gameState);
+    }
+  } else {
+    // Android / desktop: just reload to apply new code
+    pushToast("Оновлення встановлено. Перезавантажую…");
+    setTimeout(() => window.location.reload(), 1800);
+  }
+}
+
 function bindPwaEvents() {
   window.addEventListener("beforeinstallprompt", (event) => {
     event.preventDefault();
@@ -210,6 +228,16 @@ function bindPwaEvents() {
 
 function registerServiceWorker() {
   if (!("serviceWorker" in navigator)) return;
+
+  _hadSwController = !!navigator.serviceWorker.controller;
+
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    if (!_hadSwController) {
+      _hadSwController = true;
+      return; // first install, not an update
+    }
+    _onSwUpdateReady();
+  });
 
   navigator.serviceWorker.register("./service-worker.js").catch((error) => {
     console.error("Service worker registration failed", error);
@@ -616,6 +644,16 @@ function handleClick(event) {
     if (action === "open-workshop") navigate("colony");
     if (action === "open-shop") navigate("inventory");
     if (action === "close-modal") closeModal();
+
+    if (action === "copy-save-code") {
+      const textarea = document.querySelector(".save-text");
+      const text = textarea?.value ?? "";
+      navigator.clipboard?.writeText(text).then(() => pushToast("Код нори скопійовано!")).catch(() => {
+        textarea?.select();
+        document.execCommand("copy");
+        pushToast("Код нори скопійовано!");
+      });
+    }
 
     if (action === "open-export") {
       openModal("export", { saveText: exportSave(gameState) });

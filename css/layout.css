@@ -299,6 +299,22 @@
   gap: 12px;
 }
 
+.update-steps {
+  margin: 0;
+  padding-left: 22px;
+  display: grid;
+  gap: 8px;
+  color: var(--text-main);
+  font-size: 0.88rem;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.update-steps li::marker {
+  color: var(--accent);
+  font-weight: 900;
+}
+
 .toast-stack {
   position: fixed;
   top: 14px;

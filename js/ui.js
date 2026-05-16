@@ -1849,7 +1849,23 @@ function renderModal(state) {
   const { type, payload } = runtimeState.modal;
   if (type === "export") return renderExportModal(payload.saveText);
   if (type === "import") return renderImportModal();
+  if (type === "ios-update") return renderIosUpdateModal(payload.saveText);
   return "";
+}
+
+function renderIosUpdateModal(saveText) {
+  return modalShell("📦 Нова версія гри", `
+    <p>iOS не оновлює додаток автоматично. Щоб отримати оновлення і не втратити прогрес, виконай ці кроки:</p>
+    <ol class="update-steps">
+      <li>Скопіюй код нори нижче</li>
+      <li>Видали додаток з головного екрана</li>
+      <li>Відкрий цю URL в Safari</li>
+      <li>Натисни «Поділитися» → «На екран запуск»</li>
+      <li>Відкрий додаток → Налаштування → Імпорт нори → встав код</li>
+    </ol>
+    <textarea class="save-text" readonly>${escapeHtml(saveText)}</textarea>
+    <button class="btn is-ready-action" data-action="copy-save-code">📋 Скопіювати код нори</button>
+  `);
 }
 
 function renderExportModal(saveText) {
