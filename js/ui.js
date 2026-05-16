@@ -1625,17 +1625,31 @@ function renderTrainingFightTab(state, availableHamsters, selectedHamster, selec
         <span class="label">Боєць</span>
         <span class="tag">${selectedHamster ? escapeHtml(selectedHamster.name) : "—"}</span>
       </div>
-      <div class="team-grid" style="margin-top:8px">
-        ${availableHamsters.length
-          ? availableHamsters.map((h) => {
+      ${availableHamsters.length
+        ? `<div class="training-fighter-grid">
+            ${availableHamsters.map((h) => {
               const hStats = getHamsterEffectiveStats(h, state);
-              return `<button class="select-pill ${h.id === selectedId ? "active" : ""}"
+              const portraitSrc = getHamsterPortrait(h);
+              return `<button class="training-fighter-card ${h.id === selectedId ? "active" : ""}"
                 data-action="select-training-hamster" data-hamster-id="${h.id}">
-                ${svgIcon(iconForClass(h.class), "svg-icon svg-icon-xs")} ${escapeHtml(h.name)} · урон ${hStats.attack}
+                <div class="training-fighter-portrait">
+                  ${portraitSrc
+                    ? `<img src="${escapeHtml(portraitSrc)}" alt="${escapeHtml(h.name)}"
+                        onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+                       <div class="hamster-portrait-fallback" style="display:none">
+                         ${svgIcon(iconForClass(h.class), "svg-icon svg-icon-sm")}
+                       </div>`
+                    : `<div class="hamster-portrait-fallback">
+                         ${svgIcon(iconForClass(h.class), "svg-icon svg-icon-sm")}
+                       </div>`
+                  }
+                </div>
+                <span class="training-fighter-name">${escapeHtml(h.name)}</span>
+                <span class="training-fighter-stat">⚔ ${hStats.attack}</span>
               </button>`;
-            }).join("")
-          : `<p class="muted">Всі хом'яки відпочивають або поранені.</p>`}
-      </div>
+            }).join("")}
+          </div>`
+        : `<p class="muted">Всі хом'яки відпочивають або поранені.</p>`}
     </div>
   `;
 }

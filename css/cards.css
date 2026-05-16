@@ -2970,6 +2970,81 @@ textarea.save-text {
   margin-bottom: 10px;
 }
 
+/* ── Fighter portrait selector ───────────────────── */
+.training-fighter-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.training-fighter-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 4px 8px;
+  border: 1.5px solid rgba(83, 48, 28, 0.16);
+  border-radius: 14px;
+  background: rgba(255, 244, 214, 0.18);
+  cursor: pointer;
+  transition: border-color 120ms, background 120ms, transform 80ms;
+}
+
+.training-fighter-card.active {
+  border-color: var(--accent);
+  background: rgba(244, 197, 66, 0.18);
+}
+
+.training-fighter-card:active {
+  transform: scale(0.95);
+}
+
+.training-fighter-portrait {
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: rgba(83, 48, 28, 0.06);
+  position: relative;
+  flex-shrink: 0;
+}
+
+.training-fighter-portrait img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+  display: block;
+  image-rendering: pixelated;
+}
+
+.training-fighter-portrait .hamster-portrait-fallback {
+  width: 100%;
+  height: 100%;
+}
+
+.training-fighter-name {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--text);
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 70px;
+}
+
+.training-fighter-stat {
+  font-size: 0.62rem;
+  font-weight: 900;
+  color: var(--text-muted);
+}
+
+.training-fighter-card.active .training-fighter-name {
+  color: var(--accent);
+}
+
 /* Auto-attack status badge */
 .auto-attack-badge {
   text-align: center;
