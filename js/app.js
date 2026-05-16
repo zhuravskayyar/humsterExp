@@ -196,6 +196,7 @@ function initSite() {
   updateNotificationUi();
 
   window.addEventListener("visibilitychange", handleVisibilityRefresh);
+  window.addEventListener("pagehide", () => { if (gameState) saveGame(gameState); });
 
   if (shouldAutoLaunchGame()) {
     void startGame();
