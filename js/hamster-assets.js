@@ -20,6 +20,10 @@ export function getHamsterSpriteConfig(hamster) {
   return slug ? SPRITE_CONFIG[slug] ?? null : null;
 }
 
+export function getItemImageSrc(itemId) {
+  return `assets/images/items/${itemId}.png`;
+}
+
 function buildPortraitPath(slug) {
   return slug ? `assets/images/hamsters/${slug}/portret/${slug}.png` : null;
 }

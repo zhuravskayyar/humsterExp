@@ -5,7 +5,7 @@ import { formatCost, getSelectedBanner } from "./gacha.js";
 import { canUpgradeEquipment, EQUIPMENT_SLOTS, getAvailableEquipmentForSlot, getEquipmentByUid, getEquipmentLevelCost, getEquipmentStats, getEquipmentTemplate, getHamsterEquipment, needsFodder, findFodderEquipment } from "./equipment.js";
 import { canLevelHamster, getHamsterLevelCost, getHamsterEffectiveStats } from "./hamsters.js";
 import { iconForBuilding, iconForClass, iconForItemType, svgIcon } from "./icons.js";
-import { getHamsterPortrait, getHamsterSlug, getHamsterSpriteConfig } from "./hamster-assets.js";
+import { getHamsterPortrait, getHamsterSlug, getHamsterSpriteConfig, getItemImageSrc } from "./hamster-assets.js";
 import { getInventoryGroups } from "./inventory.js";
 import { runtimeState } from "./state.js";
 import { getDummyConfig, getNextDummyConfig, canUpgradeDummy } from "./training.js";
@@ -650,9 +650,12 @@ function renderCharacterSlot(state, hamster, slot, equipment) {
       ? `data-action="equip-item" data-hamster-id="${hamster.id}" data-equipment-uid="${quickEquip.uid}"`
       : "disabled";
   const icon = iconForItemType(item?.type ?? quickItem?.type ?? slot);
+  const slotVisual = (item ?? quickItem)
+    ? renderItemIcon(item ?? quickItem)
+    : svgIcon(icon, "svg-icon");
   return `
     <button class="character-slot ${equipment ? "is-filled" : ""}" ${attrs} title="${escapeHtml(item?.name ?? quickItem?.name ?? slotLabel(slot))}">
-      ${svgIcon(icon, "svg-icon")}
+      ${slotVisual}
       <span>${slotLabel(slot)}</span>
       <strong>${item ? `Lv ${equipment.level}` : quickItem ? "Одягти" : "Пусто"}</strong>
     </button>
@@ -1455,7 +1458,7 @@ function renderEquipmentCard(state, equipment, options = {}) {
   const fodder = requiresFodder ? findFodderEquipment(state, equipment) : null;
   return `
     <article class="inventory-card rarity-frame-${rarityClass(item.rarity)}">
-      <div class="item-icon">${svgIcon(iconForItemType(item.type))}</div>
+      <div class="item-icon">${renderItemIcon(item)}</div>
       <div>
         <div class="card-row">
           <h3>${item.name}</h3>
@@ -1484,7 +1487,7 @@ function renderEquipmentCard(state, equipment, options = {}) {
 function renderInventoryItemCard(entry) {
   return `
     <article class="inventory-card rarity-frame-${rarityClass(entry.item.rarity)}">
-      <div class="item-icon">${svgIcon(iconForItemType(entry.item.type))}</div>
+      <div class="item-icon">${renderItemIcon(entry.item)}</div>
       <div>
         <div class="card-row">
           <h3>${entry.item.name}</h3>
@@ -1522,6 +1525,9 @@ function renderGachaResultCard(result) {
   const portraitSrc = hamster ? getHamsterPortrait(hamster) : null;
   const item = result.item ?? findItem(result.id);
   const fallbackIcon = hamster ? iconForClass(hamster.class) : iconForItemType(item?.type ?? "resource_pack");
+  const itemImgHtml = !hamster && item
+    ? `<img src="${escapeHtml(getItemImageSrc(item.id))}" alt="${escapeHtml(result.name)}" class="item-sprite" onerror="this.style.display='none';this.nextElementSibling.style.removeProperty('display')">`
+    : "";
   const extra = result.status === "constellation"
     ? `C${result.constellationLevel} · ${result.passive?.name ?? "пасив"}`
     : result.status === "refund"
@@ -1536,8 +1542,8 @@ function renderGachaResultCard(result) {
       <div class="gacha-result-art">
         ${portraitSrc
           ? `<img src="${escapeHtml(portraitSrc)}" alt="${escapeHtml(result.name)}" onerror="this.style.display='none'; this.nextElementSibling.style.display='grid'">`
-          : ""}
-        <span style="${portraitSrc ? "display:none" : ""}">${svgIcon(fallbackIcon, "svg-icon svg-icon-lg")}</span>
+          : itemImgHtml}
+        <span style="${portraitSrc || itemImgHtml ? "display:none" : ""}">${svgIcon(fallbackIcon, "svg-icon svg-icon-lg")}</span>
       </div>
       <div class="gacha-result-info">
         <div class="card-row">
@@ -1729,7 +1735,7 @@ function renderEquippedInline(equipment) {
   const stats = getEquipmentStats(equipment);
   return `
     <div class="equipment-inline">
-      <div class="item-icon">${svgIcon(iconForItemType(item.type))}</div>
+      <div class="item-icon">${renderItemIcon(item)}</div>
       <div>
         <strong>${item.name}</strong>
         <div class="tag-row">
@@ -1828,6 +1834,12 @@ function statLabel(stat) {
 
 function rarityClass(rarity) {
   return String(rarity).toLowerCase();
+}
+
+function renderItemIcon(item) {
+  const src = getItemImageSrc(item.id);
+  const fallback = svgIcon(iconForItemType(item.type));
+  return `<img src="${escapeHtml(src)}" alt="${escapeHtml(item.name)}" class="item-sprite" onerror="this.style.display='none';this.nextElementSibling.style.removeProperty('display')"><span style="display:none">${fallback}</span>`;
 }
 
 function escapeHtml(value) {

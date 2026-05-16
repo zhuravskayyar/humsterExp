@@ -522,6 +522,27 @@
   color: var(--accent-2);
 }
 
+.item-icon .item-sprite {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 10px;
+}
+
+.character-slot .item-sprite {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  border-radius: 6px;
+}
+
+.gacha-result-art .item-sprite {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 12px;
+}
+
 .tag-row,
 .duration-row,
 .team-grid,
