@@ -1,5 +1,5 @@
 :root {
-  color-scheme: light;
+  color-scheme: light only;
   --bg-main: #211812;
   --bg-panel: #453021;
   --leather: #3A2117;
@@ -116,6 +116,9 @@ input,
 select,
 textarea {
   font: inherit;
+  color-scheme: light only;
+  appearance: none;
+  -webkit-appearance: none;
 }
 
 button {
@@ -181,6 +184,8 @@ strong {
 .page-shell {
   width: 100%;
   min-height: 100dvh;
+  forced-color-adjust: none;
+  color-scheme: light only;
 }
 
 .landing-shell {
