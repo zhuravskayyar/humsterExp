@@ -38,11 +38,18 @@ export function resetGame(data) {
 }
 
 export function exportSave(state) {
-  return btoa(unescape(encodeURIComponent(JSON.stringify(state, null, 2))));
+  const json = JSON.stringify(state, null, 2);
+  const bytes = new TextEncoder().encode(json);
+  let binary = "";
+  for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+  return btoa(binary);
 }
 
 export function importSave(encoded, data) {
-  const decoded = decodeURIComponent(escape(atob(encoded.trim())));
+  const binary = atob(encoded.trim());
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  const decoded = new TextDecoder().decode(bytes);
   const parsed = JSON.parse(decoded);
   const merged = mergeWithDefaults(parsed, data);
   setGameState(merged);

@@ -198,11 +198,12 @@ strong {
 .landing-preview,
 .story-card,
 .feature-card {
-  border: 2px solid rgba(234, 216, 180, 0.12);
+  border: var(--border);
   border-radius: 26px;
   background:
-    linear-gradient(180deg, rgba(51, 31, 21, 0.95), rgba(23, 14, 11, 0.94));
-  box-shadow: 0 24px 50px rgba(0, 0, 0, 0.25);
+    var(--texture-paper),
+    linear-gradient(180deg, var(--parchment-light) 0%, var(--parchment) 100%);
+  box-shadow: var(--shadow);
 }
 
 .landing-copy {
@@ -211,7 +212,7 @@ strong {
 
 .landing-kicker {
   margin-bottom: 10px;
-  color: var(--glow);
+  color: var(--accent);
   font-size: 0.78rem;
   font-weight: 800;
   letter-spacing: 0.18em;
@@ -220,7 +221,7 @@ strong {
 
 .landing-copy h1,
 .section-heading h2 {
-  color: var(--text-on-dark);
+  color: var(--text-main);
 }
 
 .landing-copy h1 {
@@ -235,7 +236,7 @@ strong {
 .story-card p,
 .feature-card p,
 .section-heading p {
-  color: rgba(246, 231, 199, 0.78);
+  color: var(--text-muted);
 }
 
 .landing-actions {
@@ -272,21 +273,22 @@ strong {
 .preview-card-main {
   min-height: 220px;
   background:
-    radial-gradient(circle at top right, rgba(199, 137, 53, 0.28), transparent 36%),
-    linear-gradient(180deg, rgba(88, 56, 34, 0.88), rgba(36, 24, 18, 0.96));
+    var(--texture-paper),
+    radial-gradient(circle at top right, rgba(199, 137, 53, 0.22), transparent 36%),
+    linear-gradient(180deg, var(--parchment-light), var(--parchment-dark));
 }
 
 .preview-card span,
 .preview-label,
 .story-card h3,
 .feature-card h3 {
-  color: var(--text-on-dark);
+  color: var(--text-main);
 }
 
 .preview-card strong {
   display: block;
   margin: 8px 0 10px;
-  color: #fff2cf;
+  color: var(--accent);
   font-size: 1.2rem;
   line-height: 1.2;
 }
@@ -301,16 +303,18 @@ strong {
 .landing-section {
   margin-top: 16px;
   padding: 26px;
-  border: 2px solid rgba(234, 216, 180, 0.1);
+  border: var(--border);
   border-radius: 28px;
-  background: rgba(16, 11, 8, 0.58);
-  backdrop-filter: blur(10px);
+  background:
+    var(--texture-cardboard),
+    linear-gradient(180deg, rgba(246, 231, 199, 0.7), rgba(213, 185, 130, 0.6));
 }
 
 .landing-section-accent {
   background:
-    radial-gradient(circle at 10% 0, rgba(63, 111, 106, 0.22), transparent 28%),
-    rgba(16, 11, 8, 0.68);
+    radial-gradient(circle at 10% 0, rgba(63, 111, 106, 0.14), transparent 28%),
+    var(--texture-cardboard),
+    linear-gradient(180deg, rgba(246, 231, 199, 0.7), rgba(213, 185, 130, 0.6));
 }
 
 .section-heading {
