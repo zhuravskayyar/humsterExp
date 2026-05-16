@@ -2655,15 +2655,24 @@ textarea.save-text {
   gap: 4px;
 }
 
+/* Масштабований обгортач — ширина 100%, висота задається JS */
+.arena-stage-outer {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  border-radius: 16px;
+}
+
 /* Один спільний контейнер — хомяк ліворуч, манекен праворуч, нічого між ними */
 .arena-stage {
-  position: relative;
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  overflow: visible;
-  min-height: 196px;
-  padding: 48px 12px 8px;
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: 425px;
+  height: 268px;
+  transform-origin: top center;
+  transform: translateX(-50%) scale(var(--stage-scale, 1));
+  overflow: hidden;
   border: 1px solid rgba(83, 48, 28, 0.18);
   border-radius: 16px;
   background:
@@ -2771,12 +2780,13 @@ textarea.save-text {
 }
 
 .arena-canvas-wrap {
-  position: relative;
+  position: absolute;
   z-index: 2;
-  flex: 0 0 auto;
-  overflow: visible;
+  left: 8px;
+  bottom: 20px;
   display: flex;
   align-items: flex-end;
+  overflow: visible;
   /* без рамки та фону */
 }
 
@@ -2786,9 +2796,10 @@ textarea.save-text {
 }
 
 .arena-dummy-wrap {
-  position: relative;
+  position: absolute;
   z-index: 2;
-  flex: 0 0 auto;
+  right: 8px;
+  bottom: 20px;
   display: flex;
   align-items: flex-end;
   justify-content: center;
@@ -2798,7 +2809,7 @@ textarea.save-text {
 .arena-center {
   position: absolute;
   left: 50%;
-  top: 38%;
+  top: 90px;
   transform: translateX(-50%);
   pointer-events: none;
   z-index: 10;

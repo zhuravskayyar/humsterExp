@@ -190,7 +190,20 @@ export function renderApp(state) {
   `;
   _syncTrainingCanvases(state);
   _syncHamsterPreviewCanvas(state);
+  _syncTrainingStageScale();
   _syncTutorialTarget();
+}
+
+function _syncTrainingStageScale() {
+  const outer = document.querySelector(".arena-stage-outer");
+  if (!outer) return;
+  const stage = outer.querySelector(".arena-stage");
+  if (!stage) return;
+  const STAGE_W = 425;
+  const STAGE_H = 268;
+  const scale = Math.min(outer.clientWidth / STAGE_W, 1);
+  stage.style.setProperty("--stage-scale", scale);
+  outer.style.height = Math.round(STAGE_H * scale) + "px";
 }
 
 function _syncHamsterPreviewCanvas(state) {
@@ -1511,6 +1524,8 @@ function renderTrainingScreen(state) {
       </div>
 
       <div class="training-arena">
+        <!-- Масштабований обгортач -->
+        <div class="arena-stage-outer">
         <!-- Один спільний контейнер: хом'як + манекен без розділення на колонки -->
         <div class="arena-stage ${selectedHamster ? "has-fighter" : ""} ${isAttacking ? "has-hit" : ""}">
           <div class="arena-hud">
@@ -1532,6 +1547,7 @@ function renderTrainingScreen(state) {
                   style="height:${CANVAS_DISPLAY_H}px;display:block;image-rendering:pixelated"></canvas>
               </div>
             ` : `
+              <div class="arena-canvas-wrap">
               <div class="arena-sprite-wrap">
                 <img class="arena-sprite" src="${escapeHtml(portraitSrc)}"
                   alt="${escapeHtml(selectedHamster.name)}"
@@ -1540,6 +1556,7 @@ function renderTrainingScreen(state) {
                   ${svgIcon(iconForClass(selectedHamster.class), "svg-icon svg-icon-lg")}
                   <span>арт скоро</span>
                 </div>
+              </div>
               </div>
             `}
           ` : `
@@ -1562,6 +1579,7 @@ function renderTrainingScreen(state) {
               style="height:${CANVAS_DUMMY_H}px;display:block;image-rendering:pixelated"></canvas>
           </div>
         </div>
+        </div><!-- /arena-stage-outer -->
 
         <!-- Підписи під бійцями -->
         <div class="arena-labels-row">
