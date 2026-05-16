@@ -74,6 +74,8 @@ body {
   background-size: 512px 512px, auto, auto, auto;
   color: var(--text-main);
   overflow-x: hidden;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 .svg-icon {
@@ -186,6 +188,19 @@ strong {
   min-height: 100dvh;
   forced-color-adjust: none;
   color-scheme: light only;
+  isolation: isolate;
+}
+
+.page-shell *,
+.page-shell *::before,
+.page-shell *::after {
+  forced-color-adjust: none;
+}
+
+img,
+canvas,
+svg {
+  forced-color-adjust: none;
 }
 
 .landing-shell {
