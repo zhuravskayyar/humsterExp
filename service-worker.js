@@ -1,4 +1,4 @@
-const VERSION = "hamster-exp-v30";
+const VERSION = "hamster-exp-v31";
 const STATIC_CACHE = `${VERSION}-static`;
 const RUNTIME_CACHE = `${VERSION}-runtime`;
 

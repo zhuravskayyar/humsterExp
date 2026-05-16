@@ -9,7 +9,7 @@ import { exportSave, importSave, loadGame, resetGame, saveGame } from "./save.js
 import { gameState, runtimeState } from "./state.js";
 import { claimQuest, resetDailyQuestsIfNeeded, syncQuestProgress } from "./quests.js";
 import { hitDummy, processOfflineTraining, upgradeDummy, getDummyConfig, startAutoAttack, stopAutoAttack } from "./training.js";
-import { closeModal, openModal, pushToast, renderApp, updateLiveTimers } from "./ui.js?v=23";
+import { closeModal, openModal, pushToast, renderApp, updateLiveTimers, updateTrainingArena } from "./ui.js?v=23";
 
 const {
   equipItem,
@@ -213,9 +213,18 @@ function _onSwUpdateReady() {
       renderApp(gameState);
     }
   } else {
-    // Android / desktop: just reload to apply new code
+    // Android / desktop: плавне згасання перед перезавантаження
     pushToast("Оновлення встановлено. Перезавантажую…");
-    setTimeout(() => window.location.reload(), 1800);
+    setTimeout(() => {
+      const shell = document.querySelector(".page-shell");
+      if (shell) {
+        shell.style.transition = "opacity 280ms ease";
+        shell.style.opacity = "0";
+        setTimeout(() => window.location.reload(), 300);
+      } else {
+        window.location.reload();
+      }
+    }, 1400);
   }
 }
 
@@ -447,9 +456,9 @@ function doTrainingAttack() {
       pushToast(`Схованки +${result.booksAwarded}${extrasStr}`);
     }
   }
-  // Перемальовуємо UI лише на екрані тренування
+  // Цільове оновлення арени — без повного перебудовування DOM (уникаємо моргання)
   if (runtimeState.route === "training") {
-    renderApp(gameState);
+    updateTrainingArena(gameState);
   }
 }
 

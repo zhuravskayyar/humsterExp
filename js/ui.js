@@ -194,6 +194,54 @@ export function renderApp(state) {
   _syncTutorialTarget();
 }
 
+/**
+ * Цільове оновлення арени тренування — без повного перебудови DOM.
+ * Викликається з doTrainingAttack замість renderApp, щоб уникнути моргання.
+ */
+export function updateTrainingArena(state) {
+  const stage = document.querySelector(".arena-stage");
+  if (!stage) return; // не на екрані тренування
+
+  const dummy = getDummyConfig(state);
+  const progress = state.training?.damageProgress ?? 0;
+  const progressPercent = Math.min(100, Math.round((progress / dummy.hpPerRound) * 100));
+  const lastHit = runtimeState.lastHitInfo;
+  const isAttacking = !!(lastHit?.timestamp && Date.now() - lastHit.timestamp < 450);
+
+  // 1. HP-полоска манекена
+  const fill = stage.querySelector(".arena-hp-bar span");
+  if (fill) fill.style.width = progressPercent + "%";
+  const val = stage.querySelector(".arena-hp-value");
+  if (val) val.textContent = `${progress}/${dummy.hpPerRound}`;
+
+  // 2. Клас «удар» на сцені (анімація спалаху)
+  stage.classList.toggle("has-hit", isAttacking);
+
+  // 3. Цифра шкоди
+  const center = stage.querySelector(".arena-center");
+  if (center) {
+    if (lastHit && isAttacking) {
+      center.innerHTML =
+        `<div class="arena-damage">-${lastHit.damage}</div>` +
+        (lastHit.booksAwarded > 0 ? `<div class="arena-reward">Схованки +${lastHit.booksAwarded}</div>` : "");
+    } else {
+      center.innerHTML = "";
+    }
+  }
+
+  // 4. Ресурс-бар — оновлюємо лише числа, не перебудовуємо DOM
+  const resourceBar = document.querySelector(".resource-bar");
+  if (resourceBar) {
+    for (const [key, value] of Object.entries(state.resources)) {
+      const chip = resourceBar.querySelector(`.resource-${key} strong`);
+      if (chip) chip.textContent = formatNumber(value ?? 0);
+    }
+  }
+
+  // 5. Стан анімації canvas (pose attack/idle)
+  _syncTrainingCanvases(state);
+}
+
 function _syncTrainingStageScale() {
   const outer = document.querySelector(".arena-stage-outer");
   if (!outer) return;

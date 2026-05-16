@@ -33,6 +33,7 @@
   overflow-wrap: anywhere;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
+  animation: screenEnter 180ms ease both;
 }
 
 .top-row,
