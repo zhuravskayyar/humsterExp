@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import argparse
 from dataclasses import dataclass
 from collections import deque
 from pathlib import Path
@@ -17,6 +18,9 @@ ALPHA_THRESHOLD = 8
 MIN_COMPONENT_PIXELS = 96
 MIN_COMPONENT_RATIO = 0.025
 EDGE_SLIVER_RATIO = 0.35
+MARKER_TOLERANCE = 8
+FRAME_MARKER_COLOR = (255, 0, 255)  # pink/magenta: vertical cut marker between frames
+GROUND_MARKER_COLOR = (0, 0, 255)  # blue: ground baseline marker inside a frame
 
 
 @dataclass(frozen=True)
@@ -30,9 +34,15 @@ class SheetSpec:
     out: str
 
 
+@dataclass(frozen=True)
+class RawFrame:
+    content: Image.Image | None
+    ground_y: int | None = None
+
+
 SHEETS = [
-    SheetSpec("pixel", "idle", "assets/images/hamsters/pixel/idle/idle.png", 4, 4, 1, "assets/images/hamsters/pixel/idle/pixel_idle_normalized.png"),
-    SheetSpec("pixel", "attack", "assets/images/hamsters/pixel/attack/attack.png", 6, 6, 1, "assets/images/hamsters/pixel/attack/pixel_attack_normalized.png"),
+    SheetSpec("pixel", "idle", "assets/images/hamsters/pixel/idle/pixel_idle_improved_source.png", 4, 4, 1, "assets/images/hamsters/pixel/idle/pixel_idle_normalized.png"),
+    SheetSpec("pixel", "attack", "assets/images/hamsters/pixel/attack/pixel_attack_improved_source.png", 4, 4, 1, "assets/images/hamsters/pixel/attack/pixel_attack_normalized.png"),
     SheetSpec("shurup", "idle", "assets/images/hamsters/shurup/idle/idle.png", 4, 4, 1, "assets/images/hamsters/shurup/idle/shurup_idle_normalized.png"),
     SheetSpec("shurup", "attack", "assets/images/hamsters/shurup/attack/atack.png", 6, 6, 1, "assets/images/hamsters/shurup/attack/shurup_attack_normalized.png"),
     SheetSpec("pliushka", "idle", "assets/images/hamsters/pliushka/idle/d47aa63d-40ae-4c22-aa55-a422666316a9.png", 4, 4, 1, "assets/images/hamsters/pliushka/idle/pliushka_idle_normalized.png"),
@@ -40,7 +50,7 @@ SHEETS = [
     SheetSpec("bublyk", "idle", "assets/images/hamsters/bublyk/idle/7ca303bb-871a-4892-853d-ba2f5b441dd2.png", 4, 4, 1, "assets/images/hamsters/bublyk/idle/bublyk_idle_normalized.png"),
     SheetSpec("bublyk", "attack", "assets/images/hamsters/bublyk/attack/2e5a680e-804e-4c3c-81e0-7945504018a8.png", 6, 6, 1, "assets/images/hamsters/bublyk/attack/bublyk_attack_normalized.png"),
     SheetSpec("hryzun", "idle", "assets/images/hamsters/hryzun/idle/085e95b3-4243-4d59-9a8a-8ab0e6d3fd07.png", 4, 2, 2, "assets/images/hamsters/hryzun/idle/hryzun_idle_normalized.png"),
-    SheetSpec("hryzun", "attack", "assets/images/hamsters/hryzun/attack/5af02c55-12d3-4214-805c-2a7e0b7e3636_no_bg (1).png", 6, 6, 1, "assets/images/hamsters/hryzun/attack/hryzun_attack_normalized.png"),
+    SheetSpec("hryzun", "attack", "assets/images/hamsters/hryzun/attack/hryzun_attack_improved_source.png", 5, 5, 1, "assets/images/hamsters/hryzun/attack/hryzun_attack_normalized.png"),
     SheetSpec("iskra", "idle", "assets/images/hamsters/iskra/idle/iskra_idle_source.png", 4, 4, 1, "assets/images/hamsters/iskra/idle/iskra_idle_normalized.png"),
     SheetSpec("iskra", "attack", "assets/images/hamsters/iskra/attack/iskra_attack_source.png", 4, 4, 1, "assets/images/hamsters/iskra/attack/iskra_attack_normalized.png"),
     SheetSpec("krykhta", "idle", "assets/images/hamsters/krykhta/idle/krykhta_idle_source.png", 4, 4, 1, "assets/images/hamsters/krykhta/idle/krykhta_idle_normalized.png"),
@@ -53,6 +63,112 @@ SHEETS = [
 def alpha_bbox(image: Image.Image) -> tuple[int, int, int, int] | None:
     alpha = image.getchannel("A").point(lambda value: 255 if value > ALPHA_THRESHOLD else 0)
     return alpha.getbbox()
+
+
+def is_marker_pixel(pixel: tuple[int, int, int, int], color: tuple[int, int, int]) -> bool:
+    red, green, blue, alpha = pixel
+    if alpha <= ALPHA_THRESHOLD:
+        return False
+    if color == FRAME_MARKER_COLOR:
+        return (
+            (abs(red - color[0]) <= MARKER_TOLERANCE
+             and abs(green - color[1]) <= MARKER_TOLERANCE
+             and abs(blue - color[2]) <= MARKER_TOLERANCE)
+            or (red >= 130 and blue >= 130 and green <= 130 and abs(red - blue) <= 80)
+        )
+    if color == GROUND_MARKER_COLOR:
+        return (
+            (abs(red - color[0]) <= MARKER_TOLERANCE
+             and abs(green - color[1]) <= MARKER_TOLERANCE
+             and abs(blue - color[2]) <= MARKER_TOLERANCE)
+            or (blue >= 150 and red <= 120 and green <= 150 and blue > red + 45 and blue > green + 35)
+        )
+    return (
+        abs(red - color[0]) <= MARKER_TOLERANCE
+        and abs(green - color[1]) <= MARKER_TOLERANCE
+        and abs(blue - color[2]) <= MARKER_TOLERANCE
+    )
+
+
+def marker_column_runs(image: Image.Image, color: tuple[int, int, int]) -> list[tuple[int, int]]:
+    pixels = image.load()
+    min_pixels = max(6, int(image.height * 0.18))
+    runs: list[tuple[int, int]] = []
+    start: int | None = None
+
+    for x in range(image.width):
+        count = sum(1 for y in range(image.height) if is_marker_pixel(pixels[x, y], color))
+        is_marker_column = count >= min_pixels
+        if is_marker_column and start is None:
+            start = x
+        elif not is_marker_column and start is not None:
+            runs.append((start, x - 1))
+            start = None
+
+    if start is not None:
+        runs.append((start, image.width - 1))
+    return runs
+
+
+def marker_slot_bounds(image: Image.Image, frames: int) -> list[tuple[int, int]] | None:
+    runs = marker_column_runs(image, FRAME_MARKER_COLOR)
+    if not runs:
+        return None
+
+    if len(runs) == frames - 1:
+        bounds: list[tuple[int, int]] = []
+        left = 0
+        for start, end in runs:
+            bounds.append((left, start))
+            left = end + 1
+        bounds.append((left, image.width))
+    elif len(runs) == frames + 1:
+        bounds = [(runs[index][1] + 1, runs[index + 1][0]) for index in range(frames)]
+    else:
+        raise SystemExit(
+            f"Pink frame markers found, but count is wrong: expected {frames - 1} between-frame "
+            f"markers or {frames + 1} outer+inner markers, got {len(runs)}"
+        )
+
+    if len(bounds) != frames or any(right <= left for left, right in bounds):
+        raise SystemExit("Pink frame markers produced empty or invalid frame bounds")
+    return bounds
+
+
+def detect_ground_y(image: Image.Image) -> int | None:
+    pixels = image.load()
+    row_hits: list[int] = []
+    min_pixels = max(4, int(image.width * 0.04))
+
+    for y in range(image.height):
+        count = sum(1 for x in range(image.width) if is_marker_pixel(pixels[x, y], GROUND_MARKER_COLOR))
+        if count >= min_pixels:
+            row_hits.append(y)
+
+    if row_hits:
+        return max(row_hits)
+
+    loose_hits = [
+        y
+        for y in range(image.height)
+        for x in range(image.width)
+        if is_marker_pixel(pixels[x, y], GROUND_MARKER_COLOR)
+    ]
+    return max(loose_hits) if loose_hits else None
+
+
+def remove_marker_pixels(image: Image.Image) -> Image.Image:
+    cleaned = image.copy()
+    pixels = cleaned.load()
+    for y in range(cleaned.height):
+        for x in range(cleaned.width):
+            pixel = pixels[x, y]
+            if (
+                is_marker_pixel(pixel, FRAME_MARKER_COLOR)
+                or is_marker_pixel(pixel, GROUND_MARKER_COLOR)
+            ):
+                pixels[x, y] = (0, 0, 0, 0)
+    return cleaned
 
 
 def horizontal_bounds(image: Image.Image, frames: int) -> list[int]:
@@ -154,45 +270,69 @@ def remove_small_components(image: Image.Image) -> Image.Image:
     return cleaned
 
 
-def split_sheet(spec: SheetSpec) -> list[Image.Image | None]:
+def split_sheet(spec: SheetSpec) -> list[RawFrame]:
     image = Image.open(ROOT / spec.src).convert("RGBA")
     frame_h = image.height / spec.rows
-    frames: list[Image.Image | None] = []
-    row_bounds = horizontal_bounds(image, spec.frames) if spec.rows == 1 else None
+    frames: list[RawFrame] = []
+    marker_bounds = marker_slot_bounds(image, spec.frames) if spec.rows == 1 else None
+    row_bounds = None if marker_bounds else horizontal_bounds(image, spec.frames) if spec.rows == 1 else None
 
     for index in range(spec.frames):
         row = index // spec.cols
-        if row_bounds:
+        if marker_bounds:
+            left, right = marker_bounds[index]
+            top = 0
+            bottom = image.height
+        elif row_bounds:
             left = row_bounds[index]
             right = row_bounds[index + 1]
+            top = round(row * frame_h)
+            bottom = round((row + 1) * frame_h)
         else:
             frame_w = image.width / spec.cols
             col = index % spec.cols
             left = round(col * frame_w)
             right = round((col + 1) * frame_w)
-        slot = image.crop((
-            left,
-            round(row * frame_h),
-            right,
-            round((row + 1) * frame_h),
-        ))
+            top = round(row * frame_h)
+            bottom = round((row + 1) * frame_h)
+        slot = image.crop((left, top, right, bottom))
+        ground_y = detect_ground_y(slot)
+        slot = remove_marker_pixels(slot)
         slot = remove_small_components(slot)
         bbox = alpha_bbox(slot)
-        frames.append(slot.crop(bbox) if bbox else None)
+        if bbox:
+            content = slot.crop(bbox)
+            content_ground_y = ground_y - bbox[1] + 1 if ground_y is not None else None
+            frames.append(RawFrame(content, content_ground_y))
+        else:
+            frames.append(RawFrame(None))
 
     return frames
 
 
-def compose_frame(content: Image.Image | None, scale: float) -> Image.Image:
+def layout_height(raw: RawFrame) -> int:
+    if raw.content is None:
+        return 0
+    ground_y = raw.ground_y if raw.ground_y is not None else raw.content.height
+    return max(raw.content.height, ground_y)
+
+
+def compose_frame(raw: RawFrame, scale: float) -> Image.Image:
     frame = Image.new("RGBA", (FRAME_W, FRAME_H), (0, 0, 0, 0))
-    if content is None:
+    if raw.content is None:
         return frame
 
-    width = max(1, round(content.width * scale))
-    height = max(1, round(content.height * scale))
-    resized = content.resize((width, height), Image.Resampling.NEAREST)
+    width = max(1, round(raw.content.width * scale))
+    height = max(1, round(raw.content.height * scale))
+    resized = raw.content.resize((width, height), Image.Resampling.NEAREST)
+    ground_y = raw.ground_y if raw.ground_y is not None else raw.content.height
+    ground_y = max(1, ground_y)
+    ground = max(1, round(ground_y * scale))
     x = (FRAME_W - width) // 2
-    y = FRAME_H - height
+    y = FRAME_H - ground
+    if y + height > FRAME_H:
+        y = FRAME_H - height
+    y = max(0, y)
     frame.alpha_composite(resized, (x, y))
     return frame
 
@@ -280,23 +420,32 @@ def render_preview(slug: str, mode_frames: dict[str, list[Image.Image]]) -> None
 
 
 def main() -> None:
+    parser = argparse.ArgumentParser(description="Normalize hamster sprite sheets into fixed-size transparent strips.")
+    parser.add_argument("--slug", help="Only normalize one hamster slug, for example pixel.")
+    parser.add_argument("--mode", choices=["idle", "attack"], help="Only normalize one animation mode.")
+    args = parser.parse_args()
+
     by_slug: dict[str, list[SheetSpec]] = {}
     for spec in SHEETS:
+        if args.slug and spec.slug != args.slug:
+            continue
+        if args.mode and spec.mode != args.mode:
+            continue
         by_slug.setdefault(spec.slug, []).append(spec)
 
     for slug, specs in by_slug.items():
-        raw: dict[str, list[Image.Image | None]] = {spec.mode: split_sheet(spec) for spec in specs}
+        raw: dict[str, list[RawFrame]] = {spec.mode: split_sheet(spec) for spec in specs}
         normalized: dict[str, list[Image.Image]] = {}
 
         for spec in specs:
-            contents = [frame for frame in raw[spec.mode] if frame is not None]
+            contents = [frame for frame in raw[spec.mode] if frame.content is not None]
             if not contents:
                 raise SystemExit(f"No visible pixels found for {slug}.{spec.mode}")
 
-            max_w = max(frame.width for frame in contents)
-            max_h = max(frame.height for frame in contents)
+            max_w = max(frame.content.width for frame in contents if frame.content is not None)
+            max_h = max(layout_height(frame) for frame in contents)
             scale = min(FRAME_W / max_w, FRAME_H / max_h)
-            frames = [compose_frame(content, scale) for content in raw[spec.mode]]
+            frames = [compose_frame(frame, scale) for frame in raw[spec.mode]]
             if spec.mode == "attack":
                 frames = repair_effect_only_attack_frames(frames)
             normalized[spec.mode] = frames

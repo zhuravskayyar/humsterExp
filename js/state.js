@@ -18,6 +18,7 @@ export const runtimeState = {
   modal: null,
   toasts: [],
   expandedHamsterId: null,
+  activeCharacterEquipmentSlot: "weapon",
   showSettings: false,
   gachaResults: [],
   expeditionResult: null,

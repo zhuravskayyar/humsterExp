@@ -3,6 +3,15 @@ import { addResources } from "./inventory.js";
 
 export const EQUIPMENT_SLOTS = ["weapon", "armor", "backpack", "tool", "charm"];
 
+const RARITY_RANK = {
+  Common: 1,
+  Uncommon: 2,
+  Rare: 3,
+  Epic: 4,
+  Legendary: 5,
+  Mythic: 6
+};
+
 export function createEquipmentFromItem(item) {
   if (!item?.equipmentSlot) return null;
   return {
@@ -82,17 +91,39 @@ export function getEquipmentLevelCost(equipment) {
   };
 }
 
+export function getEquipmentQualityScore(equipment) {
+  const item = getEquipmentTemplate(equipment);
+  if (!item) return 0;
+  return (item.stars ?? 1) * 10 + (RARITY_RANK[item.rarity] ?? 0);
+}
+
+function isValidMaterial(candidate, targetEquipment, allowEqualQuality = false) {
+  if (!candidate || !targetEquipment) return false;
+  if (candidate.uid === targetEquipment.uid || candidate.equippedBy || candidate.locked) return false;
+
+  const candidateItem = getEquipmentTemplate(candidate);
+  const targetItem = getEquipmentTemplate(targetEquipment);
+  if (!candidateItem || !targetItem || candidateItem.equipmentSlot !== targetItem.equipmentSlot) return false;
+
+  const candidateQuality = getEquipmentQualityScore(candidate);
+  const targetQuality = getEquipmentQualityScore(targetEquipment);
+  return allowEqualQuality ? candidateQuality <= targetQuality : candidateQuality < targetQuality;
+}
+
 export function needsFodder(equipment) {
   return equipment.level > 0 && equipment.level % 10 === 0;
 }
 
 export function findFodderEquipment(state, targetEquipment) {
-  const targetItem = getEquipmentTemplate(targetEquipment);
-  return state.equipment.find((equipment) => {
-    if (equipment.uid === targetEquipment.uid || equipment.equippedBy || equipment.locked) return false;
-    const item = getEquipmentTemplate(equipment);
-    return item?.equipmentSlot === targetItem?.equipmentSlot;
-  });
+  return state.equipment
+    .filter((equipment) => isValidMaterial(equipment, targetEquipment, true))
+    .sort((a, b) => getEquipmentQualityScore(a) - getEquipmentQualityScore(b) || (a.level ?? 1) - (b.level ?? 1))[0] ?? null;
+}
+
+export function findInferiorFodderEquipment(state, targetEquipment) {
+  return state.equipment
+    .filter((equipment) => isValidMaterial(equipment, targetEquipment, false))
+    .sort((a, b) => getEquipmentQualityScore(a) - getEquipmentQualityScore(b) || (a.level ?? 1) - (b.level ?? 1))[0] ?? null;
 }
 
 export function canUpgradeEquipment(state, equipment) {
@@ -116,7 +147,7 @@ export function upgradeEquipment(state, uid) {
   let fodder = null;
   if (needsFodder(equipment)) {
     fodder = findFodderEquipment(state, equipment);
-    if (!fodder) throw new Error("Потрібна зайва зброя/екіпіровка того ж слота як матеріал");
+    if (!fodder) throw new Error("Потрібен вільний предмет того ж слота не кращої якості");
   }
 
   for (const [resource, amount] of Object.entries(cost)) {
@@ -127,6 +158,28 @@ export function upgradeEquipment(state, uid) {
   }
   equipment.level += 1;
   return equipment;
+}
+
+export function canUpgradeEquipmentWithFodder(state, equipment) {
+  if (!equipment || equipment.level >= equipment.maxLevel) return false;
+  return Boolean(findInferiorFodderEquipment(state, equipment));
+}
+
+export function upgradeEquipmentWithFodder(state, uid) {
+  const equipment = getEquipmentByUid(state, uid);
+  if (!equipment) throw new Error("Предмет не знайдено");
+  if (equipment.level >= equipment.maxLevel) throw new Error("Предмет вже має максимальний рівень");
+
+  const fodder = findInferiorFodderEquipment(state, equipment);
+  if (!fodder) throw new Error("Потрібен вільний предмет гіршої якості того ж слота");
+
+  const levelsGained = Math.min(
+    equipment.maxLevel - equipment.level,
+    Math.max(1, Math.min(5, 1 + Math.floor(((fodder.level ?? 1) - 1) / 10)))
+  );
+  state.equipment = state.equipment.filter((candidate) => candidate.uid !== fodder.uid);
+  equipment.level += levelsGained;
+  return { equipment, fodder, levelsGained };
 }
 
 export function salvageEquipment(state, uid) {

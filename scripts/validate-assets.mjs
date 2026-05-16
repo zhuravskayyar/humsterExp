@@ -59,7 +59,8 @@ if (errors.length) {
 console.log(`Asset validation passed: ${hamsters.length} hamsters, ${Object.keys(SPRITE_CONFIG).length} sprite configs.`);
 
 function validateFile(label, relativePath) {
-  const filePath = path.join(rootDir, relativePath);
+  const cleanPath = relativePath.split(/[?#]/, 1)[0];
+  const filePath = path.join(rootDir, cleanPath);
   if (!fs.existsSync(filePath)) {
     errors.push(`Missing ${label}: ${relativePath}`);
     return null;

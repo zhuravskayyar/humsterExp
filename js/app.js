@@ -1,6 +1,6 @@
 import { loadData, dataStore, findZone } from "./data.js";
 import { canAfford, collectPassiveIncome, spendResources, upgradeColony } from "./colony.js";
-import { equipItem, salvageEquipment, unequipSlot, upgradeEquipment } from "./equipment.js";
+import * as equipmentApi from "./equipment.js?v=23";
 import { launchExpedition, updateExpeditionStatuses, claimExpedition } from "./expeditions.js";
 import { rollGacha } from "./gacha.js";
 import { getHamsterEffectiveStats, levelUpHamster, recoverHamsters } from "./hamsters.js";
@@ -9,7 +9,15 @@ import { exportSave, importSave, loadGame, resetGame, saveGame } from "./save.js
 import { gameState, runtimeState } from "./state.js";
 import { claimQuest, resetDailyQuestsIfNeeded, syncQuestProgress } from "./quests.js";
 import { hitDummy, processOfflineTraining, upgradeDummy, getDummyConfig, startAutoAttack, stopAutoAttack } from "./training.js";
-import { closeModal, openModal, pushToast, renderApp, updateLiveTimers } from "./ui.js";
+import { closeModal, openModal, pushToast, renderApp, updateLiveTimers } from "./ui.js?v=23";
+
+const {
+  equipItem,
+  getEquipmentTemplate,
+  salvageEquipment,
+  unequipSlot,
+  upgradeEquipment
+} = equipmentApi;
 
 let deferredInstallPrompt = null;
 let bootPromise = null;
@@ -504,14 +512,24 @@ function handleClick(event) {
 
     if (action === "open-hamster") {
       runtimeState.expandedHamsterId = target.dataset.hamsterId;
+      runtimeState.activeCharacterEquipmentSlot = "weapon";
     }
 
     if (action === "open-hamster-detail") {
       runtimeState.expandedHamsterId = target.dataset.hamsterId;
+      runtimeState.activeCharacterEquipmentSlot = "weapon";
     }
 
     if (action === "close-hamster-detail") {
       runtimeState.expandedHamsterId = null;
+    }
+
+    if (action === "select-character-equipment-slot") {
+      runtimeState.activeCharacterEquipmentSlot = target.dataset.slot;
+    }
+
+    if (action === "open-constellations") {
+      openModal("constellations", { hamsterId: target.dataset.hamsterId });
     }
 
     if (action === "level-hamster") {
@@ -538,6 +556,15 @@ function handleClick(event) {
     if (action === "upgrade-equipment") {
       const equipment = upgradeEquipment(gameState, target.dataset.equipmentUid);
       saveAndToast(`Предмет покращено до рівня ${equipment.level}`);
+    }
+
+    if (action === "upgrade-equipment-fodder") {
+      if (!equipmentApi.upgradeEquipmentWithFodder) {
+        throw new Error("Онови сторінку, щоб завантажити нову систему прокачки");
+      }
+      const result = equipmentApi.upgradeEquipmentWithFodder(gameState, target.dataset.equipmentUid);
+      const fodderItem = getEquipmentTemplate(result.fodder);
+      saveAndToast(`Спорядження +${result.levelsGained} рів. · поглинуто ${fodderItem?.name ?? "матеріал"}`);
     }
 
     if (action === "salvage-equipment") {

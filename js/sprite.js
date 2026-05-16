@@ -8,7 +8,7 @@
 export const SPRITE_CONFIG = {
   pixel: {
     idle: {
-      src: "assets/images/hamsters/pixel/idle/pixel_idle_normalized.png",
+      src: "assets/images/hamsters/pixel/idle/pixel_idle_normalized.png?v=24",
       frames: 4,
       totalW: 1536,
       h: 256,
@@ -16,12 +16,12 @@ export const SPRITE_CONFIG = {
       fps: 7,          // full loop ≈ 571 ms
     },
     attack: {
-      src: "assets/images/hamsters/pixel/attack/pixel_attack_normalized.png",
-      frames: 6,
-      totalW: 2304,
+      src: "assets/images/hamsters/pixel/attack/pixel_attack_normalized.png?v=25",
+      frames: 4,
+      totalW: 1536,
       h: 256,
       anchorX: 192,
-      fps: 10,         // full attack ≈ 500 ms
+      fps: 8,          // full attack ≈ 500 ms
     },
   },
   shurup: {
@@ -88,12 +88,12 @@ export const SPRITE_CONFIG = {
       fps: 7,
     },
     attack: {
-      src: "assets/images/hamsters/hryzun/attack/hryzun_attack_normalized.png",
-      frames: 6,
-      totalW: 2304,
+      src: "assets/images/hamsters/hryzun/attack/hryzun_attack_normalized.png?v=26",
+      frames: 5,
+      totalW: 1920,
       h: 256,
       anchorX: 192,
-      fps: 12,         // full attack ≈ 500 ms
+      fps: 10,         // full attack ≈ 500 ms
     },
   },
   iskra: {
@@ -153,7 +153,7 @@ export const SPRITE_CONFIG = {
 };
 
 export const CANVAS_DISPLAY_H = 156; // px – display height of the training canvas
-export const CANVAS_PREVIEW_H = 170; // px – display height for character overview
+export const CANVAS_PREVIEW_H = 230; // px – display height for character overview
 
 // ── Image cache ────────────────────────────────────────────────────────────
 const _imgCache = new Map();

@@ -2,7 +2,7 @@ import { getColonyStats, getMaxExpeditionSlots, getUpgradeCost, getUpgradeLevel,
 import { dataStore, findItem, findZone, resourceMeta, t } from "./data.js";
 import { calculateSuccessChance, calculateTeam } from "./expeditions.js";
 import { formatCost, getSelectedBanner } from "./gacha.js";
-import { canUpgradeEquipment, EQUIPMENT_SLOTS, getAvailableEquipmentForSlot, getEquipmentByUid, getEquipmentLevelCost, getEquipmentStats, getEquipmentTemplate, getHamsterEquipment, needsFodder, findFodderEquipment } from "./equipment.js";
+import * as equipmentApi from "./equipment.js?v=23";
 import { canLevelHamster, getHamsterLevelCost, getHamsterEffectiveStats } from "./hamsters.js";
 import { iconForBuilding, iconForClass, iconForItemType, svgIcon } from "./icons.js";
 import { getHamsterPortrait, getHamsterSlug, getHamsterSpriteConfig, getItemImageSrc } from "./hamster-assets.js";
@@ -10,6 +10,22 @@ import { getInventoryGroups } from "./inventory.js";
 import { runtimeState } from "./state.js";
 import { getDummyConfig, getNextDummyConfig, canUpgradeDummy } from "./training.js";
 import { attachTrainingCanvas, detachTrainingCanvas, CANVAS_DISPLAY_H, attachDummyCanvas, detachDummyCanvas, CANVAS_DUMMY_H, attachPreviewCanvas, detachPreviewCanvas, CANVAS_PREVIEW_H } from "./sprite.js";
+
+const {
+  canUpgradeEquipment,
+  EQUIPMENT_SLOTS,
+  findFodderEquipment,
+  getAvailableEquipmentForSlot,
+  getEquipmentByUid,
+  getEquipmentLevelCost,
+  getEquipmentStats,
+  getEquipmentTemplate,
+  getHamsterEquipment,
+  needsFodder
+} = equipmentApi;
+
+const canUpgradeEquipmentWithFodder = equipmentApi.canUpgradeEquipmentWithFodder ?? (() => false);
+const findInferiorFodderEquipment = equipmentApi.findInferiorFodderEquipment ?? (() => null);
 
 const navItems = [
   { route: "base",        icon: "base",      labelKey: "base" },
@@ -582,37 +598,37 @@ function renderHamsterDetailScreen(state, hamster) {
   const hasSprite = !!getHamsterSpriteConfig(hamster);
   const portraitSrc = getHamsterPortrait(hamster);
   const signatureLabel = signatureEquipped ? "Сигнатурка активна" : signatureOwned ? "Сигнатурка є" : "Сигнатурка не знайдена";
-  const primaryStats = [
+  const activeSlot = EQUIPMENT_SLOTS.includes(runtimeState.activeCharacterEquipmentSlot)
+    ? runtimeState.activeCharacterEquipmentSlot
+    : "weapon";
+  const combatPower = calculateCombatPower(stats);
+  const mainStats = [
     ["HP", stats.hp],
     ["Урон", stats.attack],
     ["Захист", stats.defense],
-    ["Сила", stats.power]
-  ];
-  const secondaryStats = [
+    ["Сила", stats.power],
     ["Швидк.", stats.speed],
-    ["Удача", stats.luck],
-    ["Вантаж", stats.carry],
-    ["Витрив.", stats.stamina]
+    ["Удача", stats.luck]
   ];
   return `
-    <main class="screen">
-      ${renderResourceBar(state)}
-      <div class="top-row">
+    <main class="screen character-screen">
+      ${renderResourceBar(state, "compact")}
+      <div class="top-row character-top-row">
         <button class="icon-btn" data-action="close-hamster-detail" title="Назад">${svgIcon("close")}</button>
-        <div style="flex:1">
-          <p class="muted">${hamster.class} · C${hamster.constellationLevel ?? 0}/6</p>
+        <div class="character-title-block">
+          <p class="muted">${hamster.class} · C${hamster.constellationLevel ?? 0}/6 · ${renderStarRating(hamster.stars)}</p>
           <h2>${escapeHtml(hamster.name)}</h2>
+          <div class="tag-row character-title-tags">
+            <span class="tag">Lv ${hamster.level}/${hamster.maxLevel ?? 90}</span>
+            <span class="tag status-${hamster.status}">${t(hamster.status)}</span>
+            <span class="tag character-signature-tag">${signatureLabel}</span>
+          </div>
         </div>
-        <span class="tag rarity-${rarityClass(hamster.rarity)}">${renderStarRating(hamster.stars)}</span>
       </div>
 
       <section class="character-overview rarity-frame-${rarityClass(hamster.rarity)}">
-        <aside class="character-constellation-panel">
-          <p class="panel-label">Сузір'я</p>
-          ${renderCharacterConstellations(hamster)}
-        </aside>
-
         <div class="character-stage">
+          ${renderCharacterConstellationSummary(hamster)}
           <div class="character-stage-art">
             ${hasSprite
               ? `<canvas id="hamster-preview-canvas" class="character-preview-canvas" style="height:${CANVAS_PREVIEW_H}px;display:block;image-rendering:pixelated"></canvas>`
@@ -624,44 +640,40 @@ function renderHamsterDetailScreen(state, hamster) {
                 </div>
               `}
           </div>
-          <div class="character-stage-meta">
-            <div>
-              <p class="muted">Рівень ${hamster.level}/${hamster.maxLevel ?? 90}</p>
-              <h3>${escapeHtml(hamster.trait)}</h3>
+          <div class="character-combat-card">
+            <span>Бойова міць</span>
+            <strong>${combatPower}</strong>
+          </div>
+          <div class="character-stat-chip-row character-stat-grid-wide">
+            ${renderCharacterStatChips(mainStats)}
+          </div>
+          <div class="character-level-card">
+            <div class="character-level-head">
+              <span>Lv ${hamster.level}/${hamster.maxLevel ?? 90}</span>
+              <strong>${Math.round(((hamster.level ?? 1) / (hamster.maxLevel ?? 90)) * 100)}%</strong>
             </div>
-            <span class="tag status-${hamster.status}">${t(hamster.status)}</span>
+            <div class="character-level-track"><span style="width:${Math.min(100, Math.round(((hamster.level ?? 1) / (hamster.maxLevel ?? 90)) * 100))}%"></span></div>
+            <div class="tag-row character-cost-row">
+              <span class="tag">${svgIcon("seed", "svg-icon svg-icon-xs")} ${cost.gold}</span>
+              <span class="tag">${svgIcon("quests", "svg-icon svg-icon-xs")} ${cost.xpBooks}</span>
+              ${renderMissingLevelCost(state, cost)}
+            </div>
+            <button class="btn character-level-cta" data-action="level-hamster" data-hamster-id="${hamster.id}" ${canLevelHamster(state, hamster) ? "" : "disabled"}>
+              Підняти рівень
+            </button>
           </div>
-          <div class="character-stat-chip-row">
-            ${renderCharacterStatChips(primaryStats)}
-          </div>
-          <div class="tag-row character-cost-row">
-            <span class="tag">${svgIcon("seed", "svg-icon svg-icon-xs")} Насіння ${cost.gold}</span>
-            <span class="tag">${svgIcon("quests", "svg-icon svg-icon-xs")} Схованки ${cost.xpBooks}</span>
-          </div>
-          <button class="btn" data-action="level-hamster" data-hamster-id="${hamster.id}" ${canLevelHamster(state, hamster) ? "" : "disabled"}>
-            Підняти рівень
-          </button>
-        </div>
-
-        <aside class="character-stats-panel">
-          <p class="panel-label">Стати</p>
-          <span class="tag character-signature-tag">${signatureLabel}</span>
-          ${renderCharacterStats(secondaryStats)}
-        </aside>
-
-        <div class="character-slot-row" aria-label="Слоти спорядження">
-          ${EQUIPMENT_SLOTS.map((slot) => renderCharacterSlot(state, hamster, slot, equipment[slot])).join("")}
         </div>
       </section>
 
       <section class="section character-equipment-panel">
         <div class="section-header">
           <h2>Спорядження</h2>
-          <span class="tag">Слотів ${EQUIPMENT_SLOTS.length}</span>
+          <span class="tag">${slotLabel(activeSlot)}</span>
         </div>
-        <div class="stack compact-stack">
-          ${EQUIPMENT_SLOTS.map((slot) => renderCharacterEquipmentControls(state, hamster, slot, equipment[slot])).join("")}
+        <div class="character-slot-row" aria-label="Слоти спорядження">
+          ${EQUIPMENT_SLOTS.map((slot) => renderCharacterSlot(state, hamster, slot, equipment[slot], activeSlot)).join("")}
         </div>
+        ${renderCharacterEquipmentFocus(state, hamster, activeSlot, equipment[activeSlot])}
       </section>
     </main>
   `;
@@ -676,10 +688,86 @@ function renderCharacterConstellations(hamster) {
           title="${escapeHtml(constellation.name)}: ${escapeHtml(constellation.description)}">
           <span>C${constellation.level}</span>
           <strong>${escapeHtml(constellation.name)}</strong>
+          <small>${escapeHtml(describeConstellationEffect(constellation.effect))}</small>
         </button>
       `).join("")}
     </div>
   `;
+}
+
+function renderConstellationDetails(hamster) {
+  const level = hamster.constellationLevel ?? 0;
+  return `
+    <div class="constellation-detail-list">
+      ${(hamster.constellations ?? []).map((constellation) => `
+        <article class="constellation-detail-card ${constellation.level <= level ? "is-active" : ""}">
+          <div class="constellation-detail-level">C${constellation.level}</div>
+          <div>
+            <div class="card-row">
+              <h3>${escapeHtml(constellation.name)}</h3>
+              <span class="tag">${constellation.level <= level ? "Активно" : "Закрито"}</span>
+            </div>
+            <p>${escapeHtml(constellation.description)}</p>
+            <div class="tag-row">
+              <span class="tag">${escapeHtml(describeConstellationEffect(constellation.effect))}</span>
+            </div>
+          </div>
+        </article>
+      `).join("")}
+    </div>
+  `;
+}
+
+function describeConstellationEffect(effect) {
+  if (!effect) return "Без ефекту";
+  if (effect.type === "stat") return `${statLabel(effect.stat)} +${effect.value}`;
+  if (effect.type === "multi_stat") {
+    return Object.entries(effect.stats ?? {}).map(([stat, value]) => `${statLabel(stat)} +${value}`).join(" · ");
+  }
+  if (effect.type === "loot_bonus") return `Лут +${effect.value}%`;
+  if (effect.type === "rare_bonus") return `Шанс рідкісного луту +${effect.value}%`;
+  if (effect.type === "injury_resist") return `Опір травмам +${effect.value}%`;
+  if (effect.type === "expedition_speed") return `Швидкість вилазок +${effect.value}%`;
+  if (effect.type === "passive_income") return `Пасивний дохід: ${resourceMeta[effect.resource]?.label ?? effect.resource} +${effect.value}`;
+  if (effect.type === "compound") return (effect.effects ?? []).map(describeConstellationEffect).join(" · ");
+  return "Особливий ефект";
+}
+
+function renderCharacterConstellationSummary(hamster) {
+  const level = hamster.constellationLevel ?? 0;
+  return `
+    <button class="character-constellation-summary" data-action="open-constellations" data-hamster-id="${hamster.id}" type="button">
+      <span class="panel-label">Сузір'я</span>
+      <div class="character-constellation-dots" aria-label="C${level}/6">
+        ${Array.from({ length: 6 }, (_, index) => `<i class="${index < level ? "is-active" : ""}"></i>`).join("")}
+      </div>
+      <strong>C${level}/6</strong>
+    </button>
+  `;
+}
+
+function calculateCombatPower(stats) {
+  return Math.round(
+    (stats.hp ?? 0) * 0.35 +
+    (stats.attack ?? 0) * 5 +
+    (stats.defense ?? 0) * 4 +
+    (stats.speed ?? 0) * 3 +
+    (stats.luck ?? 0) * 2 +
+    (stats.power ?? 0) * 4 +
+    (stats.stamina ?? 0) * 2 +
+    (stats.carry ?? 0) * 1.2
+  );
+}
+
+function renderMissingLevelCost(state, cost) {
+  const missing = Object.entries(cost)
+    .map(([resource, amount]) => [resource, Math.max(0, amount - (state.resources[resource] ?? 0))])
+    .filter(([, amount]) => amount > 0);
+  if (!missing.length) return "";
+  return missing.map(([resource, amount]) => {
+    const meta = resourceMeta[resource] ?? { label: resource, icon: "item" };
+    return `<span class="tag is-missing">${svgIcon(meta.icon, "svg-icon svg-icon-xs")} бракує ${amount}</span>`;
+  }).join("");
 }
 
 function renderCharacterStatChips(entries) {
@@ -716,41 +804,235 @@ function renderCharacterStats(statsOrEntries) {
   `;
 }
 
-function renderCharacterSlot(state, hamster, slot, equipment) {
+function getSortedAvailableEquipmentForSlot(state, slot, hamsterId, excludeUid = null) {
+  return getAvailableEquipmentForSlot(state, slot, hamsterId)
+    .filter((entry) => entry.uid !== excludeUid)
+    .sort((a, b) => getEquipmentDisplayScore(b) - getEquipmentDisplayScore(a));
+}
+
+function getEquipmentDisplayScore(equipment) {
+  const item = getEquipmentTemplate(equipment);
+  const statTotal = Object.values(getEquipmentStats(equipment)).reduce((sum, value) => sum + value, 0);
+  return (item?.stars ?? 1) * 1000 + (equipment.level ?? 1) * 20 + statTotal;
+}
+
+function renderEquipmentStatsText(equipment) {
+  const stats = getEquipmentStats(equipment);
+  const entries = Object.entries(stats);
+  if (!entries.length) return "Без бонусів";
+  return entries.map(([stat, value]) => `${statLabel(stat)} +${value}`).join(" · ");
+}
+
+function renderEquipmentUpgradeCostTags(state, equipment) {
+  if (!equipment || equipment.level >= equipment.maxLevel) {
+    return `<span class="tag">Максимальний рівень</span>`;
+  }
+  const cost = getEquipmentLevelCost(equipment);
+  const needsItem = needsFodder(equipment);
+  const fodder = needsItem ? findFodderEquipment(state, equipment) : null;
+  return `
+    <span class="tag">${svgIcon("seed", "svg-icon svg-icon-xs")} ${cost.gold}</span>
+    <span class="tag">${svgIcon("item", "svg-icon svg-icon-xs")} Руда ${cost.ore}</span>
+    ${needsItem ? `<span class="tag">${fodder ? "Матеріал слота є" : "Потрібен матеріал слота"}</span>` : ""}
+  `;
+}
+
+function renderEquipmentUpgradeButton(state, equipment, className = "btn", label = "Прокачати") {
+  const maxed = equipment.level >= equipment.maxLevel;
+  return `<button class="${className}" data-action="upgrade-equipment" data-equipment-uid="${equipment.uid}" ${!maxed && canUpgradeEquipment(state, equipment) ? "" : "disabled"}>${maxed ? "Максимум" : label}</button>`;
+}
+
+function renderEquipmentFodderButton(state, equipment, className = "btn ghost", label = "Поглинути") {
+  const fodder = findInferiorFodderEquipment(state, equipment);
+  const fodderItem = fodder ? getEquipmentTemplate(fodder) : null;
+  const title = fodderItem ? `Матеріал: ${fodderItem.name} Lv ${fodder.level}` : "Потрібен гірший предмет того ж слота";
+  return `<button class="${className}" data-action="upgrade-equipment-fodder" data-equipment-uid="${equipment.uid}" title="${escapeHtml(title)}" ${canUpgradeEquipmentWithFodder(state, equipment) ? "" : "disabled"}>${label}</button>`;
+}
+
+function renderEquipmentFodderTag(state, equipment) {
+  const fodder = findInferiorFodderEquipment(state, equipment);
+  if (!fodder) return `<span class="tag is-missing">Немає гіршого матеріалу</span>`;
+  const item = getEquipmentTemplate(fodder);
+  return `<span class="tag">Матеріал: ${escapeHtml(item?.name ?? "предмет")} Lv ${fodder.level}</span>`;
+}
+
+function renderCharacterWeaponStrip(state, hamster, equipment) {
   const item = equipment ? getEquipmentTemplate(equipment) : null;
-  const quickEquip = !equipment ? getAvailableEquipmentForSlot(state, slot, hamster.id)[0] : null;
+  const quickEquip = !equipment ? getSortedAvailableEquipmentForSlot(state, "weapon", hamster.id)[0] : null;
   const quickItem = quickEquip ? getEquipmentTemplate(quickEquip) : null;
-  const attrs = equipment
-    ? `data-action="unequip-slot" data-hamster-id="${hamster.id}" data-slot="${slot}"`
-    : quickEquip
-      ? `data-action="equip-item" data-hamster-id="${hamster.id}" data-equipment-uid="${quickEquip.uid}"`
-      : "disabled";
+  const displayEquipment = equipment ?? quickEquip;
+  const displayItem = item ?? quickItem;
+
+  if (!displayItem) {
+    return `
+      <div class="character-weapon-strip is-empty">
+        <span class="character-weapon-empty-icon">${svgIcon("weapon", "svg-icon")}</span>
+        <div>
+          <p class="panel-label">Зброя</p>
+          <strong>Немає екіпірованої зброї</strong>
+        </div>
+      </div>
+    `;
+  }
+
+  return `
+    <div class="character-weapon-strip ${equipment ? "is-equipped" : "is-suggested"}">
+      <div class="item-icon character-weapon-icon">${renderItemIcon(displayItem)}</div>
+      <div class="character-weapon-body">
+        <div class="character-weapon-head">
+          <div>
+            <p class="panel-label">${equipment ? "Екіпірована зброя" : "Доступна зброя"}</p>
+            <strong>${escapeHtml(displayItem.name)}</strong>
+          </div>
+          <span class="tag">Lv ${displayEquipment.level}/${displayEquipment.maxLevel}</span>
+        </div>
+        <p>${renderEquipmentStatsText(displayEquipment)}</p>
+        <div class="tag-row character-weapon-cost">
+          ${equipment ? renderEquipmentUpgradeCostTags(state, equipment) : `<span class="tag">${renderStarRating(displayItem.stars)}</span>`}
+        </div>
+        <div class="button-row character-weapon-actions">
+          ${equipment
+            ? `
+              ${renderEquipmentUpgradeButton(state, equipment, "btn", "Прокачати зброю")}
+              <button class="btn ghost" data-action="unequip-slot" data-hamster-id="${hamster.id}" data-slot="weapon">Зняти</button>
+            `
+            : `<button class="btn" data-action="equip-item" data-hamster-id="${hamster.id}" data-equipment-uid="${quickEquip.uid}">Одягти зброю</button>`}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderCharacterSlot(state, hamster, slot, equipment, activeSlot = "weapon") {
+  const item = equipment ? getEquipmentTemplate(equipment) : null;
+  const quickEquip = !equipment ? getSortedAvailableEquipmentForSlot(state, slot, hamster.id)[0] : null;
+  const quickItem = quickEquip ? getEquipmentTemplate(quickEquip) : null;
   const icon = iconForItemType(item?.type ?? quickItem?.type ?? slot);
   const slotVisual = (item ?? quickItem)
     ? renderItemIcon(item ?? quickItem)
     : svgIcon(icon, "svg-icon");
   return `
-    <button class="character-slot ${equipment ? "is-filled" : ""}" ${attrs} title="${escapeHtml(item?.name ?? quickItem?.name ?? slotLabel(slot))}">
+    <button class="character-slot ${equipment ? "is-filled" : ""} ${slot === activeSlot ? "is-active" : ""}" data-action="select-character-equipment-slot" data-slot="${slot}" title="${escapeHtml(item?.name ?? quickItem?.name ?? slotLabel(slot))}">
       ${slotVisual}
       <span>${slotLabel(slot)}</span>
-      <strong>${item ? `Lv ${equipment.level}` : quickItem ? "Одягти" : "Пусто"}</strong>
+      <strong>${item ? `Lv ${equipment.level}` : quickItem ? "Є предмет" : "Пусто"}</strong>
     </button>
   `;
 }
 
+function renderCharacterEquipmentFocus(state, hamster, slot, equipment) {
+  const item = equipment ? getEquipmentTemplate(equipment) : null;
+  const available = getSortedAvailableEquipmentForSlot(state, slot, hamster.id, equipment?.uid);
+
+  return `
+    <div class="character-equipment-focus">
+      <article class="character-equipped-card ${equipment ? "is-equipped" : "is-empty"}">
+        ${equipment && item ? `
+          <div class="item-icon character-equipped-art">${renderItemIcon(item)}</div>
+          <div class="character-equipped-body">
+            <div class="character-equipped-head">
+              <div>
+                <p class="panel-label">Екіпіровано</p>
+                <strong>${escapeHtml(item.name)}</strong>
+              </div>
+              <span class="tag">Lv ${equipment.level}/${equipment.maxLevel}</span>
+            </div>
+            <p>${renderEquipmentStatsText(equipment)}</p>
+            <div class="tag-row character-equipment-cost">
+              ${renderEquipmentUpgradeCostTags(state, equipment)}
+              ${renderEquipmentFodderTag(state, equipment)}
+            </div>
+            <div class="button-row character-equipped-actions">
+              ${renderEquipmentUpgradeButton(state, equipment, "btn", "Прокачати")}
+              ${renderEquipmentFodderButton(state, equipment)}
+              <button class="btn ghost" data-action="unequip-slot" data-hamster-id="${hamster.id}" data-slot="${slot}">Зняти</button>
+            </div>
+          </div>
+        ` : `
+          <span class="character-equipped-empty-icon">${svgIcon(iconForItemType(slot), "svg-icon")}</span>
+          <div>
+            <p class="panel-label">${slotLabel(slot)}</p>
+            <strong>Слот вільний</strong>
+            <p>Немає активного предмета.</p>
+          </div>
+        `}
+      </article>
+      <div class="character-equipment-option-grid">
+        ${available.length
+          ? available.map((entry) => renderCharacterEquipmentOption(state, hamster, slot, equipment, entry)).join("")
+          : `<div class="inventory-equipment-empty"><span>${svgIcon(iconForItemType(slot), "svg-icon")}</span><p>Немає доступних предметів</p></div>`}
+      </div>
+    </div>
+  `;
+}
+
+function renderCharacterEquipmentOption(state, hamster, slot, currentEquipment, candidate) {
+  const item = getEquipmentTemplate(candidate);
+  if (!item) return "";
+  return `
+    <article class="character-equipment-option rarity-frame-${rarityClass(item.rarity)}">
+      <div class="item-icon character-equipment-option-art">${renderItemIcon(item)}</div>
+      <div class="character-equipment-option-body">
+        <div class="character-equipment-option-head">
+          <strong>${escapeHtml(item.name)}</strong>
+          <span class="tag">Lv ${candidate.level}</span>
+        </div>
+        <div class="tag-row">
+          <span class="tag">${renderStarRating(item.stars)}</span>
+          ${item.signatureFor ? `<span class="tag">Сигнатурна</span>` : ""}
+        </div>
+        <div class="equipment-delta-row">
+          ${renderEquipmentDelta(candidate, currentEquipment)}
+        </div>
+        <button class="btn" data-action="equip-item" data-hamster-id="${hamster.id}" data-equipment-uid="${candidate.uid}">
+          ${currentEquipment ? "Змінити" : "Одягти"}
+        </button>
+      </div>
+    </article>
+  `;
+}
+
+function renderEquipmentDelta(candidate, currentEquipment = null) {
+  const candidateStats = getEquipmentStats(candidate);
+  const currentStats = currentEquipment ? getEquipmentStats(currentEquipment) : {};
+  const stats = new Set([...Object.keys(candidateStats), ...Object.keys(currentStats)]);
+  const entries = [...stats].map((stat) => {
+    const diff = (candidateStats[stat] ?? 0) - (currentStats[stat] ?? 0);
+    if (!currentEquipment) {
+      return `<span class="stat-positive">${statLabel(stat)} +${candidateStats[stat] ?? 0}</span>`;
+    }
+    if (diff === 0) return `<span>${statLabel(stat)} ±0</span>`;
+    return `<span class="${diff > 0 ? "stat-positive" : "stat-negative"}">${statLabel(stat)} ${diff > 0 ? "+" : ""}${diff}</span>`;
+  });
+  return entries.length ? entries.join("") : `<span>Без змін статів</span>`;
+}
+
 function renderCharacterEquipmentControls(state, hamster, slot, equipment) {
-  const available = getAvailableEquipmentForSlot(state, slot, hamster.id)
-    .filter((entry) => entry.uid !== equipment?.uid)
+  const available = getSortedAvailableEquipmentForSlot(state, slot, hamster.id, equipment?.uid)
     .slice(0, 3);
   const item = equipment ? getEquipmentTemplate(equipment) : null;
 
   return `
-    <article class="character-equipment-row">
-      <div>
-        <p class="panel-label">${slotLabel(slot)}</p>
-        <strong>${item ? escapeHtml(item.name) : "Слот вільний"}</strong>
+    <article class="character-equipment-row ${equipment ? "is-equipped" : ""}">
+      <div class="character-equipment-main">
+        <div class="item-icon character-equipment-icon">
+          ${item ? renderItemIcon(item) : svgIcon(iconForItemType(slot), "svg-icon")}
+        </div>
+        <div>
+          <p class="panel-label">${slotLabel(slot)}</p>
+          <strong>${item ? escapeHtml(item.name) : "Слот вільний"}</strong>
+          <div class="tag-row">
+            ${equipment ? `
+              <span class="tag">Lv ${equipment.level}/${equipment.maxLevel}</span>
+              <span class="tag">${renderStarRating(item.stars)}</span>
+            ` : `<span class="tag">Порожньо</span>`}
+          </div>
+          ${equipment ? `<p class="character-equipment-stats">${renderEquipmentStatsText(equipment)}</p>` : ""}
+          ${equipment ? `<div class="tag-row character-equipment-cost">${renderEquipmentUpgradeCostTags(state, equipment)}</div>` : ""}
+        </div>
       </div>
       <div class="character-equipment-actions">
+        ${equipment ? renderEquipmentUpgradeButton(state, equipment, "select-pill", "Прокачати") : ""}
         ${equipment ? `<button class="select-pill" data-action="unequip-slot" data-hamster-id="${hamster.id}" data-slot="${slot}">Зняти</button>` : ""}
         ${available.length ? available.map((entry) => {
           const candidate = getEquipmentTemplate(entry);
@@ -1065,12 +1347,14 @@ function renderGachaDropPreview(result) {
 
 function renderInventoryScreen(state) {
   const items = getInventoryGroups(state, dataStore);
+  const equipmentCount = state.equipment?.length ?? 0;
+  const equippedCount = state.equipment?.filter((equipment) => equipment.equippedBy).length ?? 0;
   return `
     <main class="screen">
       ${renderResourceBar(state)}
       <div class="top-row">
         <div>
-          <p class="muted">${items.length} типів предметів</p>
+          <p class="muted">${equipmentCount} спорядження · ${items.length} типів предметів</p>
           <h1>${t("inventory")}</h1>
         </div>
       </div>
@@ -1081,10 +1365,11 @@ function renderInventoryScreen(state) {
         </div>
       </section>
       <section class="section">
-        <h2>Екіпіровка</h2>
-        <div class="stack">
-          ${state.equipment?.length ? state.equipment.map((equipment) => renderEquipmentCard(state, equipment)).join("") : `<div class="empty-state"><span class="empty-icon">${svgIcon("armor", "svg-icon svg-icon-lg")}</span><p>Екіпіровки ще немає.</p></div>`}
+        <div class="section-header">
+          <h2>Спорядження</h2>
+          <span class="tag">${equippedCount}/${equipmentCount} одягнено</span>
         </div>
+        ${renderInventoryEquipmentBoard(state)}
       </section>
       <section class="section stack">
         <h2>Матеріали</h2>
@@ -1101,6 +1386,75 @@ function renderInventoryScreen(state) {
         </div>
       </section>
     </main>
+  `;
+}
+
+function renderInventoryEquipmentBoard(state) {
+  if (!state.equipment?.length) {
+    return `<div class="empty-state"><span class="empty-icon">${svgIcon("armor", "svg-icon svg-icon-lg")}</span><p>Екіпіровки ще немає.</p></div>`;
+  }
+
+  return `
+    <div class="inventory-equipment-board">
+      ${EQUIPMENT_SLOTS.map((slot) => renderInventoryEquipmentPanel(state, slot)).join("")}
+    </div>
+  `;
+}
+
+function renderInventoryEquipmentPanel(state, slot) {
+  const entries = (state.equipment ?? [])
+    .filter((equipment) => getEquipmentTemplate(equipment)?.equipmentSlot === slot)
+    .sort((a, b) => getEquipmentDisplayScore(b) - getEquipmentDisplayScore(a));
+  const equippedCount = entries.filter((equipment) => equipment.equippedBy).length;
+
+  return `
+    <article class="inventory-equipment-panel">
+      <header class="inventory-equipment-panel-head">
+        <span class="inventory-equipment-slot-icon">${svgIcon(iconForItemType(slot), "svg-icon")}</span>
+        <div>
+          <p class="panel-label">${slotLabel(slot)}</p>
+          <strong>${entries.length ? `${entries.length} предметів` : "Слот порожній"}</strong>
+        </div>
+        <span class="tag">${equippedCount} одягнено</span>
+      </header>
+      <div class="inventory-equipment-list">
+        ${entries.length
+          ? entries.map((equipment) => renderInventoryEquipmentTile(state, equipment)).join("")
+          : `<div class="inventory-equipment-empty"><span>${svgIcon(iconForItemType(slot), "svg-icon")}</span><p>Немає предметів</p></div>`}
+      </div>
+    </article>
+  `;
+}
+
+function renderInventoryEquipmentTile(state, equipment) {
+  const item = getEquipmentTemplate(equipment);
+  if (!item) return "";
+  const owner = equipment.equippedBy ? state.hamsters.find((hamster) => hamster.id === equipment.equippedBy) : null;
+  return `
+    <article class="inventory-equipment-tile rarity-frame-${rarityClass(item.rarity)} ${owner ? "is-equipped" : ""}">
+      <div class="item-icon inventory-equipment-art">${renderItemIcon(item)}</div>
+      <div class="inventory-equipment-tile-body">
+        <div class="inventory-equipment-title-row">
+          <h3>${escapeHtml(item.name)}</h3>
+          <span class="tag">Lv ${equipment.level}/${equipment.maxLevel}</span>
+        </div>
+        <div class="tag-row">
+          <span class="tag">${renderStarRating(item.stars)}</span>
+          ${item.signatureFor ? `<span class="tag">Сигнатурна</span>` : ""}
+          ${owner ? `<span class="tag">На ${escapeHtml(owner.name)}</span>` : `<span class="tag">Вільна</span>`}
+        </div>
+        <p>${renderEquipmentStatsText(equipment)}</p>
+        <div class="tag-row inventory-equipment-cost">
+          ${renderEquipmentUpgradeCostTags(state, equipment)}
+          ${renderEquipmentFodderTag(state, equipment)}
+        </div>
+        <div class="button-row inventory-equipment-actions">
+          ${renderEquipmentUpgradeButton(state, equipment, "btn", "Прокачати")}
+          ${renderEquipmentFodderButton(state, equipment)}
+          ${owner ? "" : `<button class="btn ghost" data-action="salvage-equipment" data-equipment-uid="${equipment.uid}">В руду</button>`}
+        </div>
+      </div>
+    </article>
   `;
 }
 
@@ -1317,9 +1671,10 @@ function renderTrainingStatsTab(state, totalRounds) {
   `;
 }
 
-function renderResourceBar(state) {
+function renderResourceBar(state, variant = "") {
+  const className = ["resource-bar", variant === "compact" ? "resource-bar-compact" : ""].filter(Boolean).join(" ");
   return `
-    <div class="resource-bar" aria-label="Ресурси">
+    <div class="${className}" aria-label="Ресурси">
       ${["food", "gold", "xpBooks", "ore", "shiny"].map((key) => renderResourceChip(key, state.resources[key])).join("")}
     </div>
   `;
@@ -1707,9 +2062,11 @@ function renderEquipmentCard(state, equipment, options = {}) {
         <div class="tag-row">
           <span class="tag">Ціна: насіння ${cost.gold}, камінці ${cost.ore}</span>
           ${requiresFodder ? `<span class="tag">${fodder ? "Матеріал є" : "Потрібен предмет того ж місця"}</span>` : ""}
+          ${renderEquipmentFodderTag(state, equipment)}
         </div>
         <div class="button-row">
           <button class="btn" data-action="upgrade-equipment" data-equipment-uid="${equipment.uid}" ${canUpgradeEquipment(state, equipment) ? "" : "disabled"}>Прокачати</button>
+          ${renderEquipmentFodderButton(state, equipment)}
           ${owner || options.hideSalvage ? "" : `<button class="btn ghost" data-action="salvage-equipment" data-equipment-uid="${equipment.uid}">В руду</button>`}
         </div>
       </div>
@@ -1850,7 +2207,18 @@ function renderModal(state) {
   if (type === "export") return renderExportModal(payload.saveText);
   if (type === "import") return renderImportModal();
   if (type === "ios-update") return renderIosUpdateModal(payload.saveText);
+  if (type === "constellations") return renderConstellationsModal(state, payload.hamsterId);
   return "";
+}
+
+function renderConstellationsModal(state, hamsterId) {
+  const hamster = state.hamsters.find((candidate) => candidate.id === hamsterId);
+  if (!hamster) return "";
+  return modalShell(`Сузір'я: ${escapeHtml(hamster.name)}`, `
+    <div class="stack compact-stack">
+      ${renderConstellationDetails(hamster)}
+    </div>
+  `);
 }
 
 function renderIosUpdateModal(saveText) {
@@ -1957,8 +2325,7 @@ function renderHamsterDetailModal(state, hamsterId) {
 }
 
 function renderEquipmentSlot(state, hamster, slot, equipment) {
-  const available = getAvailableEquipmentForSlot(state, slot, hamster.id)
-    .filter((entry) => entry.uid !== equipment?.uid)
+  const available = getSortedAvailableEquipmentForSlot(state, slot, hamster.id, equipment?.uid)
     .slice(0, 4);
   const item = equipment ? getEquipmentTemplate(equipment) : null;
   return `
@@ -1967,8 +2334,13 @@ function renderEquipmentSlot(state, hamster, slot, equipment) {
         <h3>${slotLabel(slot)}</h3>
         ${item ? `<span class="tag">${renderStarRating(item.stars)}</span>` : `<span class="tag">Порожньо</span>`}
       </div>
-      ${equipment ? renderEquippedInline(equipment) : `<p>Слот вільний.</p>`}
-      ${equipment ? `<button class="btn ghost" data-action="unequip-slot" data-hamster-id="${hamster.id}" data-slot="${slot}">Зняти</button>` : ""}
+      ${equipment ? renderEquippedInline(state, equipment) : `<p>Слот вільний.</p>`}
+      ${equipment ? `
+        <div class="button-row">
+          ${renderEquipmentUpgradeButton(state, equipment)}
+          <button class="btn ghost" data-action="unequip-slot" data-hamster-id="${hamster.id}" data-slot="${slot}">Зняти</button>
+        </div>
+      ` : ""}
       <div class="tag-row">
         ${available.length ? available.map((entry) => {
           const candidate = getEquipmentTemplate(entry);
@@ -1979,19 +2351,19 @@ function renderEquipmentSlot(state, hamster, slot, equipment) {
   `;
 }
 
-function renderEquippedInline(equipment) {
+function renderEquippedInline(state, equipment) {
   const item = getEquipmentTemplate(equipment);
-  const stats = getEquipmentStats(equipment);
   return `
     <div class="equipment-inline">
       <div class="item-icon">${renderItemIcon(item)}</div>
       <div>
-        <strong>${item.name}</strong>
+        <strong>${escapeHtml(item.name)}</strong>
         <div class="tag-row">
           <span class="tag">Lv ${equipment.level}/${equipment.maxLevel}</span>
           <span class="tag">${renderStarRating(item.stars)}</span>
         </div>
-        <p>${Object.entries(stats).map(([stat, value]) => `${statLabel(stat)} +${value}`).join(" · ")}</p>
+        <p>${renderEquipmentStatsText(equipment)}</p>
+        <div class="tag-row">${renderEquipmentUpgradeCostTags(state, equipment)}</div>
       </div>
     </div>
   `;
