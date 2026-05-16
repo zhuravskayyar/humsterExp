@@ -33,7 +33,26 @@
   --radius-small: 10px;
   --shadow: 0 8px 18px rgba(40, 20, 10, 0.24);
   --border: 2px solid rgba(83, 48, 28, 0.42);
-  font-family: "Trebuchet MS", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  --texture-paper-asset: url("../assets/textures/paper_grain_tile_no_bg.png");
+  --texture-cardboard-asset: url("../assets/textures/cardboard_panel_tile.png");
+  --texture-sawdust-asset: url("../assets/textures/training_sawdust_floor_overlay.png");
+  --texture-paper:
+    radial-gradient(circle at 16% 24%, rgba(83, 48, 28, 0.08) 0 1px, transparent 1.6px),
+    radial-gradient(circle at 78% 18%, rgba(255, 255, 255, 0.18) 0 1px, transparent 1.8px),
+    radial-gradient(circle at 52% 84%, rgba(138, 90, 50, 0.08) 0 1.4px, transparent 2px),
+    repeating-linear-gradient(98deg, rgba(83, 48, 28, 0.026) 0 1px, transparent 1px 9px);
+  --texture-cardboard:
+    radial-gradient(circle at 12% 20%, rgba(83, 48, 28, 0.1) 0 1px, transparent 1.8px),
+    radial-gradient(circle at 84% 72%, rgba(255, 255, 255, 0.16) 0 1px, transparent 1.6px),
+    repeating-linear-gradient(8deg, rgba(83, 48, 28, 0.035) 0 1px, transparent 1px 11px),
+    repeating-linear-gradient(97deg, rgba(255, 255, 255, 0.045) 0 1px, transparent 1px 17px);
+  --texture-leather:
+    radial-gradient(circle at 20% 30%, rgba(246, 231, 199, 0.05) 0 1px, transparent 1.8px),
+    radial-gradient(circle at 72% 62%, rgba(0, 0, 0, 0.12) 0 1px, transparent 2px),
+    repeating-linear-gradient(125deg, rgba(255, 255, 255, 0.035) 0 1px, transparent 1px 14px);
+  --font-ui: "Nunito", "Segoe UI Variable", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-title: "Nunito", "Segoe UI Variable", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: var(--font-ui);
 }
 
 * {
@@ -47,8 +66,11 @@ body {
   min-height: 100%;
   margin: 0;
   background:
-    linear-gradient(120deg, rgba(63, 111, 106, 0.16), transparent 34rem),
-    linear-gradient(135deg, #170E0B, #322014 54%, #111313);
+    var(--texture-paper-asset),
+    linear-gradient(180deg, rgba(246, 231, 199, 0.92), rgba(213, 185, 130, 0.88)),
+    radial-gradient(circle at 50% 0, rgba(199, 137, 53, 0.16), transparent 24rem),
+    var(--parchment-light);
+  background-size: 512px 512px, auto, auto, auto;
   color: var(--text-main);
   overflow-x: hidden;
 }
@@ -107,17 +129,23 @@ p {
 }
 
 h1 {
+  font-family: var(--font-title);
   font-size: 1.65rem;
+  font-weight: 900;
   line-height: 1.05;
 }
 
 h2 {
+  font-family: var(--font-title);
   font-size: 1.25rem;
+  font-weight: 900;
   line-height: 1.15;
 }
 
 h3 {
+  font-family: var(--font-title);
   font-size: 1rem;
+  font-weight: 900;
 }
 
 p {
@@ -151,6 +179,7 @@ strong {
 
 .page-shell {
   width: 100%;
+  min-height: 100dvh;
 }
 
 .landing-shell {

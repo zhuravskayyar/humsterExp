@@ -41,6 +41,12 @@ SHEETS = [
     SheetSpec("bublyk", "attack", "assets/images/hamsters/bublyk/attack/2e5a680e-804e-4c3c-81e0-7945504018a8.png", 6, 6, 1, "assets/images/hamsters/bublyk/attack/bublyk_attack_normalized.png"),
     SheetSpec("hryzun", "idle", "assets/images/hamsters/hryzun/idle/085e95b3-4243-4d59-9a8a-8ab0e6d3fd07.png", 4, 2, 2, "assets/images/hamsters/hryzun/idle/hryzun_idle_normalized.png"),
     SheetSpec("hryzun", "attack", "assets/images/hamsters/hryzun/attack/5af02c55-12d3-4214-805c-2a7e0b7e3636_no_bg (1).png", 6, 6, 1, "assets/images/hamsters/hryzun/attack/hryzun_attack_normalized.png"),
+    SheetSpec("iskra", "idle", "assets/images/hamsters/iskra/idle/iskra_idle_source.png", 4, 4, 1, "assets/images/hamsters/iskra/idle/iskra_idle_normalized.png"),
+    SheetSpec("iskra", "attack", "assets/images/hamsters/iskra/attack/iskra_attack_source.png", 4, 4, 1, "assets/images/hamsters/iskra/attack/iskra_attack_normalized.png"),
+    SheetSpec("krykhta", "idle", "assets/images/hamsters/krykhta/idle/krykhta_idle_source.png", 4, 4, 1, "assets/images/hamsters/krykhta/idle/krykhta_idle_normalized.png"),
+    SheetSpec("krykhta", "attack", "assets/images/hamsters/krykhta/attack/krykhta_attack_source.png", 4, 4, 1, "assets/images/hamsters/krykhta/attack/krykhta_attack_normalized.png"),
+    SheetSpec("tin", "idle", "assets/images/hamsters/tin/idle/17791034-2be3-4da1-90de-6ef13f6064da_no_bg.png", 4, 4, 1, "assets/images/hamsters/tin/idle/tin_idle_normalized.png"),
+    SheetSpec("tin", "attack", "assets/images/hamsters/tin/attack/f001878f-710a-4f01-b1e9-21e363e9bbc8_no_bg.png", 4, 4, 1, "assets/images/hamsters/tin/attack/tin_attack_normalized.png"),
 ]
 
 

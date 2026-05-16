@@ -90,7 +90,7 @@ const onboardingSteps = [
     icon: "map",
     kicker: "Клік 1",
     title: "Відкрий вилазки",
-    body: "Вилазки — головне джерело ресурсів, світяшок і предметів.",
+    body: "Вилазки — головне джерело припасів, світяшок і предметів.",
     task: "Натисни кнопку «Вилазки» в нижньому меню.",
     align: "top",
     mode: "action"
@@ -139,7 +139,7 @@ const onboardingSteps = [
     icon: "hamster",
     kicker: "Клік 7",
     title: "Обери бійця",
-    body: "Обраний хом'як почне автоатакувати манекен і заробляти схованки XP.",
+    body: "Обраний хом'як почне бити манекен і заробляти схованки досвіду.",
     task: "Натисни будь-якого вільного хом'яка у списку бійців.",
     align: "top"
   },
@@ -167,7 +167,7 @@ export function renderApp(state) {
   const app = document.querySelector("#app");
   app.innerHTML = `
     ${renderScreen(state)}
-    ${renderBottomNav()}
+    ${renderBottomNav(state)}
     ${renderOnboardingOverlay(state)}
     ${renderModal(state)}
     ${renderToasts()}
@@ -285,11 +285,11 @@ function renderActionGuide(state) {
     const zone = findZone(completed.zoneId);
     return renderGuideCard({
       icon: "collect",
-      title: "Забери готові трофеї",
-      text: `${zone?.name ?? "Вилазка"} вже завершена. Натисни «Забрати», щоб отримати ресурси, XP і світяшки.`,
+      title: "Трофеї чекають",
+      text: zone?.name ?? "Загін повернувся",
       action: "claim-expedition",
       actionAttrs: `data-expedition-id="${completed.id}"`,
-      label: "Забрати трофеї",
+      label: "Забрати",
       ready: true
     });
   }
@@ -298,11 +298,11 @@ function renderActionGuide(state) {
   if (!active) {
     return renderGuideCard({
       icon: "map",
-      title: "Почни з вилазки",
-      text: "Обери маршрут, додай хом'яка в загін і відправ його по трофеї. Це головне джерело ресурсів.",
+      title: "Пора у вилазку",
+      text: "Обери шлях і збери загін.",
       action: "nav",
       actionAttrs: `data-route="expeditions"`,
-      label: "Відкрити вилазки",
+      label: "Вирушити",
       ready: true
     });
   }
@@ -311,11 +311,11 @@ function renderActionGuide(state) {
   if (!hasTraining) {
     return renderGuideCard({
       icon: "power",
-      title: "Запусти тренування",
-      text: "Поки загін у дорозі, вільний хом'як може бити манекен і приносити схованки XP.",
+      title: "Манекен вільний",
+      text: "Постав бійця тренуватись.",
       action: "nav",
       actionAttrs: `data-route="training"`,
-      label: "До тренування"
+      label: "Тренувати"
     });
   }
 
@@ -324,31 +324,31 @@ function renderActionGuide(state) {
   if ((state.resources.shiny ?? 0) >= singleCost) {
     return renderGuideCard({
       icon: "gacha",
-      title: "Вистачає світяшок на лист",
-      text: "Можна спробувати отримати нового хом'яка або спорядження для загону.",
+      title: "Є світяшки",
+      text: "Відкрий лист із новачком або спорядженням.",
       action: "nav",
       actionAttrs: `data-route="gacha"`,
-      label: "Відкрити гачу",
+      label: "Відкрити",
       ready: true
     });
   }
 
   return renderGuideCard({
     icon: "colony",
-    title: "Підсилюй нору",
-    text: "Покращення колонії дають пасивний дохід, більше слотів загонів і швидші повернення.",
+    title: "Нора росте",
+    text: "Підсиль кімнати й запаси.",
     action: "nav",
     actionAttrs: `data-route="colony"`,
-    label: "Покращення"
+    label: "До нори"
   });
 }
 
 function renderGuideCard({ icon, title, text, action, actionAttrs = "", label, ready = false }) {
   return `
-    <section class="guide-card ${ready ? "is-ready" : ""}">
+    <section class="guide-card home-quest-card ${ready ? "is-ready" : ""}">
       <div class="guide-icon">${svgIcon(icon)}</div>
       <div class="guide-copy">
-        <p class="guide-kicker">Що робити зараз</p>
+        <p class="guide-kicker">Наступний хід</p>
         <h2>${title}</h2>
         <p>${text}</p>
       </div>
@@ -359,7 +359,7 @@ function renderGuideCard({ icon, title, text, action, actionAttrs = "", label, r
 
 function renderExpeditionGuide(selectedCount, maxTeam, canLaunch, hasFreeSlot) {
   const status = !hasFreeSlot
-    ? "Немає вільного слота. Дочекайся повернення загону або забери готові трофеї."
+    ? "Немає місця для нового загону. Дочекайся повернення або забери готові трофеї."
     : canLaunch
       ? "Загін готовий. Можна вирушати."
       : selectedCount > 0
@@ -403,48 +403,99 @@ function renderBaseScreen(state) {
           <div class="tag-row">
             ${Object.entries(result.resources ?? {}).map(([k, v]) => v > 0 ? `<span class="tag">${resourceMeta[k]?.label ?? k} +${v}</span>` : "").join("")}
             ${(result.items ?? []).map((e) => { const it = findItem(e.itemId); return `<span class="tag">${it?.name ?? e.itemId} ×${e.quantity}</span>`; }).join("")}
-            ${result.xp ? `<span class="tag">XP +${result.xp}</span>` : ""}
+            ${result.xp ? `<span class="tag">Досвід +${result.xp}</span>` : ""}
           </div>
         </div>
       ` : ""}
 
-      <section class="hero-panel">
-        <div class="top-row">
+      <section class="home-hero">
+        <div class="home-hero-top">
           <div>
-            <p class="muted">Рівень ${state.player.baseLevel} · загонів ${slots}</p>
-            <h1>Нора ${escapeHtml(state.player.name)}</h1>
+            <p class="home-kicker">Нора</p>
+            <h1>${escapeHtml(state.player.name)}</h1>
           </div>
           <button class="icon-btn" data-action="toggle-settings" title="${t("settings")}">${svgIcon("settings")}</button>
         </div>
-        <p>Нора копає, збирає, іноді навіть перемагає. Загони готові до вилазок.</p>
-        <p>Відправляй хом'яків у вилазки, збирай ресурси й відкривай нових бійців.</p>
-        <div class="button-row">
-          <button class="btn" data-action="nav" data-route="expeditions">${svgIcon("map")} ${t("expeditions")}</button>
-          <button class="btn secondary" data-action="nav" data-route="colony">${svgIcon("colony")} ${t("colony")}</button>
+        <div class="home-status-row" aria-label="Стан нори">
+          <span>${svgIcon("map", "svg-icon svg-icon-xs")} ${slots}</span>
+          <span>${svgIcon("hamster", "svg-icon svg-icon-xs")} ${state.hamsters.length}</span>
+          <span>${svgIcon("shiny", "svg-icon svg-icon-xs")} ${state.resources.shiny ?? 0}</span>
         </div>
       </section>
 
       ${guide}
+      ${renderHomeActionHub(state)}
 
-      <section class="section">
+      ${active.length ? `
+      <section class="section home-expedition-section">
         <div class="section-header">
-          <h2>Активні вилазки</h2>
+          <h2>У дорозі</h2>
           <span class="tag">${active.length}</span>
         </div>
         <div class="stack">
-          ${active.length ? active.map((expedition) => renderExpeditionSlot(state, expedition)).join("") : `<div class="empty-state"><span class="empty-icon">${svgIcon("map", "svg-icon svg-icon-lg")}</span><p>Загін ще не в дорозі.<br>Саме час обрати маршрут.</p></div>`}
+          ${active.map((expedition) => renderExpeditionSlot(state, expedition)).join("")}
         </div>
       </section>
-
-      <section class="section">
-        <div class="section-header">
-          <h2>Споруди нори</h2>
-        </div>
-        <div class="stack">
-          ${dataStore.buildings.map((building) => renderBuildingCard(state, building)).join("")}
-        </div>
-      </section>
+      ` : ""}
     </main>
+  `;
+}
+
+function renderHomeActionHub(state) {
+  const activeCount = state.expeditions?.filter((expedition) => expedition.status === "active").length ?? 0;
+  const completedCount = state.expeditions?.filter((expedition) => expedition.status === "completed").length ?? 0;
+  const hasTraining = Boolean(runtimeState.trainingHamsterId || state.training?.activeHamsterId);
+  const banner = getSelectedBanner(state);
+  const shiny = state.resources?.shiny ?? 0;
+  const singleCost = banner.cost.single.shiny ?? banner.cost.single.coins ?? 0;
+  const tenCost = banner.cost.ten.shiny ?? banner.cost.ten.coins ?? 0;
+  const pullBadge = shiny >= tenCost ? "x10" : shiny >= singleCost ? "x1" : "";
+  const expeditionBadge = completedCount ? String(completedCount) : activeCount ? String(activeCount) : "";
+
+  return `
+    <section class="home-action-grid" aria-label="Швидкі дії">
+      ${renderHomeActionCard({
+        route: "expeditions",
+        icon: "map",
+        title: "Вилазки",
+        subtitle: completedCount ? "Трофеї" : activeCount ? "У дорозі" : "Обрати шлях",
+        badge: expeditionBadge,
+        primary: true
+      })}
+      ${renderHomeActionCard({
+        route: "hamsters",
+        icon: "hamster",
+        title: "Загін",
+        subtitle: `${state.hamsters.length} бійців`
+      })}
+      ${renderHomeActionCard({
+        route: "training",
+        icon: "power",
+        title: "Манекен",
+        subtitle: hasTraining ? "Тренується" : "Вільний",
+        badge: hasTraining ? "1" : ""
+      })}
+      ${renderHomeActionCard({
+        route: "gacha",
+        icon: "gacha",
+        title: "Листи",
+        subtitle: pullBadge ? "Готово" : "Збирай світяшки",
+        badge: pullBadge
+      })}
+    </section>
+  `;
+}
+
+function renderHomeActionCard({ route, icon, title, subtitle, badge = "", primary = false }) {
+  return `
+    <button class="home-action-card ${primary ? "is-primary" : ""}" data-action="nav" data-route="${route}">
+      <span class="home-action-icon">${svgIcon(icon)}</span>
+      <span class="home-action-copy">
+        <strong>${title}</strong>
+        <small>${subtitle}</small>
+      </span>
+      ${badge ? `<span class="home-action-badge">${badge}</span>` : ""}
+    </button>
   `;
 }
 
@@ -455,18 +506,18 @@ function renderSettingsScreen(state) {
       <div class="top-row">
         <button class="icon-btn" data-action="toggle-settings" title="Назад">${svgIcon("close")}</button>
         <div style="flex:1">
-          <p class="muted">Нора · MVP</p>
+          <p class="muted">Нора</p>
           <h1>${t("settings")}</h1>
         </div>
       </div>
       <div class="stack">
         <div class="card">
-          <div class="card-row"><span>Мова</span><strong>Українська</strong></div>
-          <p class="muted">MVP зараз працює в одній локалі, щоб інтерфейс не змішував мови.</p>
+          <div class="card-row"><span>Мова гри</span><strong>Українська</strong></div>
+          <p class="muted">Тексти нори звучать українською.</p>
         </div>
         <div class="card">
           <div class="card-row"><span>Навчання</span><strong>6 кроків</strong></div>
-          <p class="muted">Повторити короткий тур по вилазках, тренуванню, ресурсах і гачі.</p>
+          <p class="muted">Повторити короткий тур по вилазках, тренуванню, припасах і листах.</p>
           <button class="btn ghost" data-action="restart-onboarding">Показати навчання</button>
         </div>
         <div class="card">
@@ -531,6 +582,18 @@ function renderHamsterDetailScreen(state, hamster) {
   const hasSprite = !!getHamsterSpriteConfig(hamster);
   const portraitSrc = getHamsterPortrait(hamster);
   const signatureLabel = signatureEquipped ? "Сигнатурка активна" : signatureOwned ? "Сигнатурка є" : "Сигнатурка не знайдена";
+  const primaryStats = [
+    ["HP", stats.hp],
+    ["Урон", stats.attack],
+    ["Захист", stats.defense],
+    ["Сила", stats.power]
+  ];
+  const secondaryStats = [
+    ["Швидк.", stats.speed],
+    ["Удача", stats.luck],
+    ["Вантаж", stats.carry],
+    ["Витрив.", stats.stamina]
+  ];
   return `
     <main class="screen">
       ${renderResourceBar(state)}
@@ -568,6 +631,9 @@ function renderHamsterDetailScreen(state, hamster) {
             </div>
             <span class="tag status-${hamster.status}">${t(hamster.status)}</span>
           </div>
+          <div class="character-stat-chip-row">
+            ${renderCharacterStatChips(primaryStats)}
+          </div>
           <div class="tag-row character-cost-row">
             <span class="tag">${svgIcon("seed", "svg-icon svg-icon-xs")} Насіння ${cost.gold}</span>
             <span class="tag">${svgIcon("quests", "svg-icon svg-icon-xs")} Схованки ${cost.xpBooks}</span>
@@ -579,8 +645,8 @@ function renderHamsterDetailScreen(state, hamster) {
 
         <aside class="character-stats-panel">
           <p class="panel-label">Стати</p>
-          <span class="tag">${signatureLabel}</span>
-          ${renderCharacterStats(stats)}
+          <span class="tag character-signature-tag">${signatureLabel}</span>
+          ${renderCharacterStats(secondaryStats)}
         </aside>
 
         <div class="character-slot-row" aria-label="Слоти спорядження">
@@ -604,30 +670,40 @@ function renderHamsterDetailScreen(state, hamster) {
 function renderCharacterConstellations(hamster) {
   const level = hamster.constellationLevel ?? 0;
   return `
-    <div class="character-constellation-list">
+    <div class="character-constellation-list character-constellation-nodes">
       ${(hamster.constellations ?? []).map((constellation) => `
-        <div class="character-constellation ${constellation.level <= level ? "is-active" : ""}">
+        <button type="button" class="character-constellation character-constellation-node ${constellation.level <= level ? "is-active" : ""}"
+          title="${escapeHtml(constellation.name)}: ${escapeHtml(constellation.description)}">
           <span>C${constellation.level}</span>
           <strong>${escapeHtml(constellation.name)}</strong>
-          <small>${escapeHtml(constellation.description)}</small>
-        </div>
+        </button>
       `).join("")}
     </div>
   `;
 }
 
-function renderCharacterStats(stats) {
-  const entries = [
-    ["HP", stats.hp],
-    ["Урон", stats.attack],
-    ["Захист", stats.defense],
-    ["Сила", stats.power],
-    ["Швидк.", stats.speed],
-    ["Удача", stats.luck],
-    ["Вантаж", stats.carry],
-    ["Витрив.", stats.stamina]
-  ];
+function renderCharacterStatChips(entries) {
+  return entries.map(([label, value]) => `
+    <span class="character-stat-chip">
+      <small>${label}</small>
+      <strong>${value}</strong>
+    </span>
+  `).join("");
+}
 
+function renderCharacterStats(statsOrEntries) {
+  const entries = Array.isArray(statsOrEntries)
+    ? statsOrEntries
+    : [
+        ["HP", statsOrEntries.hp],
+        ["Урон", statsOrEntries.attack],
+        ["Захист", statsOrEntries.defense],
+        ["Сила", statsOrEntries.power],
+        ["Швидк.", statsOrEntries.speed],
+        ["Удача", statsOrEntries.luck],
+        ["Вантаж", statsOrEntries.carry],
+        ["Витрив.", statsOrEntries.stamina]
+      ];
   return `
     <div class="character-stat-list">
       ${entries.map(([label, value]) => `
@@ -729,7 +805,7 @@ function renderExpeditionsScreen(state) {
           <span class="tag">${selectedCount}/${maxTeam} вибрано</span>
         </div>
         <div class="team-grid">
-          ${state.hamsters.map((hamster) => renderTeamPill(hamster)).join("")}
+          ${state.hamsters.map((hamster) => renderTeamPill(state, hamster)).join("")}
         </div>
       </section>
 
@@ -739,6 +815,11 @@ function renderExpeditionsScreen(state) {
           <span class="timer-badge">${chance}% успіху</span>
         </div>
         <div class="chance-meter" aria-label="Шанс успіху"><span style="width:${chance}%"></span></div>
+        <div class="chance-meter-labels" aria-hidden="true">
+          <span>Ризик</span>
+          <span>Стабільно</span>
+          <span>Успіх</span>
+        </div>
         <div class="stat-grid">
           <div class="stat"><span>Бій</span><strong>${Math.round(team.combat)}</strong></div>
           <div class="stat"><span>Урон</span><strong>${team.attack}</strong></div>
@@ -749,7 +830,7 @@ function renderExpeditionsScreen(state) {
         </div>
         <p>${selectedZone?.description ?? ""}</p>
         <p class="muted">Бій підвищує шанс успіху і зменшує травми. Довша вилазка дає більше трофеїв, а швидкість скорочує тільки час.</p>
-        ${hasFreeSlot ? "" : `<p class="muted">Немає вільного слота експедиції</p>`}
+        ${hasFreeSlot ? "" : `<p class="muted">Немає місця для нового загону</p>`}
         <button class="btn ${canLaunch ? "is-ready-action" : ""} ${isTutorialStep(5) ? "tutorial-target" : ""}" data-action="launch-expedition" ${canLaunch ? "" : "disabled"}>${t("send")}</button>
       </section>
     </main>
@@ -763,10 +844,10 @@ function renderColonyScreen(state) {
       ${renderResourceBar(state)}
       <div class="top-row">
         <div>
-          <p class="muted">Нора пасивно заробляє і пришвидшує загони</p>
+          <p class="muted">Нора збирає припаси й пришвидшує загони</p>
           <h1>${t("colony")}</h1>
         </div>
-        <button class="icon-btn" data-action="collect-passive" title="Зібрати пасивний дохід">${svgIcon("collect")}</button>
+        <button class="icon-btn" data-action="collect-passive" title="Зібрати припаси">${svgIcon("collect")}</button>
       </div>
 
       <section class="section panel">
@@ -809,11 +890,13 @@ function renderGachaScreen(state) {
   const results = runtimeState.gachaResults ?? [];
   const canSingle = shiny >= singleCost;
   const canTen = shiny >= tenCost;
+  const hasResults = results.length > 0;
+  const canTradeShiny = canAfford(state, MARKET_SHINY_TRADE.cost);
   return `
     <main class="screen">
       ${renderResourceBar(state)}
 
-      <section class="hero-panel hero-gacha ${isTutorialStep(9) ? "tutorial-target" : ""}">
+      <section class="hero-panel hero-gacha gacha-letter-panel ${hasResults ? "is-open" : ""} ${isTutorialStep(9) ? "tutorial-target" : ""}">
         <div class="top-row">
           <div>
             <h1>${t("gacha")}</h1>
@@ -821,7 +904,7 @@ function renderGachaScreen(state) {
           </div>
           <span class="shiny-counter">${svgIcon("shiny", "svg-icon svg-icon-xs")} ${shiny}</span>
         </div>
-        <p>${banner.description}</p>
+        ${renderGachaBoxStage(results)}
         <div class="gacha-pity-bar">
           <div class="gacha-pity-fill" style="width:${pityPercent}%"></div>
         </div>
@@ -832,16 +915,18 @@ function renderGachaScreen(state) {
           <span class="tag">Щоденні: світяшки 8</span>
           <span class="tag">${pullsToTen ? `До 10 листів: ${pullsToTen}` : "10 листів готові"}</span>
         </div>
-        <div class="button-row">
-          <button class="btn" data-action="pull-gacha" data-count="1" ${canSingle ? "" : "disabled"}>
+        <div class="button-row gacha-action-row">
+          <button class="btn secondary" data-action="pull-gacha" data-count="1" ${canSingle ? "" : "disabled"}>
             ${svgIcon("shiny")} 1 лист · ${singleCost}
           </button>
-          <button class="btn secondary" data-action="pull-gacha" data-count="10" ${canTen ? "" : "disabled"}>
+          <button class="btn ${canTen ? "is-ready-action" : ""}" data-action="pull-gacha" data-count="10" ${canTen ? "" : "disabled"}>
             ${svgIcon("shiny")} 10 листів · ${tenCost}
           </button>
         </div>
         ${!canSingle ? `<p class="gacha-pity-note">Бракує світяшок. Вилазки та доручення поповнюють запас.</p>` : ""}
       </section>
+
+      ${renderGachaTradePanel(canTradeShiny)}
 
       <section class="section panel">
         <div class="section-header">
@@ -858,7 +943,7 @@ function renderGachaScreen(state) {
       </section>
 
       ${results.length ? `
-        <section class="section">
+        <section class="section gacha-results-section">
           <div class="section-header">
             <h2>Відкриті листи (${results.length})</h2>
             <button class="select-pill" data-action="clear-gacha-results">Очистити</button>
@@ -873,6 +958,108 @@ function renderGachaScreen(state) {
         </section>
       `}
     </main>
+  `;
+}
+
+function renderGachaTradePanel(canTradeShiny) {
+  return `
+    <section class="gacha-trade-card">
+      <div class="gacha-trade-icon">${svgIcon("market")}</div>
+      <div class="gacha-trade-copy">
+        <p class="guide-kicker">Обмін</p>
+        <h2>Світяшки за насіння</h2>
+        <p>${MARKET_SHINY_TRADE.cost.gold} насіння → ${MARKET_SHINY_TRADE.reward.shiny} світяшок</p>
+      </div>
+      <button class="select-pill ${canTradeShiny ? "is-active" : ""}" data-action="trade-market-shiny" ${canTradeShiny ? "" : "disabled"}>
+        Обміняти
+      </button>
+    </section>
+  `;
+}
+
+function renderGachaBoxStage(results = []) {
+  const isOpen = results.length > 0;
+  const bestStars = results.reduce((best, result) => Math.max(best, result.stars ?? 0), 0);
+  const featured = getFeaturedGachaDrop(results);
+  const hasPrize = bestStars >= 5;
+  const stageClass = [
+    "gacha-box-stage",
+    isOpen ? "is-open" : "",
+    featured ? "has-drop" : "",
+    hasPrize ? "has-prize" : ""
+  ].filter(Boolean).join(" ");
+  const starCount = Math.max(1, bestStars || 1);
+
+  return `
+    <div class="${stageClass}" aria-hidden="true">
+      <div class="gacha-stage-glow"></div>
+      <div class="gacha-particles">
+        ${Array.from({ length: 10 }, (_, index) => `<span style="--delay:${180 + index * 34}ms"></span>`).join("")}
+      </div>
+      <div class="gacha-reveal-card">
+        ${featured ? renderGachaDropPreview(featured) : `
+          <span class="gacha-drop-placeholder">${svgIcon(hasPrize ? "gacha" : "shiny", "svg-icon")}</span>
+          <strong>${"✦".repeat(starCount)}</strong>
+        `}
+      </div>
+      <div class="gacha-box">
+        <div class="gacha-box-lid"></div>
+        <div class="gacha-box-base">
+          <span class="gacha-box-seal">${svgIcon("shiny", "svg-icon svg-icon-xs")}</span>
+        </div>
+      </div>
+      <div class="gacha-box-shadow"></div>
+    </div>
+  `;
+}
+
+function getFeaturedGachaDrop(results = []) {
+  return [...results].sort((a, b) => {
+    const starDiff = (b.stars ?? 0) - (a.stars ?? 0);
+    if (starDiff) return starDiff;
+    const statusDiff = gachaDropWeight(b) - gachaDropWeight(a);
+    if (statusDiff) return statusDiff;
+    return String(a.name ?? "").localeCompare(String(b.name ?? ""));
+  })[0] ?? null;
+}
+
+function gachaDropWeight(result) {
+  if (result.status === "new") return 4;
+  if (result.type === "hamster") return 3;
+  if (result.status === "equipment") return 2;
+  if (result.status === "constellation") return 1;
+  return 0;
+}
+
+function renderGachaDropPreview(result) {
+  const hamster = result.type === "hamster" ? dataStore.hamsters.find((candidate) => candidate.id === result.id) : null;
+  const portraitSrc = hamster ? getHamsterPortrait(hamster) : null;
+  const item = result.item ?? findItem(result.id);
+  const fallbackIcon = hamster ? iconForClass(hamster.class) : iconForItemType(item?.type ?? "resource_pack");
+  const imgHtml = portraitSrc
+    ? `<img src="${escapeHtml(portraitSrc)}" alt="${escapeHtml(result.name)}" onerror="this.style.display='none'; this.nextElementSibling.style.display='grid'">`
+    : item
+      ? `<img src="${escapeHtml(getItemImageSrc(item.id))}" alt="${escapeHtml(result.name)}" class="item-sprite" onerror="this.style.display='none'; this.nextElementSibling.style.display='grid'">`
+      : "";
+  const detail = result.status === "new"
+    ? "Новий боєць"
+    : result.status === "constellation"
+      ? `Сузір'я C${result.constellationLevel}`
+      : result.status === "refund"
+        ? "Припаси"
+        : result.status === "equipment"
+          ? "Спорядження"
+          : "Знахідка";
+
+  return `
+    <span class="gacha-drop-art rarity-frame-${rarityClass(result.rarity)}">
+      ${imgHtml}
+      <span class="gacha-drop-fallback" style="${imgHtml ? "display:none" : ""}">${svgIcon(fallbackIcon, "svg-icon")}</span>
+    </span>
+    <span class="gacha-drop-copy">
+      <strong>${escapeHtml(result.name)}</strong>
+      <small>${renderStarRating(result.stars)} ${detail}</small>
+    </span>
   `;
 }
 
@@ -910,7 +1097,7 @@ function renderInventoryScreen(state) {
         </div>
         <div class="empty-state">
           <span class="empty-icon">${svgIcon("market", "svg-icon svg-icon-lg")}</span>
-          <p>Тут можна буде міняти зайві ресурси<br>на Світяшки та рідкісні матеріали.</p>
+          <p>Тут можна буде міняти зайві припаси<br>на Світяшки та рідкісні матеріали.</p>
         </div>
       </section>
     </main>
@@ -951,6 +1138,9 @@ function renderTrainingScreen(state) {
 
   // Чи атакує зараз (анімація attack якщо удар < 450мс тому)
   const isAttacking = !!(lastHit?.timestamp && Date.now() - lastHit.timestamp < 450);
+  const autoAttackLabel = selectedHamster
+    ? `Авто-атака · 1.3с · ${selectedStats.attack} урону`
+    : "Оберіть бійця";
 
   // Portrait path (fallback when no sprite config)
   const hasSprite = !!getHamsterSpriteConfig(selectedHamster);
@@ -969,6 +1159,18 @@ function renderTrainingScreen(state) {
       <div class="training-arena">
         <!-- Один спільний контейнер: хом'як + манекен без розділення на колонки -->
         <div class="arena-stage ${selectedHamster ? "has-fighter" : ""} ${isAttacking ? "has-hit" : ""}">
+          <div class="arena-hud">
+            <div class="arena-hp-strip">
+              <span class="arena-hp-label">Манекен</span>
+              <div class="arena-hp-bar" aria-label="HP манекена">
+                <span style="width:${progressPercent}%"></span>
+              </div>
+              <span class="arena-hp-value">${progress}/${dummy.hpPerRound}</span>
+            </div>
+            <div class="arena-status-pill ${selectedHamster ? "active" : ""}">
+              ${autoAttackLabel}
+            </div>
+          </div>
           ${selectedHamster ? `
             ${hasSprite ? `
               <div class="arena-canvas-wrap">
@@ -1020,13 +1222,6 @@ function renderTrainingScreen(state) {
         </div>
       </div>
 
-      <div class="training-hp-wrap">
-        <div class="training-hp-bar">
-          <div class="training-hp-fill" style="width:${progressPercent}%"></div>
-        </div>
-        <span class="training-hp-text">${progress} / ${dummy.hpPerRound} · схованки x${dummy.rewardBooks}</span>
-      </div>
-
       <div class="training-tabs">
         <button class="training-tab-btn ${activeTab === "fight" ? "active" : ""}"
           data-action="set-training-tab" data-tab="fight">${svgIcon("weapon", "svg-icon svg-icon-xs")} Бій</button>
@@ -1053,11 +1248,6 @@ function renderTrainingScreen(state) {
 
 function renderTrainingFightTab(state, availableHamsters, selectedHamster, selectedId, selectedStats) {
   return `
-    <div class="auto-attack-badge ${selectedHamster ? "active" : ""}">
-      ${selectedHamster
-        ? `Авто-атака · 1.3с · ${selectedStats.attack} урону`
-        : "Оберіть бійця щоб почати тренування"}
-    </div>
     <div class="card ${isTutorialStep(7) ? "tutorial-target" : ""}" style="margin-top:10px">
       <div class="section-header">
         <span class="label">Боєць</span>
@@ -1103,7 +1293,7 @@ function renderTrainingDummyTab(state, dummy, nextDummy) {
           Поліпшити манекен
         </button>
         ${!canUpgradeDummy(state)
-          ? `<p class="muted" style="font-size:0.78rem;margin-top:4px">Бракує ресурсів</p>`
+          ? `<p class="muted" style="font-size:0.78rem;margin-top:4px">Бракує припасів</p>`
           : ""}
       </div>
     ` : `
@@ -1156,20 +1346,47 @@ function compactResourceLabel(key, label) {
   }[key] ?? label;
 }
 
-function renderBottomNav() {
+function renderBottomNav(state) {
   return `
     <nav class="bottom-nav ${isTutorialStep(1) || isTutorialStep(6) || isTutorialStep(8) ? "tutorial-target" : ""}" aria-label="Головна навігація">
       <div class="bottom-nav-inner">
-        ${navItems.map((item) => `
+        ${navItems.map((item) => {
+          const badge = getNavBadge(state, item.route);
+          return `
           <button class="nav-button ${runtimeState.route === item.route ? "is-active" : ""} ${isTutorialNavTarget(item.route) ? "tutorial-nav-target" : ""}" data-action="nav" data-route="${item.route}">
             <span class="nav-icon">${svgIcon(item.icon)}</span>
             <span class="nav-label">${t(item.labelKey)}</span>
+            ${badge ? `<span class="nav-badge">${badge}</span>` : ""}
             <span class="nav-dot"></span>
           </button>
-        `).join("")}
+        `;
+        }).join("")}
       </div>
     </nav>
   `;
+}
+
+function getNavBadge(state, route) {
+  if (route === "expeditions") {
+    const completed = state.expeditions?.filter((expedition) => expedition.status === "completed").length ?? 0;
+    const active = state.expeditions?.filter((expedition) => expedition.status === "active").length ?? 0;
+    return completed || active || "";
+  }
+
+  if (route === "training") {
+    return runtimeState.trainingHamsterId || state.training?.activeHamsterId ? "1" : "";
+  }
+
+  if (route === "gacha") {
+    const banner = getSelectedBanner(state);
+    const shiny = state.resources?.shiny ?? 0;
+    const singleCost = banner.cost.single.shiny ?? banner.cost.single.coins ?? 0;
+    const tenCost = banner.cost.ten.shiny ?? banner.cost.ten.coins ?? 0;
+    if (shiny >= tenCost) return "10";
+    if (shiny >= singleCost) return "1";
+  }
+
+  return "";
 }
 
 function renderBuildingCard(state, building) {
@@ -1185,7 +1402,7 @@ function renderBuildingCard(state, building) {
             <p class="building-role">${config.role ?? "Споруда"}</p>
             <h3>${building.name}</h3>
           </div>
-          <span class="tag">Lv ${level}</span>
+          <span class="tag">Ранг ${level}</span>
         </div>
         <p>${building.description}</p>
         <div class="tag-row building-stat-row">
@@ -1214,8 +1431,8 @@ function getBuildingTags(state, buildingId) {
 
   return {
     storage: [
-      `Ресурсів ${Object.keys(state.resources ?? {}).length}`,
-      "Пасив до 8 год"
+      `Запасів ${Object.keys(state.resources ?? {}).length}`,
+      "Комора до 8 год"
     ],
     kitchen: [
       `Крихти +${stats.passiveIncomePerMin.food ?? 0}/хв`,
@@ -1235,7 +1452,7 @@ function getBuildingTags(state, buildingId) {
     ],
     lab: [
       `5 зірок +${stats.gachaLuckPercent}%`,
-      `Маяк Lv ${getUpgradeLevel(state, "gacha_luck")}/${dataStore.colonyUpgrades.find((upgrade) => upgrade.id === "gacha_luck")?.maxLevel ?? 5}`
+      `Маяк ${getUpgradeLevel(state, "gacha_luck")}/${dataStore.colonyUpgrades.find((upgrade) => upgrade.id === "gacha_luck")?.maxLevel ?? 5}`
     ],
     market: [
       `${MARKET_SHINY_TRADE.cost.gold} насіння -> ${MARKET_SHINY_TRADE.reward.shiny} світяшок`,
@@ -1365,17 +1582,20 @@ function renderConstellationRow(hamster) {
 function renderZoneCard(zone) {
   const active = runtimeState.selectedZoneId === zone.id;
   return `
-    <article class="zone-card ${active ? "is-active" : ""} ${active && isTutorialStep(2) ? "tutorial-target" : ""}" data-action="select-zone" data-zone-id="${zone.id}">
-      <div class="card-row">
-        <h2>${zone.name}</h2>
-        <span class="tag">Рівень ${zone.level}</span>
-      </div>
-      <p>${zone.description}</p>
-      <div class="tag-row">
-        <span class="tag">Небезпека ${zone.danger}</span>
-        <span class="tag">Сила ${zone.requiredPower}</span>
-        <span class="tag">Загін до ${zone.maxTeam ?? 3}</span>
-        <span class="tag">Рідкісне ${zone.rareChance}%</span>
+    <article class="zone-card zone-map-card ${active ? "is-active" : ""} ${active && isTutorialStep(2) ? "tutorial-target" : ""}" data-action="select-zone" data-zone-id="${zone.id}">
+      <div class="zone-map-icon" aria-hidden="true">${svgIcon("map", "svg-icon svg-icon-lg")}</div>
+      <div class="zone-card-body">
+        <div class="card-row">
+          <h2>${zone.name}</h2>
+          <span class="tag">Рівень ${zone.level}</span>
+        </div>
+        <p>${zone.description}</p>
+        <div class="tag-row zone-stat-grid">
+          <span class="tag">Небезпека ${zone.danger}</span>
+          <span class="tag">Сила ${zone.requiredPower}</span>
+          <span class="tag">Загін до ${zone.maxTeam ?? 3}</span>
+          <span class="tag">Рідкісне ${zone.rareChance}%</span>
+        </div>
       </div>
     </article>
   `;
@@ -1395,7 +1615,7 @@ function renderDurationOptions(zone) {
   `).join("");
 }
 
-function renderTeamPill(hamster) {
+function renderTeamPill(state, hamster) {
   const selected = runtimeState.selectedHamsterIds.includes(hamster.id);
   const selectedZone = findZone(runtimeState.selectedZoneId);
   const maxTeam = selectedZone?.maxTeam ?? 3;
@@ -1403,9 +1623,22 @@ function renderTeamPill(hamster) {
   const unavailable = hamster.status !== "available";
   const disabled = unavailable || (!selected && teamFull);
   const statusClass = unavailable ? `pill-${hamster.status}` : "";
+  const stats = getHamsterEffectiveStats(hamster, state);
+  const portraitSrc = getHamsterPortrait(hamster);
   return `
-    <button class="select-pill ${selected ? "is-active" : ""} ${statusClass}" data-action="toggle-hamster" data-hamster-id="${hamster.id}" ${disabled ? "disabled" : ""}>
-      ${escapeHtml(hamster.name)} · ${hamster.stars} зірк. · C${hamster.constellationLevel ?? 0}
+    <button class="select-pill team-pill ${selected ? "is-active" : ""} ${statusClass}" data-action="toggle-hamster" data-hamster-id="${hamster.id}" ${disabled ? "disabled" : ""}>
+      <span class="team-pill-avatar">
+        ${portraitSrc
+          ? `<img src="${escapeHtml(portraitSrc)}" alt="${escapeHtml(hamster.name)}" onerror="this.style.display='none'; this.nextElementSibling.style.display='grid'">`
+          : ""}
+        <span class="team-pill-avatar-fallback" style="${portraitSrc ? "display:none" : ""}">
+          ${svgIcon(iconForClass(hamster.class), "svg-icon svg-icon-xs")}
+        </span>
+      </span>
+      <span class="team-pill-copy">
+        <strong>${escapeHtml(hamster.name)}</strong>
+        <small>${hamster.stars} зірк. · C${hamster.constellationLevel ?? 0} · ${svgIcon("weapon", "svg-icon svg-icon-xs")} ${stats.attack}</small>
+      </span>
     </button>
   `;
 }
@@ -1435,7 +1668,7 @@ function renderUpgradeCard(state, upgrade) {
     <article class="upgrade-card">
       <div class="card-row">
         <h3>${upgrade.name}</h3>
-        <span class="tag">Lv ${level}/${upgrade.maxLevel}</span>
+        <span class="tag">Ранг ${level}/${upgrade.maxLevel}</span>
       </div>
       <p>${upgrade.description}</p>
       <div class="tag-row">
@@ -1465,7 +1698,7 @@ function renderEquipmentCard(state, equipment, options = {}) {
           <span class="tag">${renderStarRating(item.stars)}</span>
         </div>
         <div class="tag-row">
-          <span class="tag">Lv ${equipment.level}/${equipment.maxLevel}</span>
+          <span class="tag">Ранг ${equipment.level}/${equipment.maxLevel}</span>
           <span class="tag">${slotLabel(item.equipmentSlot)}</span>
           ${item.signatureFor ? `<span class="tag">Сигнатурна</span>` : ""}
           ${owner ? `<span class="tag">На ${escapeHtml(owner.name)}</span>` : ""}
@@ -1473,7 +1706,7 @@ function renderEquipmentCard(state, equipment, options = {}) {
         <p>${Object.entries(stats).map(([stat, value]) => `${statLabel(stat)} +${value}`).join(" · ")}</p>
         <div class="tag-row">
           <span class="tag">Ціна: насіння ${cost.gold}, камінці ${cost.ore}</span>
-          ${requiresFodder ? `<span class="tag">${fodder ? "Матеріал є" : "Потрібен предмет того ж слота"}</span>` : ""}
+          ${requiresFodder ? `<span class="tag">${fodder ? "Матеріал є" : "Потрібен предмет того ж місця"}</span>` : ""}
         </div>
         <div class="button-row">
           <button class="btn" data-action="upgrade-equipment" data-equipment-uid="${equipment.uid}" ${canUpgradeEquipment(state, equipment) ? "" : "disabled"}>Прокачати</button>
@@ -1529,9 +1762,9 @@ function renderGachaResultCard(result) {
     ? `<img src="${escapeHtml(getItemImageSrc(item.id))}" alt="${escapeHtml(result.name)}" class="item-sprite" onerror="this.style.display='none';this.nextElementSibling.style.removeProperty('display')">`
     : "";
   const extra = result.status === "constellation"
-    ? `C${result.constellationLevel} · ${result.passive?.name ?? "пасив"}`
+    ? `C${result.constellationLevel} · ${result.passive?.name ?? "дар"}`
     : result.status === "refund"
-      ? "Компенсація ресурсами"
+      ? "Повернули припаси"
       : result.status === "new"
         ? "Новий хом'як"
         : result.status === "equipment"
@@ -1620,16 +1853,16 @@ function renderModal(state) {
 }
 
 function renderExportModal(saveText) {
-  return modalShell("Експорт save", `
-    <p>Скопіюйте цей код для перенесення прогресу.</p>
+  return modalShell("Експорт нори", `
+    <p>Код переносить прогрес на інший пристрій.</p>
     <textarea class="save-text" readonly>${escapeHtml(saveText)}</textarea>
   `);
 }
 
 function renderImportModal() {
-  return modalShell("Імпорт save", `
-    <p>Вставте експортований код і підтвердьте імпорт.</p>
-    <textarea class="save-text" data-role="import-save" placeholder="Save code"></textarea>
+  return modalShell("Імпорт нори", `
+    <p>Встав код нори й підтвердь перенесення.</p>
+    <textarea class="save-text" data-role="import-save" placeholder="Код нори"></textarea>
     <button class="btn" data-action="confirm-import">Імпортувати</button>
   `);
 }
@@ -1645,9 +1878,9 @@ function renderResultModal(result) {
   return modalShell(result.title, `
     <p>${result.text}</p>
     <div class="card">
-      <h3>Ресурси</h3>
+      <h3>Припаси</h3>
       <div class="tag-row">
-        ${Object.entries(result.resources).length ? Object.entries(result.resources).map(([key, value]) => `<span class="tag">${resourceMeta[key]?.label ?? key} +${value}</span>`).join("") : `<span class="tag">Без ресурсів</span>`}
+        ${Object.entries(result.resources).length ? Object.entries(result.resources).map(([key, value]) => `<span class="tag">${resourceMeta[key]?.label ?? key} +${value}</span>`).join("") : `<span class="tag">Без припасів</span>`}
       </div>
     </div>
     <div class="card">
@@ -1655,7 +1888,7 @@ function renderResultModal(result) {
       <div class="tag-row">${itemList}</div>
     </div>
     <div class="card">
-      <span class="tag">XP +${result.xp}</span>
+      <span class="tag">Досвід +${result.xp}</span>
       <span class="tag">${t(result.hamsterStatus)}</span>
     </div>
   `);

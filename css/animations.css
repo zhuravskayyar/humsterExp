@@ -257,6 +257,112 @@
   }
 }
 
+@keyframes gachaBoxIdle {
+  0%,
+  100% {
+    transform: translateX(-50%) translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateX(-50%) translateY(-3px) rotate(-0.7deg);
+  }
+}
+
+@keyframes gachaBoxOpenShake {
+  0% {
+    transform: translateX(-50%) translateY(0) rotate(0deg);
+  }
+  22% {
+    transform: translateX(-50%) translateY(4px) rotate(-2deg);
+  }
+  46% {
+    transform: translateX(-50%) translateY(-7px) rotate(2deg);
+  }
+  72% {
+    transform: translateX(-50%) translateY(0) rotate(-1deg);
+  }
+  100% {
+    transform: translateX(-50%) translateY(0) rotate(0deg);
+  }
+}
+
+@keyframes gachaLidOpen {
+  0% {
+    transform: translateX(-50%) rotateX(0deg) rotateZ(0deg) translateY(0);
+  }
+  28% {
+    transform: translateX(-50%) rotateX(-10deg) rotateZ(1deg) translateY(1px);
+  }
+  72%,
+  100% {
+    transform: translateX(-50%) rotateX(76deg) rotateZ(-3deg) translateY(-18px);
+  }
+}
+
+@keyframes gachaGlowBurst {
+  0% {
+    opacity: 0.16;
+    transform: translateX(-50%) scale(0.66);
+  }
+  48% {
+    opacity: 0.88;
+    transform: translateX(-50%) scale(1.28);
+  }
+  100% {
+    opacity: 0.46;
+    transform: translateX(-50%) scale(1.06);
+  }
+}
+
+@keyframes gachaRewardRise {
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(28px) scale(0.78) rotate(-7deg);
+  }
+  58% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(-20px) scale(1.04) rotate(3deg);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(-12px) scale(1) rotate(0deg);
+  }
+}
+
+@keyframes gachaRewardDrop {
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-78px) scale(0.72) rotate(-8deg);
+  }
+  30% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(10px) scale(1.04) rotate(4deg);
+  }
+  48% {
+    transform: translateX(-50%) translateY(-8px) scale(0.98) rotate(-2deg);
+  }
+  68% {
+    transform: translateX(-50%) translateY(2px) scale(1.01) rotate(1deg);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1) rotate(0deg);
+  }
+}
+
+@keyframes gachaParticleBurst {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 0) scale(0.4);
+  }
+  28% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(calc(-50% + var(--tx)), var(--ty)) scale(0.96);
+  }
+}
+
 .modal {
   animation: modalIn 180ms ease-out;
 }

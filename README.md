@@ -33,6 +33,18 @@ npx live-server
 
 or open this folder with the VS Code Live Server extension.
 
+## Sprite animation rule
+
+Use one transparent sprite sheet per hamster state:
+
+- `idle`: 4 frames in one horizontal row, usually `7fps`.
+- `attack`: 4 or 6 frames in one horizontal row, timed around 400-500ms total.
+- Normalized runtime sheets must use `384x256` per frame, bottom-center alignment, and transparent background.
+- The sheet width must be exactly `frameWidth * frames`, so `totalW % frames === 0`.
+- `js/sprite.js` must match the PNG exactly: `frames`, `totalW`, `h`, optional `cols/rows`, and `anchorX`.
+- New or replaced sheets go into `scripts/normalize-sprites.py`; run `npm run normalize-sprites` and then `npm run validate-assets`.
+- Do not animate by changing CSS size or shifting the canvas. Keep motion inside frames and keep the character pivot on the same bottom-center anchor.
+
 ## MVP features
 
 - Base, Hamsters, Expeditions, Inventory, and Quests screens.

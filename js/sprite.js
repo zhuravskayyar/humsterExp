@@ -100,17 +100,17 @@ export const SPRITE_CONFIG = {
     idle: {
       src: "assets/images/hamsters/iskra/idle/iskra_idle_normalized.png",
       frames: 4,
-      totalW: 2508,
-      h: 627,
-      anchorX: 314,
+      totalW: 1536,
+      h: 256,
+      anchorX: 192,
       fps: 7,
     },
     attack: {
       src: "assets/images/hamsters/iskra/attack/iskra_attack_normalized.png",
       frames: 4,
-      totalW: 2172,
-      h: 724,
-      anchorX: 272,
+      totalW: 1536,
+      h: 256,
+      anchorX: 192,
       fps: 10,
     },
   },
@@ -118,23 +118,41 @@ export const SPRITE_CONFIG = {
     idle: {
       src: "assets/images/hamsters/krykhta/idle/krykhta_idle_normalized.png",
       frames: 4,
-      totalW: 2898,
-      h: 604,
-      anchorX: 362,
+      totalW: 1536,
+      h: 256,
+      anchorX: 192,
       fps: 7,
     },
     attack: {
       src: "assets/images/hamsters/krykhta/attack/krykhta_attack_normalized.png",
       frames: 4,
-      totalW: 1791,
-      h: 516,
-      anchorX: 224,
+      totalW: 1536,
+      h: 256,
+      anchorX: 192,
+      fps: 10,
+    },
+  },
+  tin: {
+    idle: {
+      src: "assets/images/hamsters/tin/idle/tin_idle_normalized.png",
+      frames: 4,
+      totalW: 1536,
+      h: 256,
+      anchorX: 192,
+      fps: 7,
+    },
+    attack: {
+      src: "assets/images/hamsters/tin/attack/tin_attack_normalized.png",
+      frames: 4,
+      totalW: 1536,
+      h: 256,
+      anchorX: 192,
       fps: 10,
     },
   },
 };
 
-export const CANVAS_DISPLAY_H = 78; // px – display height of the canvas
+export const CANVAS_DISPLAY_H = 156; // px – display height of the training canvas
 export const CANVAS_PREVIEW_H = 170; // px – display height for character overview
 
 // ── Image cache ────────────────────────────────────────────────────────────
@@ -414,11 +432,12 @@ export const DUMMY_SPRITE_CONFIG = {
   src:    "assets/images/maneken/maneken.png",
   totalW: 2509,
   h:      732,
+  contentBottom: 612,
   frames: 4,
   fps:    10,   // hit animation: 4 frames × 100 ms ≈ 400 ms
 };
 
-export const CANVAS_DUMMY_H = 90; // px – display height
+export const CANVAS_DUMMY_H = 180; // px – display height of the dummy canvas
 
 // ── Private dummy state ───────────────────────────────────────────────────────
 let _dummyVer  = 0;
@@ -519,6 +538,7 @@ function _dummyDraw() {
   const fh    = DUMMY_SPRITE_CONFIG.h;
   const scale = CANVAS_DUMMY_H / fh;
   const drawW = fw * scale;
+  const dy = Math.round(CANVAS_DUMMY_H - (DUMMY_SPRITE_CONFIG.contentBottom ?? fh) * scale);
 
   const frame = _dummyAnim.mode === "idle" ? 0 : Math.min(_dummyAnim.frame, DUMMY_SPRITE_CONFIG.frames - 1);
 
@@ -527,7 +547,7 @@ function _dummyDraw() {
     _dummyImg,
     frame * fw, 0,           // source x, y
     fw,         fh,           // source w, h
-    0,          0,            // dest x, y
+    0,          dy,           // dest x, y
     drawW,      CANVAS_DUMMY_H, // dest w, h
   );
 }

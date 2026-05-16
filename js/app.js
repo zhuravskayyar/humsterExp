@@ -14,6 +14,9 @@ import { closeModal, openModal, pushToast, renderApp, updateLiveTimers } from ".
 let deferredInstallPrompt = null;
 let bootPromise = null;
 let expeditionReminderTimer = null;
+let inactivityReminderTimer = null;
+const INACTIVITY_DELAY_MS = 2 * 60 * 60 * 1000;
+const INACTIVITY_KEY = "hamster_last_active_ms";
 
 const TUTORIAL_STEP_ROUTES = [
   "base",
@@ -128,6 +131,7 @@ async function boot() {
     await loadData();
     const state = loadGame(dataStore);
     processPassiveUpdates(state);
+    _checkInactivityOnBoot(state);
     resetDailyQuestsIfNeeded(state);
     syncQuestProgress(state);
     // Офлайн-тренування: зарахувати час поки гравець був відсутній
@@ -715,6 +719,7 @@ function processPassiveUpdates(state) {
     saveGame(state);
   }
   syncExpeditionReminder();
+  syncInactivityReminder();
   return Boolean(completedExpeditions.length || changedHamsters || passiveRewards || dailyQuestsReset);
 }
 
@@ -851,6 +856,65 @@ function syncExpeditionReminder() {
     updateLiveTimers(gameState);
     syncExpeditionReminder();
   }, delay);
+}
+
+function _checkInactivityOnBoot(state) {
+  const hasActive = (state.expeditions ?? []).some((e) => e.status === "active");
+  if (hasActive) {
+    localStorage.setItem(INACTIVITY_KEY, String(Date.now()));
+    return;
+  }
+  const lastMs = Number(localStorage.getItem(INACTIVITY_KEY) || "0");
+  if (lastMs && Date.now() - lastMs >= INACTIVITY_DELAY_MS) {
+    localStorage.setItem(INACTIVITY_KEY, String(Date.now()));
+    // Delay so SW has time to become active
+    window.setTimeout(() => void showInactivityNotification(), 3000);
+  }
+}
+
+function syncInactivityReminder() {
+  if (inactivityReminderTimer !== null) {
+    clearTimeout(inactivityReminderTimer);
+    inactivityReminderTimer = null;
+  }
+
+  const hasActive = gameState?.expeditions?.some((e) => e.status === "active");
+  if (hasActive) {
+    localStorage.setItem(INACTIVITY_KEY, String(Date.now()));
+    return;
+  }
+
+  const lastMs = Number(localStorage.getItem(INACTIVITY_KEY) || "0");
+  if (!lastMs) return;
+
+  const remaining = INACTIVITY_DELAY_MS - (Date.now() - lastMs);
+  if (remaining <= 0) return;
+
+  inactivityReminderTimer = window.setTimeout(() => {
+    inactivityReminderTimer = null;
+    localStorage.setItem(INACTIVITY_KEY, String(Date.now()));
+    void showInactivityNotification();
+  }, Math.min(remaining, 2147483647));
+}
+
+async function showInactivityNotification() {
+  if (!gameState) return;
+  if (!( "Notification" in window) || Notification.permission !== "granted" || !("serviceWorker" in navigator)) return;
+  // Don't show if an expedition is already active
+  if (gameState.expeditions?.some((e) => e.status === "active")) return;
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    await reg.showNotification("Хом'яки сумують!", {
+      body: "Ви давно не відправляли загони в похід. Час зібратися!",
+      icon: "./icons/icon-192.png",
+      badge: "./icons/icon-192.png",
+      tag: "inactivity-reminder",
+      renotify: false,
+      data: { url: "./#play" }
+    });
+  } catch (error) {
+    console.error("Inactivity notification error", error);
+  }
 }
 
 async function notifyAboutCompletedExpeditions(expeditions) {
