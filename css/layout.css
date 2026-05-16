@@ -1,6 +1,7 @@
 .game-shell {
   width: min(100%, 425px);
-  min-height: 100dvh;
+  height: var(--locked-height, 100dvh);
+  flex-shrink: 0;
   margin: 0 auto;
   background:
     var(--texture-paper-asset),
@@ -12,8 +13,7 @@
   background-size: 512px 512px, auto, auto, auto, auto, auto;
   color: var(--text-main);
   position: relative;
-  overflow-x: hidden;
-  padding-bottom: calc(92px + env(safe-area-inset-bottom));
+  overflow: hidden;
   box-shadow: 0 0 0 3px rgba(83, 48, 28, 0.55), 0 0 55px rgba(0, 0, 0, 0.45);
 }
 
@@ -22,9 +22,17 @@
 }
 
 .screen {
-  min-height: calc(100dvh - 92px);
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: calc(73px + env(safe-area-inset-bottom));
   padding: 16px 14px 22px;
+  overflow-y: auto;
+  overflow-x: hidden;
   overflow-wrap: anywhere;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
 }
 
 .top-row,
@@ -151,14 +159,12 @@
 }
 
 .bottom-nav {
-  position: fixed;
+  position: absolute;
   right: 0;
   bottom: 0;
   left: 0;
   z-index: 20;
   width: 100%;
-  max-width: 425px;
-  margin: 0 auto;
   padding: 8px 12px calc(8px + env(safe-area-inset-bottom));
   border-top: 1px solid rgba(255, 244, 214, 0.1);
   background:
@@ -511,8 +517,7 @@
 }
 
 @media (min-width: 700px) {
-  .game-shell,
-  .bottom-nav {
+  .game-shell {
     max-width: 480px;
   }
 }

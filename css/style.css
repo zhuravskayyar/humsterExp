@@ -178,15 +178,20 @@ strong {
 
 .boot-screen {
   display: grid;
-  min-height: 100dvh;
+  height: 100%;
   place-items: center;
   padding: 2rem;
   text-align: center;
 }
 
 .page-shell {
-  width: 100%;
-  min-height: 100dvh;
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
   forced-color-adjust: none;
   color-scheme: light only;
   isolation: isolate;
@@ -206,6 +211,11 @@ svg {
 
 .landing-shell {
   width: min(100%, 1180px);
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
   margin: 0 auto;
   padding: 24px 18px 48px;
 }
