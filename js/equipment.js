@@ -4,15 +4,17 @@ import { addResources } from "./inventory.js";
 export const EQUIPMENT_SLOTS = ["weapon", "armor", "backpack", "tool", "charm"];
 export const WEAPON_COPY_MAX = 5;
 
+// Базові бонуси сигнатурної зброї (діють навіть без копій).
+// Копії збільшують кожен стат на scale (critDamage/hp: *8, решта: *2).
 const SIGNATURE_PASSIVES = {
-  ham_1: { carry: 4, lootBonus: 4 },
-  ham_2: { speed: 4, expeditionSpeedBonus: 3 },
-  ham_3: { attack: 5, defense: 3 },
-  ham_4: { luck: 5, rareBonus: 3 },
-  ham_5: { speed: 3, defense: 3, expeditionSpeedBonus: 2 },
-  ham_6: { hp: 34, injuryResist: 4 },
-  ham_7: { attack: 6, critChance: 3 },
-  ham_8: { speed: 5, critDamage: 22 }
+  ham_1: { carry: 4, lootBonus: 4,           critChance:  5               }, // Бублик — рідкісний але влучний удар
+  ham_2: { speed: 4, expeditionSpeedBonus: 3, critChance:  8               }, // Піксель — швидка атака = більше критів
+  ham_3: { attack: 5, defense: 3,             critChance: 12, critDamage: 15 }, // Гризун — воїн, критичний лобовий удар
+  ham_4: { luck: 5, rareBonus: 3,             critChance: 10               }, // Плюшка — щасливий крит
+  ham_5: { speed: 3, defense: 3, expeditionSpeedBonus: 2, critChance: 6   }, // Шуруп — технічний крит
+  ham_6: { hp: 34, injuryResist: 4,           critChance:  5               }, // Крихта — лікар з несподіваним ударом
+  ham_7: { attack: 6,                         critChance: 10, critDamage: 20 }, // Іскра — мутант, збалансований крит
+  ham_8: { speed: 5,                          critChance:  8, critDamage: 30 }, // Тінь — майстер критичних ударів
 };
 
 const RARITY_RANK = {
