@@ -107,9 +107,25 @@ function rollHamster(state, stars) {
   };
 }
 
+const SIGNATURE_ITEM_BOOST = 4;
+
 function rollItem(state, stars) {
   const pool = dataStore.items.filter((item) => item.stars === stars && item.gacha !== false);
-  const item = pool[Math.floor(Math.random() * pool.length)];
+  const ownedHamsterIds = new Set(state.hamsters.map((h) => h.id));
+
+  let totalWeight = 0;
+  const weights = pool.map((item) => {
+    const w = item.signatureFor && ownedHamsterIds.has(item.signatureFor) ? SIGNATURE_ITEM_BOOST : 1;
+    totalWeight += w;
+    return w;
+  });
+
+  let roll = Math.random() * totalWeight;
+  let item = pool.at(-1);
+  for (let i = 0; i < pool.length; i += 1) {
+    roll -= weights[i];
+    if (roll <= 0) { item = pool[i]; break; }
+  }
   const equipment = createEquipmentFromItem(item);
 
   if (equipment) {
