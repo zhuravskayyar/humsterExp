@@ -8,20 +8,24 @@
 .expedition-slot,
 .upgrade-card,
 .gacha-result-card {
+  position: relative;
   border: var(--border);
-  border-radius: var(--radius);
+  border-radius: calc(var(--radius) + 2px);
   background:
     var(--texture-paper-asset),
-    linear-gradient(180deg, rgba(246, 231, 199, 0.78), rgba(234, 216, 180, 0.72)),
+    radial-gradient(circle at 84% 86%, rgba(255, 255, 255, 0.18), transparent 30%),
+    linear-gradient(180deg, rgba(240, 223, 185, 0.92), rgba(216, 189, 130, 0.82)),
     var(--texture-cardboard),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.24), rgba(138, 90, 50, 0.08)),
     var(--texture-cardboard-asset),
     var(--card);
   background-size: 512px 512px, auto, auto, auto, 420px 420px, auto;
+  outline: 1px dashed rgba(90, 60, 36, 0.2);
+  outline-offset: -8px;
   box-shadow:
     var(--shadow),
-    inset 0 1px 0 rgba(255, 255, 255, 0.36),
-    inset 0 -12px 22px rgba(83, 48, 28, 0.06);
+    inset 0 2px 0 rgba(255, 255, 255, 0.34),
+    inset 0 -4px 0 rgba(95, 60, 30, 0.12),
+    inset 0 -12px 22px rgba(83, 48, 28, 0.05);
 }
 
 .panel,
@@ -37,14 +41,55 @@
   border-radius: 20px;
   background:
     var(--texture-paper-asset),
-    linear-gradient(180deg, rgba(246, 231, 199, 0.78), rgba(234, 216, 180, 0.72)),
+    radial-gradient(circle at 84% 86%, rgba(255, 255, 255, 0.18), transparent 30%),
+    linear-gradient(180deg, rgba(240, 223, 185, 0.94), rgba(216, 189, 130, 0.82)),
     var(--texture-cardboard),
-    linear-gradient(135deg, rgba(255, 255, 255, 0.18), rgba(138, 90, 50, 0.1)),
     var(--texture-cardboard-asset),
     var(--card);
   background-size: 512px 512px, auto, auto, auto, 420px 420px, auto;
-  box-shadow: var(--shadow);
+  outline: 1px dashed rgba(90, 60, 36, 0.18);
+  outline-offset: -8px;
+  box-shadow:
+    var(--shadow),
+    inset 0 2px 0 rgba(255, 255, 255, 0.32),
+    inset 0 -4px 0 rgba(95, 60, 30, 0.12);
   color: var(--text-main);
+}
+
+.hero-panel::before,
+.home-hero::before,
+.guide-card::after,
+.zone-card.is-active::before {
+  content: "";
+  position: absolute;
+  width: 58px;
+  height: 20px;
+  border-right: 1px dashed rgba(120, 95, 50, 0.2);
+  border-left: 1px dashed rgba(120, 95, 50, 0.2);
+  border-radius: 4px;
+  background: var(--texture-tape);
+  box-shadow: 0 2px 5px rgba(70, 45, 25, 0.12);
+  opacity: 0.72;
+  pointer-events: none;
+}
+
+.hero-panel::before,
+.home-hero::before {
+  top: -10px;
+  left: 28px;
+  transform: rotate(-4deg);
+}
+
+.guide-card::after {
+  top: -9px;
+  right: 28px;
+  transform: rotate(3deg);
+}
+
+.zone-card.is-active::before {
+  top: -9px;
+  left: 26px;
+  transform: rotate(-3deg);
 }
 
 .hero-panel p,
@@ -76,8 +121,8 @@
   border-radius: 22px;
   background:
     var(--texture-paper-asset),
-    radial-gradient(circle at 82% 18%, rgba(244, 197, 66, 0.2), transparent 34%),
-    linear-gradient(180deg, rgba(246, 231, 199, 0.86), rgba(234, 216, 180, 0.72)),
+    radial-gradient(circle at 82% 18%, rgba(240, 182, 61, 0.18), transparent 34%),
+    linear-gradient(180deg, rgba(247, 233, 196, 0.94), rgba(216, 189, 130, 0.78)),
     var(--texture-cardboard),
     var(--card);
   background-size: 512px 512px, auto, auto, auto, auto;
@@ -146,8 +191,9 @@
   border: 1px solid rgba(83, 48, 28, 0.16);
   border-radius: 999px;
   background:
-    linear-gradient(180deg, rgba(255, 244, 214, 0.48), rgba(255, 255, 255, 0.14)),
-    rgba(255, 255, 255, 0.16);
+    radial-gradient(circle at 35% 24%, rgba(255, 255, 255, 0.48), transparent 38%),
+    var(--texture-paper),
+    linear-gradient(180deg, rgba(247, 233, 196, 0.68), rgba(216, 189, 130, 0.32));
   color: var(--text-main);
   font-size: 0.78rem;
   font-weight: 900;
@@ -176,7 +222,7 @@
   border-radius: 18px;
   background:
     var(--texture-paper-asset),
-    linear-gradient(180deg, rgba(246, 231, 199, 0.78), rgba(234, 216, 180, 0.68)),
+    linear-gradient(180deg, rgba(247, 233, 196, 0.86), rgba(216, 189, 130, 0.7)),
     var(--texture-cardboard),
     var(--card);
   background-size: 512px 512px, auto, auto, auto;
@@ -201,10 +247,10 @@
 }
 
 .home-action-card.is-primary {
-  border-color: rgba(199, 137, 53, 0.58);
+  border-color: rgba(183, 120, 28, 0.64);
   background:
     var(--texture-paper-asset),
-    linear-gradient(180deg, rgba(255, 229, 145, 0.62), rgba(199, 137, 53, 0.22)),
+    linear-gradient(180deg, rgba(255, 229, 145, 0.58), rgba(79, 117, 84, 0.12)),
     var(--texture-cardboard),
     var(--card);
 }
@@ -226,8 +272,8 @@
   border: 1px solid rgba(83, 48, 28, 0.18);
   border-radius: 14px;
   background:
-    radial-gradient(circle at 30% 22%, rgba(255, 244, 214, 0.56), transparent 46%),
-    rgba(63, 111, 106, 0.12);
+    linear-gradient(180deg, #EFE4C4, #D5C08F);
+  color: var(--accent-2);
   color: var(--accent-2);
 }
 
@@ -265,14 +311,18 @@
   height: 20px;
   place-items: center;
   padding: 0 6px;
-  border: 1px solid rgba(255, 244, 214, 0.48);
+  border: 1px solid rgba(111, 72, 18, 0.36);
   border-radius: 999px;
-  background: linear-gradient(180deg, #F4C542, #C78935);
-  color: #2D1A11;
+  background:
+    radial-gradient(circle at 35% 25%, rgba(255, 255, 255, 0.55), transparent 35%),
+    linear-gradient(180deg, #F7C84C, #D8951D);
+  color: #3B2410;
   font-size: 0.62rem;
   font-weight: 900;
   line-height: 1;
-  box-shadow: 0 3px 8px rgba(83, 48, 28, 0.22);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    0 2px 5px rgba(70, 40, 15, 0.25);
 }
 
 .home-expedition-section {
@@ -288,11 +338,16 @@
 .stat {
   padding: 8px;
   border-radius: 14px;
-  border: 1px solid rgba(83, 48, 28, 0.18);
+  border: 1px solid rgba(96, 73, 45, 0.26);
   background:
+    var(--texture-paper-asset),
     var(--texture-paper),
-    rgba(83, 48, 28, 0.08);
+    linear-gradient(180deg, rgba(239, 228, 196, 0.78), rgba(216, 189, 130, 0.34));
+  background-size: 512px 512px, auto, auto;
   text-align: center;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.34),
+    0 2px 0 rgba(116, 82, 50, 0.1);
 }
 
 .stat span {
@@ -359,9 +414,13 @@
   border: 2px solid rgba(83, 48, 28, 0.5);
   border-radius: 16px;
   background:
-    var(--texture-cardboard),
-    radial-gradient(circle at 30% 25%, rgba(255, 255, 255, 0.35), transparent 45%),
-    var(--parchment-dark);
+    var(--texture-paper-asset),
+    linear-gradient(180deg, #EFE4C4, #D5C08F);
+  background-size: 512px 512px, auto;
+  color: var(--accent-2);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.45),
+    0 2px 4px rgba(65, 40, 20, 0.12);
   font-weight: 900;
 }
 
@@ -1322,14 +1381,16 @@
   height: 58px;
   place-items: center;
   align-self: start;
-  border: 1px solid rgba(83, 48, 28, 0.18);
+  border: 1.5px solid rgba(96, 73, 45, 0.32);
   border-radius: 16px;
   background:
-    linear-gradient(180deg, rgba(255, 244, 214, 0.48), rgba(213, 185, 130, 0.18)),
-    var(--texture-paper),
-    rgba(255, 255, 255, 0.18);
+    var(--texture-paper-asset),
+    linear-gradient(180deg, #EFE4C4, #D5C08F);
+  background-size: 512px 512px, auto;
   color: var(--accent-2);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.34);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.45),
+    0 2px 4px rgba(65, 40, 20, 0.12);
 }
 
 .zone-card-body {
@@ -1349,13 +1410,14 @@
 }
 
 .zone-card.is-active {
-  border-color: var(--accent);
+  border-color: rgba(183, 120, 28, 0.76);
   background:
     var(--texture-paper-asset),
-    linear-gradient(135deg, rgba(199, 137, 53, 0.22), rgba(63, 111, 106, 0.08)),
+    radial-gradient(circle at 84% 86%, rgba(255, 255, 255, 0.18), transparent 30%),
+    linear-gradient(135deg, rgba(247, 200, 76, 0.28), rgba(79, 117, 84, 0.12)),
     var(--texture-cardboard),
     var(--card);
-  background-size: 512px 512px, auto, auto, auto;
+  background-size: 512px 512px, auto, auto, auto, auto;
 }
 
 .inventory-card {
@@ -1559,11 +1621,32 @@
 
 .tag-row,
 .duration-row,
+.ration-row,
 .team-grid,
 .constellation-row {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+}
+
+.ration-pill {
+  display: grid;
+  min-width: min(100%, 172px);
+  flex: 1 1 172px;
+  gap: 2px;
+  align-content: center;
+  text-align: left;
+}
+
+.ration-pill small {
+  overflow: hidden;
+  color: inherit;
+  font-size: 0.72rem;
+  font-weight: 800;
+  line-height: 1.2;
+  opacity: 0.78;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .tag-row.zone-stat-grid {
@@ -1772,13 +1855,17 @@
   min-height: 26px;
   padding: 4px 8px;
   border-radius: 999px;
-  border: 1px solid rgba(83, 48, 28, 0.16);
+  border: 1px solid rgba(96, 73, 45, 0.24);
   background:
+    radial-gradient(circle at 35% 25%, rgba(255, 255, 255, 0.42), transparent 36%),
     var(--texture-paper),
-    rgba(83, 48, 28, 0.08);
+    linear-gradient(180deg, rgba(247, 233, 196, 0.72), rgba(216, 189, 130, 0.28));
   color: var(--text-muted);
   font-size: 0.72rem;
   font-weight: 800;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.36),
+    0 1px 2px rgba(70, 40, 15, 0.08);
 }
 
 .rarity-common { color: var(--common); }
@@ -1895,10 +1982,10 @@ textarea.save-text {
 }
 
 /* ── Hamster status badge variants ─────────────── */
-.tag.status-available   { background: rgba(106, 143, 78, 0.22);  color: var(--success); }
-.tag.status-in_expedition { background: rgba(95, 212, 232, 0.18); color: var(--accent-2); }
-.tag.status-injured     { background: rgba(201, 75, 61, 0.2);    color: var(--danger); }
-.tag.status-resting     { background: rgba(244, 197, 66, 0.18);  color: var(--accent); }
+.tag.status-available   { background: linear-gradient(180deg, rgba(158, 173, 117, 0.28), rgba(79, 117, 84, 0.14)); color: var(--success); }
+.tag.status-in_expedition { background: linear-gradient(180deg, rgba(143, 194, 188, 0.24), rgba(63, 111, 106, 0.12)); color: var(--accent-2); }
+.tag.status-injured     { background: linear-gradient(180deg, rgba(201, 75, 61, 0.2), rgba(164, 59, 45, 0.12)); color: var(--danger); }
+.tag.status-resting     { background: linear-gradient(180deg, rgba(247, 200, 76, 0.28), rgba(183, 120, 28, 0.14)); color: var(--accent); }
 
 /* ── Shop placeholder item card ─────────────────── */
 .shop-item-card {
@@ -2461,8 +2548,11 @@ textarea.save-text {
   border: var(--border);
   border-radius: var(--radius);
   background:
-    linear-gradient(135deg, rgba(63, 111, 106, 0.14), rgba(244, 197, 66, 0.1)),
+    var(--texture-paper-asset),
+    var(--texture-cardboard),
+    linear-gradient(135deg, rgba(63, 111, 106, 0.13), rgba(240, 182, 61, 0.12)),
     var(--card);
+  background-size: 512px 512px, auto, auto, auto;
   box-shadow: var(--shadow);
 }
 
@@ -2484,10 +2574,16 @@ textarea.save-text {
   width: 46px;
   height: 46px;
   place-items: center;
-  border: 2px solid rgba(63, 111, 106, 0.28);
+  border: 1.5px solid rgba(96, 73, 45, 0.34);
   border-radius: 16px;
-  background: rgba(63, 111, 106, 0.12);
+  background:
+    var(--texture-paper-asset),
+    linear-gradient(180deg, #EFE4C4, #D5C08F);
+  background-size: 512px 512px, auto;
   color: var(--accent-2);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.45),
+    0 2px 4px rgba(65, 40, 20, 0.12);
 }
 
 .guide-copy {

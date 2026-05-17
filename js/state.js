@@ -15,6 +15,7 @@ export const runtimeState = {
   selectedZoneId: "kitchen",
   selectedDurationMs: 300000,
   selectedHamsterIds: [],
+  selectedRationId: "none",
   modal: null,
   toasts: [],
   expandedHamsterId: null,

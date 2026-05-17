@@ -367,12 +367,12 @@
   animation: modalIn 180ms ease-out;
 }
 
-.toast {
+.status-strip span {
   animation: toastIn 160ms ease-out;
 }
 
 .screen {
-  animation: screenEnter 200ms ease-out;
+  animation: var(--screen-enter-animation, screenEnter 200ms ease-out);
 }
 
 .guide-card,
@@ -382,22 +382,22 @@
 .stack > .upgrade-card,
 .stack > .inventory-card,
 .gacha-result-card {
-  animation: cardRise 180ms ease-out both;
+  animation: var(--card-enter-animation, cardRise 180ms ease-out both);
 }
 
 .stack > :nth-child(2),
 .gacha-result-grid > :nth-child(2) {
-  animation-delay: 35ms;
+  animation-delay: var(--card-enter-delay-2, 35ms);
 }
 
 .stack > :nth-child(3),
 .gacha-result-grid > :nth-child(3) {
-  animation-delay: 70ms;
+  animation-delay: var(--card-enter-delay-3, 70ms);
 }
 
 .stack > :nth-child(n+4),
 .gacha-result-grid > :nth-child(n+4) {
-  animation-delay: 105ms;
+  animation-delay: var(--card-enter-delay-many, 105ms);
 }
 
 .resource-chip strong {

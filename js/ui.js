@@ -1,6 +1,6 @@
 import { getColonyStats, getMaxExpeditionSlots, getUpgradeCost, getUpgradeLevel, getUsedExpeditionSlots, canAfford } from "./colony.js";
 import { dataStore, findItem, findZone, resourceMeta, t } from "./data.js";
-import { calculateSuccessChance, calculateTeam } from "./expeditions.js";
+import { calculateSuccessChance, calculateTeam, EXPEDITION_RATIONS, getExpeditionRation, getExpeditionRationCost } from "./expeditions.js?v=24";
 import { formatCost, getSelectedBanner } from "./gacha.js";
 import * as equipmentApi from "./equipment.js?v=23";
 import { canLevelHamster, getHamsterLevelCost, getHamsterEffectiveStats } from "./hamsters.js";
@@ -179,8 +179,22 @@ const onboardingSteps = [
   }
 ];
 
+let lastRenderScreenKey = null;
+let lastRenderModalKey = null;
+let toastClearTimer = null;
+
 export function renderApp(state) {
   const app = document.querySelector("#app");
+  if (!app) return;
+
+  const nextScreenKey = getRenderScreenKey();
+  const nextModalKey = getRenderModalKey();
+  const shouldRestoreScreenScroll = nextScreenKey === lastRenderScreenKey;
+  const shouldRestoreModalScroll = nextModalKey === lastRenderModalKey;
+  const screenScrollTop = app.querySelector(".screen")?.scrollTop ?? 0;
+  const modalScrollTop = app.querySelector(".modal")?.scrollTop ?? 0;
+
+  app.classList.toggle("is-state-refresh", shouldRestoreScreenScroll);
   app.innerHTML = `
     ${renderScreen(state)}
     ${renderBottomNav(state)}
@@ -188,10 +202,49 @@ export function renderApp(state) {
     ${renderModal(state)}
     ${renderToasts()}
   `;
+
+  if (shouldRestoreScreenScroll) {
+    restoreScrollTop(app.querySelector(".screen"), screenScrollTop);
+  }
+  if (shouldRestoreModalScroll) {
+    restoreScrollTop(app.querySelector(".modal"), modalScrollTop);
+  }
+
   _syncTrainingCanvases(state);
   _syncHamsterPreviewCanvas(state);
   _syncTrainingStageScale();
   _syncTutorialTarget();
+
+  lastRenderScreenKey = nextScreenKey;
+  lastRenderModalKey = nextModalKey;
+}
+
+function getRenderScreenKey() {
+  const parts = [
+    runtimeState.route,
+    runtimeState.showSettings ? "settings" : "main"
+  ];
+
+  if (runtimeState.route === "hamsters" && runtimeState.expandedHamsterId) {
+    parts.push(`hamster:${runtimeState.expandedHamsterId}`);
+  }
+
+  return parts.join("|");
+}
+
+function getRenderModalKey() {
+  return runtimeState.modal?.type ?? "none";
+}
+
+function restoreScrollTop(element, scrollTop) {
+  if (!element || scrollTop <= 0) return;
+
+  const apply = () => {
+    element.scrollTop = Math.min(scrollTop, Math.max(0, element.scrollHeight - element.clientHeight));
+  };
+
+  apply();
+  requestAnimationFrame(apply);
 }
 
 /**
@@ -318,11 +371,39 @@ function _syncTutorialTarget() {
 
 export function pushToast(message) {
   const id = crypto.randomUUID();
-  runtimeState.toasts.push({ id, message });
-  setTimeout(() => {
-    runtimeState.toasts = runtimeState.toasts.filter((toast) => toast.id !== id);
-    renderApp(window.hamsterGame.state);
-  }, 2400);
+  runtimeState.toasts = [{ id, message }];
+
+  if (toastClearTimer) {
+    clearTimeout(toastClearTimer);
+  }
+
+  renderStatusStrip();
+
+  toastClearTimer = setTimeout(() => {
+    if (runtimeState.toasts[0]?.id !== id) return;
+    runtimeState.toasts = [];
+    renderStatusStrip();
+  }, 1900);
+}
+
+function renderStatusStrip() {
+  const app = document.querySelector("#app");
+  if (!app) return;
+
+  const existing = app.querySelector(".status-strip");
+  const html = renderToasts();
+
+  if (!html) {
+    existing?.remove();
+    return;
+  }
+
+  if (existing) {
+    existing.outerHTML = html;
+    return;
+  }
+
+  app.insertAdjacentHTML("beforeend", html);
 }
 
 export function openModal(type, payload = {}) {
@@ -434,9 +515,11 @@ function renderGuideCard({ icon, title, text, action, actionAttrs = "", label, r
   `;
 }
 
-function renderExpeditionGuide(selectedCount, maxTeam, canLaunch, hasFreeSlot) {
+function renderExpeditionGuide(selectedCount, maxTeam, canLaunch, hasFreeSlot, canAffordRation = true) {
   const status = !hasFreeSlot
     ? "Немає місця для нового загону. Дочекайся повернення або забери готові трофеї."
+    : selectedCount > 0 && !canAffordRation
+      ? "Бракує крихт на обраний пайок. Обери дешевший пайок або вирушай без нього."
     : canLaunch
       ? "Загін готовий. Можна вирушати."
       : selectedCount > 0
@@ -481,6 +564,7 @@ function renderBaseScreen(state) {
             ${Object.entries(result.resources ?? {}).map(([k, v]) => v > 0 ? `<span class="tag">${resourceMeta[k]?.label ?? k} +${v}</span>` : "").join("")}
             ${(result.items ?? []).map((e) => { const it = findItem(e.itemId); return `<span class="tag">${it?.name ?? e.itemId} ×${e.quantity}</span>`; }).join("")}
             ${result.xp ? `<span class="tag">Досвід +${result.xp}</span>` : ""}
+            ${result.ration ? `<span class="tag">Пайок: ${escapeHtml(result.ration.label)}</span>` : ""}
           </div>
         </div>
       ` : ""}
@@ -1108,13 +1192,16 @@ function renderExpeditionsScreen(state) {
   const selectedZone = findZone(runtimeState.selectedZoneId) ?? dataStore.zones[0];
   if (selectedZone && !runtimeState.selectedDurationMs) runtimeState.selectedDurationMs = selectedZone.minDurationMs;
   const team = calculateTeam(state, runtimeState.selectedHamsterIds);
-  const chance = calculateSuccessChance(state, selectedZone?.id, runtimeState.selectedHamsterIds);
   const colonyStats = getColonyStats(state);
   const slots = `${getUsedExpeditionSlots(state)}/${getMaxExpeditionSlots(state)}`;
   const hasFreeSlot = getUsedExpeditionSlots(state) < getMaxExpeditionSlots(state);
   const maxTeam = selectedZone?.maxTeam ?? 3;
   const selectedCount = runtimeState.selectedHamsterIds.length;
-  const canLaunch = selectedCount > 0 && selectedCount <= maxTeam && hasFreeSlot;
+  const selectedRation = getExpeditionRation(runtimeState.selectedRationId);
+  const chance = calculateSuccessChance(state, selectedZone?.id, runtimeState.selectedHamsterIds, selectedRation.id);
+  const rationCost = getExpeditionRationCost(selectedRation, selectedCount || 1);
+  const canAffordRation = canAfford(state, rationCost);
+  const canLaunch = selectedCount > 0 && selectedCount <= maxTeam && hasFreeSlot && canAffordRation;
 
   return `
     <main class="screen">
@@ -1126,7 +1213,7 @@ function renderExpeditionsScreen(state) {
         </div>
       </div>
 
-      ${renderExpeditionGuide(selectedCount, maxTeam, canLaunch, hasFreeSlot)}
+      ${renderExpeditionGuide(selectedCount, maxTeam, canLaunch, hasFreeSlot, canAffordRation)}
 
       <section class="section stack">
         ${dataStore.zones.filter((zone) => state.unlockedZones.includes(zone.id)).map((zone) => renderZoneCard(zone)).join("")}
@@ -1154,6 +1241,17 @@ function renderExpeditionsScreen(state) {
 
       <section class="section card">
         <div class="section-header">
+          <h2>Пайок</h2>
+          <span class="tag">Крихти ${formatNumber(state.resources.food ?? 0)}</span>
+        </div>
+        <div class="ration-row">
+          ${renderRationOptions(state, selectedCount)}
+        </div>
+        <p class="muted">Пайок витрачає крихти під час старту і тимчасово підсилює тільки цю вилазку.</p>
+      </section>
+
+      <section class="section card">
+        <div class="section-header">
           <h2>Прогноз</h2>
           <span class="timer-badge">${chance}% успіху</span>
         </div>
@@ -1169,7 +1267,7 @@ function renderExpeditionsScreen(state) {
           <div class="stat"><span>Захист</span><strong>${team.defense}</strong></div>
           <div class="stat"><span>Сила</span><strong>${team.power}</strong></div>
           <div class="stat"><span>Удача</span><strong>${team.luck}</strong></div>
-          <div class="stat"><span>Лут</span><strong>+${team.lootBonus}%</strong></div>
+          <div class="stat"><span>Лут</span><strong>+${team.lootBonus + selectedRation.lootBonus}%</strong></div>
         </div>
         <p>${selectedZone?.description ?? ""}</p>
         <p class="muted">Бій підвищує шанс успіху і зменшує травми. Довша вилазка дає більше трофеїв, а швидкість скорочує тільки час.</p>
@@ -1783,7 +1881,7 @@ function compactResourceLabel(key, label) {
 
 function renderBottomNav(state) {
   return `
-    <nav class="bottom-nav ${isTutorialStep(1) || isTutorialStep(6) || isTutorialStep(8) ? "tutorial-target" : ""}" aria-label="Головна навігація">
+    <nav class="bottom-nav" aria-label="Головна навігація">
       <div class="bottom-nav-inner">
         ${navItems.map((item) => {
           const badge = getNavBadge(state, item.route);
@@ -2050,6 +2148,26 @@ function renderDurationOptions(zone) {
   `).join("");
 }
 
+function renderRationOptions(state, selectedCount) {
+  const teamSize = selectedCount || 1;
+  return EXPEDITION_RATIONS.map((ration) => {
+    const cost = getExpeditionRationCost(ration, teamSize);
+    const active = getExpeditionRation(runtimeState.selectedRationId).id === ration.id;
+    const affordable = canAfford(state, cost);
+    const costLabel = Object.keys(cost).length ? formatCost(cost, resourceMeta) : "без витрат";
+    const bonusLabel = ration.id === "none"
+      ? "без бонусів"
+      : `+${ration.successBonus}% шанс · +${ration.lootBonus}% лут`;
+
+    return `
+      <button class="select-pill ration-pill ${active ? "is-active" : ""}" data-action="select-ration" data-ration-id="${ration.id}" ${affordable ? "" : "disabled"} title="${escapeHtml(ration.description)}">
+        <strong>${escapeHtml(ration.label)}</strong>
+        <small>${costLabel} · ${bonusLabel}</small>
+      </button>
+    `;
+  }).join("");
+}
+
 function renderTeamPill(state, hamster) {
   const selected = runtimeState.selectedHamsterIds.includes(hamster.id);
   const selectedZone = findZone(runtimeState.selectedZoneId);
@@ -2234,16 +2352,40 @@ function renderOnboardingOverlay(state) {
   const primaryAction = step.done ? "tutorial-finish" : "tutorial-next";
   const primaryLabel = step.done ? "Завершити" : index === 0 ? "Почати" : "Далі";
   const waitsForPlayer = step.mode !== "button";
+  const compactClass = waitsForPlayer ? " tutorial-card-compact" : "";
+  const layerModeClass = waitsForPlayer ? " tutorial-layer-compact" : "";
+  if (waitsForPlayer) {
+    return `
+      <div class="tutorial-layer tutorial-align-${step.align}${layerModeClass}" aria-live="polite">
+        <section class="tutorial-card tutorial-card-compact tutorial-chip" role="dialog" aria-modal="false" aria-label="Навчання: ${escapeHtml(step.title)}">
+          <div class="tutorial-chip-main">
+            <span class="tutorial-icon">${svgIcon(step.icon)}</span>
+            <div class="tutorial-heading">
+              <p class="tutorial-kicker">${step.kicker} · ${index + 1}/${onboardingSteps.length}</p>
+              <h2>${step.title}</h2>
+              <p class="tutorial-chip-task">${step.task}</p>
+            </div>
+            <button class="tutorial-chip-skip" data-action="tutorial-skip">Проп.</button>
+          </div>
+          <div class="tutorial-progress tutorial-progress-compact" aria-hidden="true">
+            <span style="width:${progress}%"></span>
+          </div>
+        </section>
+      </div>
+    `;
+  }
   return `
-    <div class="tutorial-layer tutorial-align-${step.align}" aria-live="polite">
-      <section class="tutorial-card" role="dialog" aria-modal="false" aria-label="Навчання: ${escapeHtml(step.title)}">
+    <div class="tutorial-layer tutorial-align-${step.align}${layerModeClass}" aria-live="polite">
+      <section class="tutorial-card${compactClass}" role="dialog" aria-modal="false" aria-label="Навчання: ${escapeHtml(step.title)}">
         <div class="tutorial-card-top">
           <span class="tutorial-icon">${svgIcon(step.icon)}</span>
-          <span class="tutorial-count">Крок ${index + 1}/${onboardingSteps.length}</span>
+          <div class="tutorial-heading">
+            <p class="tutorial-kicker">${step.kicker}</p>
+            <h2>${step.title}</h2>
+          </div>
+          <span class="tutorial-count">${index + 1}/${onboardingSteps.length}</span>
         </div>
-        <p class="tutorial-kicker">${step.kicker}</p>
-        <h2>${step.title}</h2>
-        <p>${step.body}</p>
+        ${step.done ? `<p class="tutorial-body">${step.body}</p>` : ""}
         <div class="tutorial-task">
           <strong>Підказка</strong>
           <span>${step.task}</span>
@@ -2252,10 +2394,10 @@ function renderOnboardingOverlay(state) {
           <span style="width:${progress}%"></span>
         </div>
         <div class="tutorial-actions">
-          ${index > 0 ? `<button class="btn ghost" data-action="tutorial-prev">Назад</button>` : ""}
+          ${index > 0 && !waitsForPlayer ? `<button class="btn ghost" data-action="tutorial-prev">Назад</button>` : ""}
           <button class="btn ghost" data-action="tutorial-skip">Пропустити</button>
           ${waitsForPlayer
-            ? `<span class="tutorial-waiting">Клікни підсвічений елемент</span>`
+            ? ""
             : `<button class="btn is-ready-action" data-action="${primaryAction}">${primaryLabel}</button>`}
         </div>
       </section>
@@ -2468,8 +2610,9 @@ function modalShell(title, body) {
 }
 
 function renderToasts() {
-  if (!runtimeState.toasts.length) return "";
-  return `<div class="toast-stack">${runtimeState.toasts.map((toast) => `<div class="toast">${escapeHtml(toast.message)}</div>`).join("")}</div>`;
+  const toast = runtimeState.toasts[runtimeState.toasts.length - 1];
+  if (!toast) return "";
+  return `<div class="status-strip" role="status" aria-live="polite"><span>${escapeHtml(toast.message)}</span></div>`;
 }
 
 function renderTimerBadge(expedition) {

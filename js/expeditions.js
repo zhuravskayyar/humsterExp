@@ -3,7 +3,7 @@ import { createEquipmentFromItem } from "./equipment.js";
 import { getHamster, getHamsterEffectiveStats, grantHamsterXp, setHamsterStatus } from "./hamsters.js";
 import { addItem, addResources } from "./inventory.js";
 import { clamp, randomInt } from "./state.js";
-import { getColonyStats, getMaxExpeditionSlots, getUsedExpeditionSlots } from "./colony.js";
+import { canAfford, getColonyStats, getMaxExpeditionSlots, getUsedExpeditionSlots, spendResources } from "./colony.js";
 
 const resultLabels = {
   full_success: "Повний успіх",
@@ -14,6 +14,55 @@ const resultLabels = {
   injury: "Травма",
   special_event: "Особлива подія"
 };
+
+export const EXPEDITION_RATIONS = Object.freeze([
+  {
+    id: "none",
+    label: "Без пайка",
+    foodPerHamster: 0,
+    successBonus: 0,
+    lootBonus: 0,
+    injuryResist: 0,
+    description: "Крихти лишаються в норі."
+  },
+  {
+    id: "snack",
+    label: "Легкий пайок",
+    foodPerHamster: 18,
+    successBonus: 4,
+    lootBonus: 6,
+    injuryResist: 4,
+    description: "Трохи впевненості перед короткою вилазкою."
+  },
+  {
+    id: "meal",
+    label: "Ситний пайок",
+    foodPerHamster: 38,
+    successBonus: 8,
+    lootBonus: 12,
+    injuryResist: 8,
+    description: "Добрий баланс шансу, луту і безпеки."
+  },
+  {
+    id: "bundle",
+    label: "Запас на дорогу",
+    foodPerHamster: 70,
+    successBonus: 12,
+    lootBonus: 20,
+    injuryResist: 14,
+    description: "Дорого, але корисно для ризикових маршрутів."
+  }
+]);
+
+export function getExpeditionRation(rationId = "none") {
+  return EXPEDITION_RATIONS.find((ration) => ration.id === rationId) ?? EXPEDITION_RATIONS[0];
+}
+
+export function getExpeditionRationCost(rationOrId, teamSize = 1) {
+  const ration = typeof rationOrId === "string" ? getExpeditionRation(rationOrId) : rationOrId;
+  const food = (ration?.foodPerHamster ?? 0) * Math.max(1, Number(teamSize) || 1);
+  return food > 0 ? { food } : {};
+}
 
 export function calculateTeam(state, hamsterIds) {
   const hamsters = hamsterIds.map((id) => getHamster(state, id)).filter(Boolean);
@@ -36,16 +85,17 @@ export function calculateTeam(state, hamsterIds) {
   };
 }
 
-export function calculateSuccessChance(state, zoneId, hamsterIds) {
+export function calculateSuccessChance(state, zoneId, hamsterIds, rationId = "none") {
   const zone = findZone(zoneId);
   if (!zone || !hamsterIds.length) return 0;
   const team = calculateTeam(state, hamsterIds);
+  const ration = getExpeditionRation(rationId);
   const combatBonus = (team.combat / Math.max(1, zone.requiredPower * 4)) * 14;
-  const successChance = zone.baseChance + (team.power / zone.requiredPower) * 18 + combatBonus + team.luck * 0.2 - zone.danger;
+  const successChance = zone.baseChance + (team.power / zone.requiredPower) * 18 + combatBonus + team.luck * 0.2 + ration.successBonus - zone.danger;
   return Math.round(clamp(successChance, 5, 95));
 }
 
-export function launchExpedition(state, zoneId, hamsterIds, durationMs) {
+export function launchExpedition(state, zoneId, hamsterIds, durationMs, rationId = "none") {
   const zone = findZone(zoneId);
   if (!zone) throw new Error("Unknown zone");
   if (!hamsterIds.length) throw new Error("Select at least one hamster");
@@ -62,6 +112,13 @@ export function launchExpedition(state, zoneId, hamsterIds, durationMs) {
     throw new Error(`У цю зону можна взяти максимум ${maxTeam} хом'яків`);
   }
 
+  const ration = getExpeditionRation(rationId);
+  const rationCost = getExpeditionRationCost(ration, selected.length);
+  if (!canAfford(state, rationCost)) {
+    throw new Error("Бракує крихт на обраний пайок");
+  }
+  spendResources(state, rationCost);
+
   const now = Date.now();
   const team = calculateTeam(state, hamsterIds);
   const colonyStats = getColonyStats(state);
@@ -77,6 +134,16 @@ export function launchExpedition(state, zoneId, hamsterIds, durationMs) {
     startTime: now,
     endTime: now + adjustedDuration,
     status: "active",
+    ration: ration.id === "none"
+      ? null
+      : {
+          id: ration.id,
+          label: ration.label,
+          cost: rationCost,
+          successBonus: ration.successBonus,
+          lootBonus: ration.lootBonus,
+          injuryResist: ration.injuryResist
+        },
     result: null
   };
 
@@ -144,7 +211,8 @@ export function claimExpedition(state, expeditionId) {
 function generateExpeditionResult(state, expedition) {
   const zone = findZone(expedition.zoneId);
   const team = calculateTeam(state, expedition.hamsterIds);
-  const chance = calculateSuccessChance(state, expedition.zoneId, expedition.hamsterIds);
+  const ration = getExpeditionRation(expedition.ration?.id);
+  const chance = calculateSuccessChance(state, expedition.zoneId, expedition.hamsterIds, ration.id);
   const roll = randomInt(1, 100);
   const event = pickEvent(team, zone);
   const baseDuration = expedition.baseDurationMs ?? expedition.durationMs;
@@ -169,15 +237,15 @@ function generateExpeditionResult(state, expedition) {
   } else {
     resultType = randomInt(1, 100) <= 45 ? "ambush" : "failure";
     lootMultiplier = resultType === "ambush" ? 0.35 : 0.2;
-    if (randomInt(1, 100) > team.stamina + team.defense * 0.25 + team.injuryResist) {
+    if (randomInt(1, 100) > team.stamina + team.defense * 0.25 + team.injuryResist + ration.injuryResist) {
       hamsterStatus = "injured";
     }
   }
 
-  if (event?.risk === "injury" && randomInt(1, 100) > team.injuryResist + team.defense * 0.2) {
+  if (event?.risk === "injury" && randomInt(1, 100) > team.injuryResist + team.defense * 0.2 + ration.injuryResist) {
     resultType = "injury";
     hamsterStatus = "injured";
-  } else if (event?.risk === "minor_injury" && randomInt(1, 100) <= Math.max(5, 25 - team.injuryResist)) {
+  } else if (event?.risk === "minor_injury" && randomInt(1, 100) <= Math.max(5, 25 - team.injuryResist - ration.injuryResist)) {
     resultType = "injury";
     hamsterStatus = "injured";
   } else if (event?.risk === "rest" || event?.risk === "delay") {
@@ -192,7 +260,8 @@ function generateExpeditionResult(state, expedition) {
   }
 
   const combatLootMultiplier = 1 + Math.min(0.25, team.combat / 900);
-  const resources = buildLoot(zone, event, durationMultiplier, carryMultiplier, lootMultiplier * combatLootMultiplier, team);
+  const rationLootMultiplier = 1 + ration.lootBonus / 100;
+  const resources = buildLoot(zone, event, durationMultiplier, carryMultiplier, lootMultiplier * combatLootMultiplier * rationLootMultiplier, team);
   const items = buildItems(zone, event, resultType, team);
   const xp = Math.round(22 * durationMultiplier + zone.level * 8 + (resultType === "rare_find" ? 18 : 0));
 
@@ -204,6 +273,7 @@ function generateExpeditionResult(state, expedition) {
     roll,
     durationMultiplier,
     event,
+    ration: expedition.ration ?? null,
     resources,
     items,
     xp,

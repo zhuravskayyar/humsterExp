@@ -1,7 +1,7 @@
 import { loadData, dataStore, findZone } from "./data.js";
 import { canAfford, collectPassiveIncome, spendResources, upgradeColony } from "./colony.js";
 import * as equipmentApi from "./equipment.js?v=23";
-import { launchExpedition, updateExpeditionStatuses, claimExpedition } from "./expeditions.js";
+import { launchExpedition, updateExpeditionStatuses, claimExpedition } from "./expeditions.js?v=24";
 import { rollGacha } from "./gacha.js";
 import { getHamsterEffectiveStats, levelUpHamster, recoverHamsters } from "./hamsters.js";
 import { navigate } from "./router.js";
@@ -9,7 +9,7 @@ import { exportSave, importSave, loadGame, resetGame, saveGame } from "./save.js
 import { gameState, runtimeState } from "./state.js";
 import { claimQuest, resetDailyQuestsIfNeeded, syncQuestProgress } from "./quests.js";
 import { hitDummy, processOfflineTraining, upgradeDummy, getDummyConfig, startAutoAttack, stopAutoAttack } from "./training.js";
-import { closeModal, openModal, pushToast, renderApp, updateLiveTimers, updateTrainingArena } from "./ui.js?v=23";
+import { closeModal, openModal, pushToast, renderApp, updateLiveTimers, updateTrainingArena } from "./ui.js?v=25";
 
 const {
   equipItem,
@@ -466,6 +466,7 @@ function doTrainingAttack() {
 function handleClick(event) {
   const closeTarget = event.target.closest("[data-action='close-modal']");
   if (closeTarget?.classList.contains("modal-backdrop")) {
+    event.preventDefault();
     if (!event.target.closest("[data-stop-close]")) {
       closeModal();
       renderApp(gameState);
@@ -475,6 +476,7 @@ function handleClick(event) {
 
   const target = event.target.closest("[data-action]");
   if (!target) return;
+  event.preventDefault();
   const action = target.dataset.action;
 
   try {
@@ -514,6 +516,10 @@ function handleClick(event) {
 
     if (action === "select-duration") {
       runtimeState.selectedDurationMs = Number(target.dataset.duration);
+    }
+
+    if (action === "select-ration") {
+      runtimeState.selectedRationId = target.dataset.rationId || "none";
     }
 
     if (action === "toggle-hamster") {
@@ -583,9 +589,11 @@ function handleClick(event) {
     }
 
     if (action === "launch-expedition") {
-      const expedition = launchExpedition(gameState, runtimeState.selectedZoneId, runtimeState.selectedHamsterIds, runtimeState.selectedDurationMs);
+      const expedition = launchExpedition(gameState, runtimeState.selectedZoneId, runtimeState.selectedHamsterIds, runtimeState.selectedDurationMs, runtimeState.selectedRationId);
       runtimeState.selectedHamsterIds = [];
-      saveAndToast(`Експедицію запущено: ${findZone(expedition.zoneId).name}`);
+      runtimeState.selectedRationId = "none";
+      const rationLabel = expedition.ration ? ` · пайок: ${expedition.ration.label}` : "";
+      saveAndToast(`Експедицію запущено: ${findZone(expedition.zoneId).name}${rationLabel}`);
       syncExpeditionReminder();
     }
 
@@ -721,6 +729,7 @@ function handleClick(event) {
         runtimeState.selectedHamsterIds = [];
         runtimeState.selectedZoneId = "kitchen";
         runtimeState.selectedDurationMs = 300000;
+        runtimeState.selectedRationId = "none";
         runtimeState.expandedHamsterId = null;
         runtimeState.showSettings = false;
         runtimeState.gachaResults = [];
