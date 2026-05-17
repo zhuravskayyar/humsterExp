@@ -78,3 +78,21 @@ Negative prompt:
 - Keep files under 250 KB when possible.
 - Test all tiles at 25%, 50%, and 100% opacity over the current CSS colors.
 - The CSS already works without these files; generated assets should only improve texture quality, not carry layout or text.
+
+## Generated Batch Review
+
+Source files in `assets/textures/1.webp` through `assets/textures/7.png` were normalized into production assets:
+
+- `1.webp` -> superseded cardboard fiber draft
+- `2.webp` -> `assets/textures/light_paper_grain_tile.webp`
+- `3.webp` -> `assets/ui/tape_strip_clear.webp`
+- `4.webp` -> `assets/ui/torn_cardboard_edge.webp`
+- `5.png` -> `assets/ui/marker_icon_style_reference.webp`
+- `6.webp` -> `assets/ui/dark_cardboard_button_panel.webp`
+- `7.png` -> `assets/textures/cardboard_fiber_tile.webp` as the active cardboard UI texture
+
+Notes:
+
+- `1.webp` and `2.webp` are byte-identical. The light paper tile was derived from the duplicate by desaturating, brightening, and lowering contrast. `7.png` replaced the initial `1.webp` output as the better active cardboard tile.
+- The generated batch does not include `assets/ui/sticker_badges.webp`.
+- The numbered source files were kept unchanged as raw inputs.

@@ -242,6 +242,7 @@ function mergeEquipment(savedEquipment = [], itemTemplates = []) {
         itemId: equipment.itemId,
         level: Math.min(equipment.maxLevel ?? template.maxLevel ?? 90, equipment.level ?? 1),
         maxLevel: equipment.maxLevel ?? template.maxLevel ?? 90,
+        copies: Math.max(0, Math.min(5, Number(equipment.copies ?? equipment.refine ?? 0) || 0)),
         equippedBy: equipment.equippedBy ?? null,
         locked: equipment.locked ?? false
       };
@@ -256,6 +257,7 @@ function createEquipmentInstance(template) {
     itemId: template.id,
     level: 1,
     maxLevel: template.maxLevel ?? 90,
+    copies: 0,
     equippedBy: null,
     locked: false
   };

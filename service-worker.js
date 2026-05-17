@@ -1,4 +1,4 @@
-const VERSION = "hamster-exp-v37";
+const VERSION = "hamster-exp-v43";
 const STATIC_CACHE = `${VERSION}-static`;
 const RUNTIME_CACHE = `${VERSION}-runtime`;
 
@@ -41,9 +41,13 @@ const APP_SHELL = [
   "./data/quests.json",
   "./data/zones.json",
   "./assets/images/maneken/maneken.png",
-  "./assets/textures/cardboard_panel_tile.png",
+  "./assets/textures/cardboard_fiber_tile.webp",
+  "./assets/textures/light_paper_grain_tile.webp",
   "./assets/textures/paper_grain_tile_no_bg.png",
   "./assets/textures/training_sawdust_floor_overlay.png",
+  "./assets/ui/dark_cardboard_button_panel.webp",
+  "./assets/ui/tape_strip_clear.webp",
+  "./assets/ui/torn_cardboard_edge.webp",
   "./icons/icon-192.png",
   "./icons/icon-512.png"
 ];

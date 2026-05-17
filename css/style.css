@@ -1,30 +1,30 @@
 :root {
   color-scheme: light only;
-  --bg-main: #24170F;
-  --bg-panel: #5B3A25;
-  --leather: #4B2E20;
-  --leather-light: #765036;
-  --wood: #9B6A3F;
-  --wood-dark: #54341F;
-  --moss: #4F7554;
-  --glow: #F0B63D;
-  --cardboard-1: #F0DFB9;
-  --cardboard-2: #D8BD82;
-  --cardboard-3: #B98D55;
-  --cardboard-edge: #8C6643;
-  --paper-sticker: #F7E9C4;
+  --bg-main: #26170E;
+  --bg-panel: #5A351F;
+  --leather: #4A2A1A;
+  --leather-light: #7B5130;
+  --wood: #A06A37;
+  --wood-dark: #4B2A16;
+  --moss: #4E7353;
+  --glow: #E9B842;
+  --cardboard-1: #E7C58D;
+  --cardboard-2: #CF9F62;
+  --cardboard-3: #A86D37;
+  --cardboard-edge: #7A4D29;
+  --paper-sticker: #F5E5BF;
   --parchment: var(--cardboard-1);
-  --parchment-light: #F7E9C8;
+  --parchment-light: #F6E6C3;
   --parchment-dark: var(--cardboard-2);
   --card: var(--cardboard-1);
   --card-bg: rgba(240, 223, 185, 0.72);
   --card-light: var(--cardboard-3);
-  --text-main: #332217;
-  --text-muted: #765A3F;
+  --text-main: #2E1D12;
+  --text-muted: #6E4E34;
   --muted: var(--text-muted);
   --text-on-dark: #F6E7C7;
-  --accent: #B7781C;
-  --accent-2: #3F6F66;
+  --accent: #A86418;
+  --accent-2: #386C61;
   --accent-3: var(--moss);
   --danger: #A43B2D;
   --success: #4F7A3F;
@@ -37,12 +37,16 @@
   --radius: 18px;
   --radius-small: 10px;
   --shadow:
-    0 8px 0 rgba(116, 82, 50, 0.14),
-    0 15px 24px rgba(55, 32, 18, 0.18);
-  --border: 2px solid rgba(112, 78, 45, 0.48);
+    0 5px 0 rgba(87, 53, 29, 0.18),
+    0 14px 24px rgba(47, 25, 13, 0.2);
+  --border: 2px solid rgba(95, 58, 31, 0.58);
   --texture-paper-asset: url("../assets/textures/paper_grain_tile_no_bg.png");
-  --texture-cardboard-asset: url("../assets/textures/cardboard_panel_tile.png");
+  --texture-light-paper-asset: url("../assets/textures/light_paper_grain_tile.webp");
+  --texture-cardboard-asset: url("../assets/textures/cardboard_fiber_tile.webp");
   --texture-sawdust-asset: url("../assets/textures/training_sawdust_floor_overlay.png");
+  --texture-tape-asset: url("../assets/ui/tape_strip_clear.webp");
+  --texture-torn-edge-asset: url("../assets/ui/torn_cardboard_edge.webp");
+  --texture-button-panel-asset: url("../assets/ui/dark_cardboard_button_panel.webp");
   --texture-paper:
     radial-gradient(circle at 18% 18%, rgba(255, 255, 255, 0.22) 0 1px, transparent 1.8px),
     radial-gradient(circle at 72% 38%, rgba(112, 78, 45, 0.075) 0 1.3px, transparent 2px),
@@ -56,6 +60,7 @@
     repeating-linear-gradient(8deg, rgba(83, 48, 28, 0.042) 0 1px, transparent 1px 10px),
     repeating-linear-gradient(99deg, rgba(255, 255, 255, 0.045) 0 1px, transparent 1px 18px);
   --texture-tape:
+    var(--texture-tape-asset),
     linear-gradient(90deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.08)),
     repeating-linear-gradient(90deg, rgba(116, 82, 50, 0.12) 0 1px, transparent 1px 9px),
     rgba(232, 211, 151, 0.54);
@@ -80,12 +85,12 @@ body {
   height: 100%;
   margin: 0;
   background:
-    var(--texture-paper-asset),
-    radial-gradient(circle at 20% 15%, rgba(255, 255, 255, 0.2), transparent 24rem),
-    radial-gradient(circle at 82% 58%, rgba(112, 78, 45, 0.12), transparent 28rem),
-    repeating-linear-gradient(12deg, rgba(255, 255, 255, 0.035) 0 1px, transparent 1px 8px),
-    linear-gradient(180deg, #EAD6A8 0%, #D7B97F 100%);
-  background-size: 512px 512px, auto, auto, auto, auto;
+    radial-gradient(circle at 20% 15%, rgba(255, 244, 214, 0.28), transparent 24rem),
+    radial-gradient(circle at 82% 58%, rgba(56, 108, 97, 0.13), transparent 28rem),
+    linear-gradient(180deg, rgba(236, 195, 127, 0.62), rgba(168, 109, 55, 0.72)),
+    var(--texture-cardboard-asset),
+    #C89155;
+  background-size: auto, auto, auto, 560px 560px, auto;
   color: var(--text-main);
   overflow: hidden;
   -webkit-text-size-adjust: 100%;
@@ -250,8 +255,11 @@ svg {
   border: var(--border);
   border-radius: 26px;
   background:
-    var(--texture-paper),
-    linear-gradient(180deg, var(--parchment-light) 0%, var(--parchment) 100%);
+    var(--texture-paper-asset),
+    linear-gradient(180deg, rgba(246, 230, 195, 0.9) 0%, rgba(231, 197, 141, 0.78) 100%),
+    var(--texture-cardboard-asset),
+    var(--card);
+  background-size: 512px 512px, auto, 460px 460px, auto;
   box-shadow: var(--shadow);
 }
 
@@ -322,9 +330,11 @@ svg {
 .preview-card-main {
   min-height: 220px;
   background:
-    var(--texture-paper),
-    radial-gradient(circle at top right, rgba(199, 137, 53, 0.22), transparent 36%),
-    linear-gradient(180deg, var(--parchment-light), var(--parchment-dark));
+    var(--texture-paper-asset),
+    radial-gradient(circle at top right, rgba(233, 184, 66, 0.24), transparent 36%),
+    linear-gradient(180deg, rgba(246, 230, 195, 0.82), rgba(207, 159, 98, 0.72)),
+    var(--texture-cardboard-asset);
+  background-size: 512px 512px, auto, auto, 460px 460px;
 }
 
 .preview-card span,
@@ -355,15 +365,20 @@ svg {
   border: var(--border);
   border-radius: 28px;
   background:
-    var(--texture-cardboard),
-    linear-gradient(180deg, rgba(246, 231, 199, 0.7), rgba(213, 185, 130, 0.6));
+    var(--texture-paper-asset),
+    radial-gradient(circle at 10% 8%, rgba(255, 244, 214, 0.22), transparent 28%),
+    linear-gradient(180deg, rgba(231, 197, 141, 0.72), rgba(168, 109, 55, 0.44)),
+    var(--texture-cardboard-asset);
+  background-size: 512px 512px, auto, auto, 520px 520px;
 }
 
 .landing-section-accent {
   background:
-    radial-gradient(circle at 10% 0, rgba(63, 111, 106, 0.14), transparent 28%),
-    var(--texture-cardboard),
-    linear-gradient(180deg, rgba(246, 231, 199, 0.7), rgba(213, 185, 130, 0.6));
+    var(--texture-paper-asset),
+    radial-gradient(circle at 10% 0, rgba(56, 108, 97, 0.18), transparent 28%),
+    linear-gradient(180deg, rgba(231, 197, 141, 0.74), rgba(168, 109, 55, 0.46)),
+    var(--texture-cardboard-asset);
+  background-size: 512px 512px, auto, auto, 520px 520px;
 }
 
 .section-heading {
@@ -438,8 +453,11 @@ svg {
   border: 3px solid rgba(83, 48, 28, 0.5);
   border-radius: 28px;
   background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.18), rgba(83, 48, 28, 0.12)),
+    radial-gradient(circle at 28% 18%, rgba(255, 244, 214, 0.28), transparent 40%),
+    linear-gradient(135deg, rgba(233, 184, 66, 0.2), rgba(83, 48, 28, 0.16)),
+    var(--texture-cardboard-asset),
     var(--parchment);
+  background-size: auto, auto, 320px 320px, auto;
   box-shadow: var(--shadow);
   color: var(--wood-dark);
   font-size: 2rem;

@@ -1,6 +1,6 @@
 import { loadData, dataStore, findZone } from "./data.js";
 import { canAfford, collectPassiveIncome, spendResources, upgradeColony } from "./colony.js";
-import * as equipmentApi from "./equipment.js?v=23";
+import * as equipmentApi from "./equipment.js?v=24";
 import { launchExpedition, updateExpeditionStatuses, claimExpedition } from "./expeditions.js?v=24";
 import { rollGacha } from "./gacha.js";
 import { getHamsterEffectiveStats, levelUpHamster, recoverHamsters } from "./hamsters.js";
@@ -9,7 +9,7 @@ import { exportSave, importSave, loadGame, resetGame, saveGame } from "./save.js
 import { gameState, runtimeState } from "./state.js";
 import { claimQuest, resetDailyQuestsIfNeeded, syncQuestProgress } from "./quests.js";
 import { hitDummy, processOfflineTraining, upgradeDummy, getDummyConfig, startAutoAttack, stopAutoAttack } from "./training.js";
-import { closeModal, openModal, pushToast, renderApp, updateLiveTimers, updateTrainingArena } from "./ui.js?v=25";
+import { closeModal, openModal, pushToast, renderApp, updateLiveTimers, updateTrainingArena } from "./ui.js?v=26";
 
 const {
   equipItem,
@@ -396,7 +396,7 @@ function _saveTrainingPause() {
   if (!hamster || hamster.status !== "available") return;
   const stats = getHamsterEffectiveStats(hamster, gameState);
   gameState.training.offlineSince = Date.now();
-  gameState.training.offlineDps = stats.attack / 1300;
+  gameState.training.offlineDps = getExpectedTrainingDamage(stats) / 1300;
   saveGame(gameState);
 }
 
@@ -478,6 +478,7 @@ function handleClick(event) {
   if (!target) return;
   event.preventDefault();
   const action = target.dataset.action;
+  let shouldPlayGachaOpen = false;
 
   try {
     if (action === "nav") {
@@ -583,6 +584,16 @@ function handleClick(event) {
       saveAndToast(`Спорядження +${result.levelsGained} рів. · поглинуто ${fodderItem?.name ?? "матеріал"}`);
     }
 
+    if (action === "refine-weapon") {
+      if (!equipmentApi.refineWeapon) {
+        throw new Error("Онови сторінку, щоб завантажити систему злиття зброї");
+      }
+      const result = equipmentApi.refineWeapon(gameState, target.dataset.equipmentUid);
+      const item = getEquipmentTemplate(result.equipment);
+      const copies = equipmentApi.getWeaponCopies?.(result.equipment) ?? result.equipment.copies ?? 0;
+      saveAndToast(`${item?.name ?? "Зброя"}: копії ${copies}/5`);
+    }
+
     if (action === "salvage-equipment") {
       salvageEquipment(gameState, target.dataset.equipmentUid);
       saveAndToast("Предмет розібрано на ресурси");
@@ -676,6 +687,7 @@ function handleClick(event) {
       syncQuestProgress(gameState);
       saveGame(gameState);
       runtimeState.gachaResults = results;
+      shouldPlayGachaOpen = true;
     }
 
     if (action === "clear-gacha-results") {
@@ -748,6 +760,35 @@ function handleClick(event) {
   }
 
   renderApp(gameState);
+  if (shouldPlayGachaOpen) {
+    playGachaOpenAnimation();
+  }
+}
+
+function getExpectedTrainingDamage(stats) {
+  const critChance = Math.max(0, Math.min(75, stats.critChance ?? 0));
+  const critDamage = Math.max(0, stats.critDamage ?? 0);
+  return Math.max(1, stats.attack * (1 + (critChance / 100) * (critDamage / 100)));
+}
+
+function playGachaOpenAnimation() {
+  const stage = document.querySelector("#gachaStage");
+  if (!stage) return;
+
+  const hasReward = stage.classList.contains("has-reward");
+  stage.classList.remove("has-reward", "is-opening");
+  void stage.offsetWidth;
+  stage.classList.add("is-opening");
+
+  if (hasReward) {
+    window.setTimeout(() => {
+      stage.classList.add("has-reward");
+    }, 260);
+  }
+
+  window.setTimeout(() => {
+    stage.classList.remove("is-opening");
+  }, 1300);
 }
 
 function handleChange(event) {

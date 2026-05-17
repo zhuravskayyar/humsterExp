@@ -37,7 +37,10 @@ export function hitDummy(state, hamsterId) {
 
   const dummy = getDummyConfig(state);
   const stats = getHamsterEffectiveStats(hamster, state);
-  const damage = Math.max(1, stats.attack);
+  const critChance = Math.max(0, Math.min(75, stats.critChance ?? 0));
+  const critDamage = Math.max(0, stats.critDamage ?? 0);
+  const critical = critChance > 0 && Math.random() * 100 < critChance;
+  const damage = Math.max(1, Math.round(stats.attack * (critical ? 1 + critDamage / 100 : 1)));
 
   if (!state.training) {
     state.training = { dummyLevel: 1, damageProgress: 0, totalRounds: 0 };
@@ -71,7 +74,7 @@ export function hitDummy(state, hamsterId) {
     }
   }
 
-  return { damage, booksAwarded, goldAwarded, foodAwarded, oreAwarded };
+  return { damage, critical, critChance, critDamage, booksAwarded, goldAwarded, foodAwarded, oreAwarded };
 }
 
 /**

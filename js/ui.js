@@ -2,7 +2,7 @@ import { getColonyStats, getMaxExpeditionSlots, getUpgradeCost, getUpgradeLevel,
 import { dataStore, findItem, findZone, resourceMeta, t } from "./data.js";
 import { calculateSuccessChance, calculateTeam, EXPEDITION_RATIONS, getExpeditionRation, getExpeditionRationCost } from "./expeditions.js?v=24";
 import { formatCost, getSelectedBanner } from "./gacha.js";
-import * as equipmentApi from "./equipment.js?v=23";
+import * as equipmentApi from "./equipment.js?v=24";
 import { canLevelHamster, getHamsterLevelCost, getHamsterEffectiveStats } from "./hamsters.js";
 import { iconForBuilding, iconForClass, iconForItemType, svgIcon } from "./icons.js";
 import { getHamsterPortrait, getHamsterSlug, getHamsterSpriteConfig, getItemImageSrc } from "./hamster-assets.js";
@@ -15,22 +15,28 @@ const {
   canUpgradeEquipment,
   EQUIPMENT_SLOTS,
   findFodderEquipment,
+  findWeaponCopyEquipment,
   getAvailableEquipmentForSlot,
   getEquipmentByUid,
   getEquipmentLevelCost,
   getEquipmentStats,
   getEquipmentTemplate,
   getHamsterEquipment,
+  getSignaturePassiveText,
+  getWeaponCopies,
   needsFodder
 } = equipmentApi;
 
 const canUpgradeEquipmentWithFodder = equipmentApi.canUpgradeEquipmentWithFodder ?? (() => false);
 const findInferiorFodderEquipment = equipmentApi.findInferiorFodderEquipment ?? (() => null);
+const canRefineWeapon = equipmentApi.canRefineWeapon ?? (() => false);
+const WEAPON_COPY_MAX = equipmentApi.WEAPON_COPY_MAX ?? 5;
 
 const navItems = [
   { route: "base",        icon: "base",      labelKey: "base" },
   { route: "hamsters",    icon: "hamster",   labelKey: "hamsters" },
   { route: "expeditions", icon: "map",       labelKey: "expeditions" },
+  { route: "backpack",    icon: "backpack",  labelKey: "backpack" },
   { route: "training",    icon: "power",     labelKey: "training" },
   { route: "gacha",       icon: "gacha",     labelKey: "gacha" },
 ];
@@ -56,7 +62,7 @@ const buildingConfig = {
   workshop: {
     role: "Спорядження",
     upgradeIds: [],
-    primary: { label: "Відкрити спорядження", action: "nav", attrs: `data-route="inventory"` }
+    primary: { label: "Відкрити рюкзак", action: "nav", attrs: `data-route="backpack"` }
   },
   barracks: {
     role: "Тренування",
@@ -275,7 +281,7 @@ export function updateTrainingArena(state) {
   if (center) {
     if (lastHit && isAttacking) {
       center.innerHTML =
-        `<div class="arena-damage">-${lastHit.damage}</div>` +
+        `<div class="arena-damage ${lastHit.critical ? "is-critical" : ""}">-${lastHit.damage}${lastHit.critical ? " крит" : ""}</div>` +
         (lastHit.booksAwarded > 0 ? `<div class="arena-reward">Схованки +${lastHit.booksAwarded}</div>` : "");
     } else {
       center.innerHTML = "";
@@ -431,6 +437,7 @@ function renderScreen(state) {
   if (runtimeState.route === "expeditions") return renderExpeditionsScreen(state);
   if (runtimeState.route === "colony") return renderColonyScreen(state);
   if (runtimeState.route === "gacha") return renderGachaScreen(state);
+  if (runtimeState.route === "backpack") return renderBackpackScreen(state);
   if (runtimeState.route === "inventory") return renderInventoryScreen(state);
   if (runtimeState.route === "quests") return renderQuestsScreen(state);
   if (runtimeState.route === "training") return renderTrainingScreen(state);
@@ -753,7 +760,8 @@ function renderHamsterDetailScreen(state, hamster) {
     ["Захист", stats.defense],
     ["Сила", stats.power],
     ["Швидк.", stats.speed],
-    ["Удача", stats.luck]
+    ["Удача", stats.luck],
+    ["Крит", `${stats.critChance ?? 0}%`]
   ];
   return `
     <main class="screen character-screen">
@@ -900,7 +908,9 @@ function calculateCombatPower(stats) {
     (stats.luck ?? 0) * 2 +
     (stats.power ?? 0) * 4 +
     (stats.stamina ?? 0) * 2 +
-    (stats.carry ?? 0) * 1.2
+    (stats.carry ?? 0) * 1.2 +
+    (stats.critChance ?? 0) * 2 +
+    (stats.critDamage ?? 0) * 0.5
   );
 }
 
@@ -935,7 +945,9 @@ function renderCharacterStats(statsOrEntries) {
         ["Швидк.", statsOrEntries.speed],
         ["Удача", statsOrEntries.luck],
         ["Вантаж", statsOrEntries.carry],
-        ["Витрив.", statsOrEntries.stamina]
+        ["Витрив.", statsOrEntries.stamina],
+        ["Крит", `${statsOrEntries.critChance ?? 0}%`],
+        ["Крит урон", `${statsOrEntries.critDamage ?? 0}%`]
       ];
   return `
     <div class="character-stat-list">
@@ -958,14 +970,19 @@ function getSortedAvailableEquipmentForSlot(state, slot, hamsterId, excludeUid =
 function getEquipmentDisplayScore(equipment) {
   const item = getEquipmentTemplate(equipment);
   const statTotal = Object.values(getEquipmentStats(equipment)).reduce((sum, value) => sum + value, 0);
-  return (item?.stars ?? 1) * 1000 + (equipment.level ?? 1) * 20 + statTotal;
+  return (item?.stars ?? 1) * 1000 + getWeaponCopies(equipment) * 120 + (equipment.level ?? 1) * 20 + statTotal;
 }
 
 function renderEquipmentStatsText(equipment) {
   const stats = getEquipmentStats(equipment);
   const entries = Object.entries(stats);
   if (!entries.length) return "Без бонусів";
-  return entries.map(([stat, value]) => `${statLabel(stat)} +${value}`).join(" · ");
+  return entries.map(([stat, value]) => formatEquipmentStat(stat, value)).join(" · ");
+}
+
+function formatEquipmentStat(stat, value) {
+  if (stat === "critChance" || stat === "critDamage") return `${statLabel(stat)} +${value}%`;
+  return `${statLabel(stat)} +${value}`;
 }
 
 function renderEquipmentUpgradeCostTags(state, equipment) {
@@ -1001,6 +1018,39 @@ function renderEquipmentFodderTag(state, equipment) {
   return `<span class="tag">Матеріал: ${escapeHtml(item?.name ?? "предмет")} Lv ${fodder.level}</span>`;
 }
 
+function renderWeaponCopyTags(state, equipment) {
+  const item = getEquipmentTemplate(equipment);
+  if (item?.equipmentSlot !== "weapon") return "";
+  const copies = getWeaponCopies(equipment);
+  const crit = equipmentApi.getWeaponCopyStats?.(equipment) ?? {};
+  const copy = findWeaponCopyEquipment?.(state, equipment);
+  return `
+    <span class="tag">Копії ${copies}/${WEAPON_COPY_MAX}</span>
+    <span class="tag">${copies ? `Крит ${crit.critChance}% · урон +${crit.critDamage}%` : "Крит відкривається копією"}</span>
+    ${copies < WEAPON_COPY_MAX ? `<span class="tag ${copy ? "" : "is-missing"}">${copy ? "Копія є" : "Потрібна така сама зброя"}</span>` : `<span class="tag">Злиття максимум</span>`}
+  `;
+}
+
+function renderWeaponRefineButton(state, equipment, className = "btn ghost", label = "Злити копію") {
+  const item = getEquipmentTemplate(equipment);
+  if (item?.equipmentSlot !== "weapon") return "";
+  const copy = findWeaponCopyEquipment?.(state, equipment);
+  const copyItem = copy ? getEquipmentTemplate(copy) : null;
+  const copies = getWeaponCopies(equipment);
+  const maxed = copies >= WEAPON_COPY_MAX;
+  const title = maxed
+    ? "Зброя вже має максимум копій"
+    : copy
+      ? `Поглинає ${copyItem?.name ?? "копію"} Lv ${copy.level}`
+      : "Потрібна вільна копія тієї самої зброї";
+  return `<button class="${className}" data-action="refine-weapon" data-equipment-uid="${equipment.uid}" title="${escapeHtml(title)}" ${!maxed && canRefineWeapon(state, equipment) ? "" : "disabled"}>${maxed ? "Копії max" : label}</button>`;
+}
+
+function renderSignaturePassiveLine(equipment) {
+  const text = getSignaturePassiveText?.(equipment) ?? "";
+  return text ? `<p class="equipment-passive">${escapeHtml(text)}</p>` : "";
+}
+
 function renderCharacterWeaponStrip(state, hamster, equipment) {
   const item = equipment ? getEquipmentTemplate(equipment) : null;
   const quickEquip = !equipment ? getSortedAvailableEquipmentForSlot(state, "weapon", hamster.id)[0] : null;
@@ -1032,13 +1082,16 @@ function renderCharacterWeaponStrip(state, hamster, equipment) {
           <span class="tag">Lv ${displayEquipment.level}/${displayEquipment.maxLevel}</span>
         </div>
         <p>${renderEquipmentStatsText(displayEquipment)}</p>
+        ${renderSignaturePassiveLine(displayEquipment)}
         <div class="tag-row character-weapon-cost">
           ${equipment ? renderEquipmentUpgradeCostTags(state, equipment) : `<span class="tag">${renderStarRating(displayItem.stars)}</span>`}
+          ${equipment ? renderWeaponCopyTags(state, equipment) : ""}
         </div>
         <div class="button-row character-weapon-actions">
           ${equipment
             ? `
               ${renderEquipmentUpgradeButton(state, equipment, "btn", "Прокачати зброю")}
+              ${renderWeaponRefineButton(state, equipment, "btn ghost")}
               <button class="btn ghost" data-action="unequip-slot" data-hamster-id="${hamster.id}" data-slot="weapon">Зняти</button>
             `
             : `<button class="btn" data-action="equip-item" data-hamster-id="${hamster.id}" data-equipment-uid="${quickEquip.uid}">Одягти зброю</button>`}
@@ -1083,13 +1136,16 @@ function renderCharacterEquipmentFocus(state, hamster, slot, equipment) {
               <span class="tag">Lv ${equipment.level}/${equipment.maxLevel}</span>
             </div>
             <p>${renderEquipmentStatsText(equipment)}</p>
+            ${renderSignaturePassiveLine(equipment)}
             <div class="tag-row character-equipment-cost">
               ${renderEquipmentUpgradeCostTags(state, equipment)}
               ${renderEquipmentFodderTag(state, equipment)}
+              ${renderWeaponCopyTags(state, equipment)}
             </div>
             <div class="button-row character-equipped-actions">
               ${renderEquipmentUpgradeButton(state, equipment, "btn", "Прокачати")}
               ${renderEquipmentFodderButton(state, equipment)}
+              ${renderWeaponRefineButton(state, equipment)}
               <button class="btn ghost" data-action="unequip-slot" data-hamster-id="${hamster.id}" data-slot="${slot}">Зняти</button>
             </div>
           </div>
@@ -1125,7 +1181,9 @@ function renderCharacterEquipmentOption(state, hamster, slot, currentEquipment, 
         <div class="tag-row">
           <span class="tag">${renderStarRating(item.stars)}</span>
           ${item.signatureFor ? `<span class="tag">Сигнатурна</span>` : ""}
+          ${renderWeaponCopyTags(state, candidate)}
         </div>
+        ${renderSignaturePassiveLine(candidate)}
         <div class="equipment-delta-row">
           ${renderEquipmentDelta(candidate, currentEquipment)}
         </div>
@@ -1325,14 +1383,22 @@ function renderGachaScreen(state) {
   const shiny = state.resources.shiny ?? 0;
   const singleCost = banner.cost.single.shiny ?? banner.cost.single.coins ?? 0;
   const tenCost = banner.cost.ten.shiny ?? banner.cost.ten.coins ?? 0;
-  const pityPercent = Math.min(100, Math.round((state.gacha.pity5 / banner.pity.fiveStarEvery) * 100));
+  const pityTotal = banner.pity.fiveStarEvery;
+  const pityCurrent = state.gacha.pity5;
+  const pityPercent = Math.min(100, (pityCurrent / pityTotal) * 100);
   const softPityStart = banner.pity.softPityStart ?? banner.pity.fiveStarEvery;
   const pullsToTen = Math.max(0, tenCost - shiny);
+  const pullsToSingle = Math.max(0, singleCost - shiny);
   const results = runtimeState.gachaResults ?? [];
   const canSingle = shiny >= singleCost;
   const canTen = shiny >= tenCost;
   const hasResults = results.length > 0;
   const canTradeShiny = canAfford(state, MARKET_SHINY_TRADE.cost);
+  const needMore = !canSingle
+    ? `До 1 листа не вистачає: <b>${pullsToSingle} світяшок</b>`
+    : pullsToTen
+      ? `До 10 листів не вистачає: <b>${pullsToTen} світяшок</b>`
+      : "10 листів готові";
   return `
     <main class="screen">
       ${renderResourceBar(state)}
@@ -1342,29 +1408,36 @@ function renderGachaScreen(state) {
           <div>
             <h1>${t("gacha")}</h1>
             <p class="muted">${banner.name}</p>
+            <div class="featured-card">★★★★★ Тінь · головний приз</div>
           </div>
           <span class="shiny-counter">${svgIcon("shiny", "svg-icon svg-icon-xs")} ${shiny}</span>
         </div>
         ${renderGachaBoxStage(results)}
-        <div class="gacha-pity-bar">
-          <div class="gacha-pity-fill" style="width:${pityPercent}%"></div>
+        <div class="gacha-pity-box">
+          <div class="gacha-pity-label">
+            <span>Гарант 5★</span>
+            <span>${pityCurrent} / ${pityTotal}</span>
+          </div>
+          <div class="gacha-pity-bar">
+            <div class="gacha-pity-fill" style="width:${pityPercent}%"></div>
+          </div>
+          <div class="gacha-pity-hint">М'який шанс починається з ${softPityStart} листа</div>
         </div>
-        <p class="gacha-pity-note">Гарант 5 зірок: ${state.gacha.pity5}/${banner.pity.fiveStarEvery} листів · м'який шанс з ${softPityStart}</p>
-        <div class="gacha-economy-row">
-          <span class="tag">Вилазка: світяшки 2-12+</span>
-          <span class="tag">Блиск у щілині: світяшки 3+</span>
-          <span class="tag">Щоденні: світяшки 8</span>
-          <span class="tag">${pullsToTen ? `До 10 листів: ${pullsToTen}` : "10 листів готові"}</span>
+        <div class="gacha-rules">
+          <span class="rule-pill">Вилазка: світяшки 2-12+</span>
+          <span class="rule-pill">Блиск у щілині: світяшки 3+</span>
+          <span class="rule-pill">Щоденні: світяшки 8</span>
+          <span class="rule-pill">${pullsToTen ? `До 10 листів: ${pullsToTen}` : "10 листів готові"}</span>
         </div>
-        <div class="button-row gacha-action-row">
-          <button class="btn secondary" data-action="pull-gacha" data-count="1" ${canSingle ? "" : "disabled"}>
+        <div class="pull-buttons gacha-action-row">
+          <button class="btn pull-btn primary" data-action="pull-gacha" data-count="1" ${canSingle ? "" : "disabled"} title="${canSingle ? "" : `Потрібно ще ${pullsToSingle} світяшок`}">
             ${svgIcon("shiny")} 1 лист · ${singleCost}
           </button>
-          <button class="btn ${canTen ? "is-ready-action" : ""}" data-action="pull-gacha" data-count="10" ${canTen ? "" : "disabled"}>
+          <button class="btn pull-btn ${canTen ? "ten-ready" : "disabled"}" data-action="pull-gacha" data-count="10" ${canTen ? "" : "disabled"} title="${canTen ? "" : `Потрібно ще ${pullsToTen} світяшок`}">
             ${svgIcon("shiny")} 10 листів · ${tenCost}
           </button>
         </div>
-        ${!canSingle ? `<p class="gacha-pity-note">Бракує світяшок. Вилазки та доручення поповнюють запас.</p>` : ""}
+        <div class="need-more">${needMore}</div>
       </section>
 
       ${renderGachaTradePanel(canTradeShiny)}
@@ -1404,14 +1477,14 @@ function renderGachaScreen(state) {
 
 function renderGachaTradePanel(canTradeShiny) {
   return `
-    <section class="gacha-trade-card">
+    <section class="gacha-trade-card exchange-card">
       <div class="gacha-trade-icon">${svgIcon("market")}</div>
       <div class="gacha-trade-copy">
         <p class="guide-kicker">Обмін</p>
         <h2>Світяшки за насіння</h2>
         <p>${MARKET_SHINY_TRADE.cost.gold} насіння → ${MARKET_SHINY_TRADE.reward.shiny} світяшок</p>
       </div>
-      <button class="select-pill ${canTradeShiny ? "is-active" : ""}" data-action="trade-market-shiny" ${canTradeShiny ? "" : "disabled"}>
+      <button class="select-pill exchange-btn ${canTradeShiny ? "is-active" : ""}" data-action="trade-market-shiny" ${canTradeShiny ? "" : "disabled"}>
         Обміняти
       </button>
     </section>
@@ -1419,30 +1492,26 @@ function renderGachaTradePanel(canTradeShiny) {
 }
 
 function renderGachaBoxStage(results = []) {
-  const isOpen = results.length > 0;
   const bestStars = results.reduce((best, result) => Math.max(best, result.stars ?? 0), 0);
   const featured = getFeaturedGachaDrop(results);
   const hasPrize = bestStars >= 5;
   const stageClass = [
     "gacha-box-stage",
-    isOpen ? "is-open" : "",
-    featured ? "has-drop" : "",
+    featured ? "has-reward" : "",
     hasPrize ? "has-prize" : ""
   ].filter(Boolean).join(" ");
-  const starCount = Math.max(1, bestStars || 1);
 
   return `
-    <div class="${stageClass}" aria-hidden="true">
+    <div class="${stageClass}" id="gachaStage" aria-hidden="true">
+      ${featured ? renderGachaRewardPreview(featured) : ""}
+      <div class="gacha-burst-light"></div>
+      <div class="gacha-spark-field"></div>
       <div class="gacha-stage-glow"></div>
       <div class="gacha-particles">
         ${Array.from({ length: 10 }, (_, index) => `<span style="--delay:${180 + index * 34}ms"></span>`).join("")}
       </div>
-      <div class="gacha-reveal-card">
-        ${featured ? renderGachaDropPreview(featured) : `
-          <span class="gacha-drop-placeholder">${svgIcon(hasPrize ? "gacha" : "shiny", "svg-icon")}</span>
-          <strong>${"✦".repeat(starCount)}</strong>
-        `}
-      </div>
+      <div class="gacha-letter-fx"></div>
+      <div class="gacha-spark-fx"></div>
       <div class="gacha-box">
         <div class="gacha-box-lid"></div>
         <div class="gacha-box-base">
@@ -1472,16 +1541,48 @@ function gachaDropWeight(result) {
   return 0;
 }
 
-function renderGachaDropPreview(result) {
+function getGachaRewardVisual(result) {
   const hamster = result.type === "hamster" ? dataStore.hamsters.find((candidate) => candidate.id === result.id) : null;
   const portraitSrc = hamster ? getHamsterPortrait(hamster) : null;
   const item = result.item ?? findItem(result.id);
   const fallbackIcon = hamster ? iconForClass(hamster.class) : iconForItemType(item?.type ?? "resource_pack");
-  const imgHtml = portraitSrc
-    ? `<img src="${escapeHtml(portraitSrc)}" alt="${escapeHtml(result.name)}" onerror="this.style.display='none'; this.nextElementSibling.style.display='grid'">`
-    : item
-      ? `<img src="${escapeHtml(getItemImageSrc(item.id))}" alt="${escapeHtml(result.name)}" class="item-sprite" onerror="this.style.display='none'; this.nextElementSibling.style.display='grid'">`
-      : "";
+  const imageSrc = portraitSrc ?? (item ? getItemImageSrc(item.id) : "");
+  const imageClass = !portraitSrc && item ? "item-sprite" : "";
+  const imgHtml = imageSrc
+    ? `<img src="${escapeHtml(imageSrc)}" alt="${escapeHtml(result.name)}" class="${imageClass}" onerror="this.style.display='none'; this.nextElementSibling.style.display='grid'">`
+    : "";
+
+  return { fallbackIcon, imgHtml };
+}
+
+function gachaRewardTypeLabel(result) {
+  if (result.stars >= 5 && result.type === "hamster") return "головний приз";
+  if (result.status === "new") return "новий боєць";
+  if (result.status === "constellation") return `сузір'я C${result.constellationLevel}`;
+  if (result.status === "refund") return "припаси";
+  if (result.status === "equipment") return "спорядження";
+  return result.type === "hamster" ? "хом'як" : "нагорода";
+}
+
+function renderGachaRewardPreview(result) {
+  const { fallbackIcon, imgHtml } = getGachaRewardVisual(result);
+  const stars = Math.max(1, result.stars ?? 1);
+
+  return `
+    <div class="gacha-reward-preview rarity-${rarityClass(result.rarity ?? "common")}" id="gachaRewardPreview">
+      <div class="gacha-reward-stars">${"★".repeat(stars)}</div>
+      <div class="gacha-reward-art">
+        ${imgHtml}
+        <span class="gacha-reward-fallback" style="${imgHtml ? "display:none" : ""}">${svgIcon(fallbackIcon, "svg-icon svg-icon-lg")}</span>
+      </div>
+      <div class="gacha-reward-name">${escapeHtml(result.name)}</div>
+      <div class="gacha-reward-type">${escapeHtml(gachaRewardTypeLabel(result))}</div>
+    </div>
+  `;
+}
+
+function renderGachaDropPreview(result) {
+  const { fallbackIcon, imgHtml } = getGachaRewardVisual(result);
   const detail = result.status === "new"
     ? "Новий боєць"
     : result.status === "constellation"
@@ -1507,13 +1608,12 @@ function renderGachaDropPreview(result) {
 function renderInventoryScreen(state) {
   const items = getInventoryGroups(state, dataStore);
   const equipmentCount = state.equipment?.length ?? 0;
-  const equippedCount = state.equipment?.filter((equipment) => equipment.equippedBy).length ?? 0;
   return `
     <main class="screen">
       ${renderResourceBar(state)}
       <div class="top-row">
         <div>
-          <p class="muted">${equipmentCount} спорядження · ${items.length} типів предметів</p>
+          <p class="muted">${items.length} типів предметів · ${equipmentCount} спорядження в рюкзаку</p>
           <h1>${t("inventory")}</h1>
         </div>
       </div>
@@ -1525,10 +1625,14 @@ function renderInventoryScreen(state) {
       </section>
       <section class="section">
         <div class="section-header">
-          <h2>Спорядження</h2>
-          <span class="tag">${equippedCount}/${equipmentCount} одягнено</span>
+          <h2>Рюкзак</h2>
+          <span class="tag">${equipmentCount} предметів</span>
         </div>
-        ${renderInventoryEquipmentBoard(state)}
+        <div class="empty-state">
+          <span class="empty-icon">${svgIcon("backpack", "svg-icon svg-icon-lg")}</span>
+          <p>Усе спорядження тепер зібране в окремій вкладці рюкзака.</p>
+          <button class="btn" data-action="nav" data-route="backpack">Відкрити рюкзак</button>
+        </div>
       </section>
       <section class="section stack">
         <h2>Матеріали</h2>
@@ -1543,6 +1647,40 @@ function renderInventoryScreen(state) {
           <span class="empty-icon">${svgIcon("market", "svg-icon svg-icon-lg")}</span>
           <p>Тут можна буде міняти зайві припаси<br>на Світяшки та рідкісні матеріали.</p>
         </div>
+      </section>
+    </main>
+  `;
+}
+
+function renderBackpackScreen(state) {
+  const equipmentCount = state.equipment?.length ?? 0;
+  const equippedCount = state.equipment?.filter((equipment) => equipment.equippedBy).length ?? 0;
+  const weaponCount = state.equipment?.filter((equipment) => getEquipmentTemplate(equipment)?.equipmentSlot === "weapon").length ?? 0;
+  const readyCopies = getReadyWeaponMergeCount(state);
+  const readyCopyLabel = readyCopies === 1 ? "1 злиття готове" : `${readyCopies} злиття готові`;
+
+  return `
+    <main class="screen">
+      ${renderResourceBar(state)}
+      <div class="top-row">
+        <div>
+          <p class="muted">${equipmentCount} спорядження · ${weaponCount} зброї · ${readyCopyLabel}</p>
+          <h1>${t("backpack")}</h1>
+        </div>
+      </div>
+      <section class="section backpack-summary">
+        <div class="card-row">
+          <span class="tag">${equippedCount}/${equipmentCount} одягнено</span>
+          <span class="tag">${readyCopies ? `Копії готові: ${readyCopies}` : "Немає готових копій"}</span>
+        </div>
+        <p class="muted">Зброя зливається тільки однаковими копіями 1 в 1. Кожна копія піднімає крит шанс і крит урон, максимум ${WEAPON_COPY_MAX}/5.</p>
+      </section>
+      <section class="section">
+        <div class="section-header">
+          <h2>Все спорядження</h2>
+          <span class="tag">${equipmentCount}</span>
+        </div>
+        ${renderInventoryEquipmentBoard(state)}
       </section>
     </main>
   `;
@@ -1601,14 +1739,17 @@ function renderInventoryEquipmentTile(state, equipment) {
           <span class="tag">${renderStarRating(item.stars)}</span>
           ${item.signatureFor ? `<span class="tag">Сигнатурна</span>` : ""}
           ${owner ? `<span class="tag">На ${escapeHtml(owner.name)}</span>` : `<span class="tag">Вільна</span>`}
+          ${renderWeaponCopyTags(state, equipment)}
         </div>
         <p>${renderEquipmentStatsText(equipment)}</p>
+        ${renderSignaturePassiveLine(equipment)}
         <div class="tag-row inventory-equipment-cost">
           ${renderEquipmentUpgradeCostTags(state, equipment)}
           ${renderEquipmentFodderTag(state, equipment)}
         </div>
         <div class="button-row inventory-equipment-actions">
           ${renderEquipmentUpgradeButton(state, equipment, "btn", "Прокачати")}
+          ${renderWeaponRefineButton(state, equipment)}
           ${renderEquipmentFodderButton(state, equipment)}
           ${owner ? "" : `<button class="btn ghost" data-action="salvage-equipment" data-equipment-uid="${equipment.uid}">В руду</button>`}
         </div>
@@ -1652,7 +1793,7 @@ function renderTrainingScreen(state) {
   // Чи атакує зараз (анімація attack якщо удар < 450мс тому)
   const isAttacking = !!(lastHit?.timestamp && Date.now() - lastHit.timestamp < 450);
   const autoAttackLabel = selectedHamster
-    ? `Авто-атака · 1.3с · ${selectedStats.attack} урону`
+    ? `Авто-атака · 1.3с · ${Math.round(getExpectedTrainingDamage(selectedStats))} сер. урону`
     : "Оберіть бійця";
 
   // Portrait path (fallback when no sprite config)
@@ -1713,7 +1854,7 @@ function renderTrainingScreen(state) {
 
           <div class="arena-center">
             ${lastHit && isAttacking ? `
-              <div class="arena-damage">-${lastHit.damage}</div>
+              <div class="arena-damage ${lastHit.critical ? "is-critical" : ""}">-${lastHit.damage}${lastHit.critical ? " крит" : ""}</div>
               ${lastHit.booksAwarded > 0
                 ? `<div class="arena-reward">Схованки +${lastHit.booksAwarded}</div>`
                 : ""}
@@ -1731,7 +1872,7 @@ function renderTrainingScreen(state) {
         <div class="arena-labels-row">
           <div class="arena-side-info">
             <span class="arena-label">${selectedHamster ? escapeHtml(selectedHamster.name) : "оберіть бійця"}</span>
-            ${selectedHamster ? `<span class="arena-stat">${svgIcon("weapon", "svg-icon svg-icon-xs")} ${selectedStats.attack}</span>` : ""}
+            ${selectedHamster ? `<span class="arena-stat">${svgIcon("weapon", "svg-icon svg-icon-xs")} ${selectedStats.attack} · ${selectedStats.critChance ?? 0}% крит</span>` : ""}
           </div>
           <div class="arena-side-info" style="align-items:flex-end">
             <span class="arena-label">Манекен</span>
@@ -1791,13 +1932,20 @@ function renderTrainingFightTab(state, availableHamsters, selectedHamster, selec
                   }
                 </div>
                 <span class="training-fighter-name">${escapeHtml(h.name)}</span>
-                <span class="training-fighter-stat">⚔ ${hStats.attack}</span>
+                <span class="training-fighter-stat">⚔ ${hStats.attack} · ${hStats.critChance ?? 0}%</span>
               </button>`;
             }).join("")}
           </div>`
         : `<p class="muted">Всі хом'яки відпочивають або поранені.</p>`}
     </div>
   `;
+}
+
+function getExpectedTrainingDamage(stats) {
+  if (!stats) return 0;
+  const critChance = Math.max(0, Math.min(75, stats.critChance ?? 0));
+  const critDamage = Math.max(0, stats.critDamage ?? 0);
+  return Math.max(1, stats.attack * (1 + (critChance / 100) * (critDamage / 100)));
 }
 
 function renderTrainingDummyTab(state, dummy, nextDummy) {
@@ -1863,8 +2011,8 @@ function renderResourceChip(key, value) {
   const label = compactResourceLabel(key, meta.label);
   return `
     <div class="resource-chip resource-${key}" title="${escapeHtml(meta.label)}">
-      <span>${svgIcon(meta.icon, "svg-icon svg-icon-xs")} ${label}</span>
-      <strong>${formatNumber(value ?? 0)}</strong>
+      <span class="resource-label">${svgIcon(meta.icon, "svg-icon svg-icon-xs")} ${label}</span>
+      <strong class="resource-value">${formatNumber(value ?? 0)}</strong>
     </div>
   `;
 }
@@ -1910,6 +2058,10 @@ function getNavBadge(state, route) {
     return runtimeState.trainingHamsterId || state.training?.activeHamsterId ? "1" : "";
   }
 
+  if (route === "backpack") {
+    return getReadyWeaponMergeCount(state) || "";
+  }
+
   if (route === "gacha") {
     const banner = getSelectedBanner(state);
     const shiny = state.resources?.shiny ?? 0;
@@ -1920,6 +2072,27 @@ function getNavBadge(state, route) {
   }
 
   return "";
+}
+
+function getReadyWeaponMergeCount(state) {
+  const groups = new Map();
+  for (const equipment of state.equipment ?? []) {
+    const item = getEquipmentTemplate(equipment);
+    if (item?.equipmentSlot !== "weapon") continue;
+    const entries = groups.get(equipment.itemId) ?? [];
+    entries.push(equipment);
+    groups.set(equipment.itemId, entries);
+  }
+
+  let count = 0;
+  for (const entries of groups.values()) {
+    const hasTarget = entries.some((equipment) => getWeaponCopies(equipment) < WEAPON_COPY_MAX);
+    if (!hasTarget) continue;
+    const freeCopies = entries.filter((equipment) => !equipment.equippedBy && !equipment.locked).length;
+    const targetIsEquipped = entries.some((equipment) => equipment.equippedBy && getWeaponCopies(equipment) < WEAPON_COPY_MAX);
+    count += Math.max(0, freeCopies - (targetIsEquipped ? 0 : 1));
+  }
+  return count;
 }
 
 function renderBuildingCard(state, building) {
@@ -2255,8 +2428,10 @@ function renderEquipmentCard(state, equipment, options = {}) {
           <span class="tag">${slotLabel(item.equipmentSlot)}</span>
           ${item.signatureFor ? `<span class="tag">Сигнатурна</span>` : ""}
           ${owner ? `<span class="tag">На ${escapeHtml(owner.name)}</span>` : ""}
+          ${renderWeaponCopyTags(state, equipment)}
         </div>
-        <p>${Object.entries(stats).map(([stat, value]) => `${statLabel(stat)} +${value}`).join(" · ")}</p>
+        <p>${Object.entries(stats).map(([stat, value]) => formatEquipmentStat(stat, value)).join(" · ")}</p>
+        ${renderSignaturePassiveLine(equipment)}
         <div class="tag-row">
           <span class="tag">Ціна: насіння ${cost.gold}, камінці ${cost.ore}</span>
           ${requiresFodder ? `<span class="tag">${fodder ? "Матеріал є" : "Потрібен предмет того ж місця"}</span>` : ""}
@@ -2264,6 +2439,7 @@ function renderEquipmentCard(state, equipment, options = {}) {
         </div>
         <div class="button-row">
           <button class="btn" data-action="upgrade-equipment" data-equipment-uid="${equipment.uid}" ${canUpgradeEquipment(state, equipment) ? "" : "disabled"}>Прокачати</button>
+          ${renderWeaponRefineButton(state, equipment)}
           ${renderEquipmentFodderButton(state, equipment)}
           ${owner || options.hideSalvage ? "" : `<button class="btn ghost" data-action="salvage-equipment" data-equipment-uid="${equipment.uid}">В руду</button>`}
         </div>
@@ -2533,6 +2709,8 @@ function renderHamsterDetailModal(state, hamsterId) {
         <div class="stat"><span>Сила</span><strong>${stats.power}</strong></div>
         <div class="stat"><span>Швидк.</span><strong>${stats.speed}</strong></div>
         <div class="stat"><span>Удача</span><strong>${stats.luck}</strong></div>
+        <div class="stat"><span>Крит</span><strong>${stats.critChance ?? 0}%</strong></div>
+        <div class="stat"><span>Крит урон</span><strong>${stats.critDamage ?? 0}%</strong></div>
       </div>
       <div class="tag-row">
         <span class="tag">Прокачка: насіння ${cost.gold}</span>
@@ -2560,6 +2738,7 @@ function renderEquipmentSlot(state, hamster, slot, equipment) {
       ${equipment ? `
         <div class="button-row">
           ${renderEquipmentUpgradeButton(state, equipment)}
+          ${renderWeaponRefineButton(state, equipment)}
           <button class="btn ghost" data-action="unequip-slot" data-hamster-id="${hamster.id}" data-slot="${slot}">Зняти</button>
         </div>
       ` : ""}
@@ -2583,8 +2762,10 @@ function renderEquippedInline(state, equipment) {
         <div class="tag-row">
           <span class="tag">Lv ${equipment.level}/${equipment.maxLevel}</span>
           <span class="tag">${renderStarRating(item.stars)}</span>
+          ${renderWeaponCopyTags(state, equipment)}
         </div>
         <p>${renderEquipmentStatsText(equipment)}</p>
+        ${renderSignaturePassiveLine(equipment)}
         <div class="tag-row">${renderEquipmentUpgradeCostTags(state, equipment)}</div>
       </div>
     </div>
@@ -2672,7 +2853,13 @@ function statLabel(stat) {
     luck: "удача",
     carry: "вантаж",
     stamina: "витривалість",
-    signatureDamageBonus: "сигн. урон"
+    signatureDamageBonus: "сигн. урон",
+    critChance: "крит шанс",
+    critDamage: "крит урон",
+    lootBonus: "лут",
+    rareBonus: "рідк. шанс",
+    injuryResist: "травмост.",
+    expeditionSpeedBonus: "маршрут"
   }[stat] ?? stat;
 }
 

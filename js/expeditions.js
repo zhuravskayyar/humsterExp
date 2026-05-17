@@ -72,7 +72,7 @@ export function calculateTeam(state, hamsterIds) {
     hp: effective.reduce((sum, stats) => sum + stats.hp, 0),
     attack: effective.reduce((sum, stats) => sum + stats.attack, 0),
     defense: effective.reduce((sum, stats) => sum + stats.defense, 0),
-    combat: effective.reduce((sum, stats) => sum + stats.attack + stats.defense * 0.65 + stats.hp / 14 + (stats.signatureDamageBonus ?? 0), 0),
+    combat: effective.reduce((sum, stats) => sum + getExpectedAttack(stats) + stats.defense * 0.65 + stats.hp / 14 + (stats.signatureDamageBonus ?? 0), 0),
     power: effective.reduce((sum, stats) => sum + stats.power, 0),
     speed: effective.reduce((sum, stats) => sum + stats.speed, 0),
     luck: effective.reduce((sum, stats) => sum + stats.luck, 0),
@@ -83,6 +83,12 @@ export function calculateTeam(state, hamsterIds) {
     rareBonus: effective.reduce((sum, stats) => sum + stats.rareBonus, 0),
     injuryResist: effective.reduce((sum, stats) => sum + stats.injuryResist, 0)
   };
+}
+
+function getExpectedAttack(stats) {
+  const critChance = Math.max(0, Math.min(75, stats.critChance ?? 0));
+  const critDamage = Math.max(0, stats.critDamage ?? 0);
+  return stats.attack * (1 + (critChance / 100) * (critDamage / 100));
 }
 
 export function calculateSuccessChance(state, zoneId, hamsterIds, rationId = "none") {

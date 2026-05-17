@@ -115,6 +115,8 @@ export function getHamsterEffectiveStats(hamster, state = null) {
     lootBonus: 0,
     rareBonus: 0,
     injuryResist: 0,
+    critChance: 0,
+    critDamage: 0,
     passiveIncome: {}
   };
 

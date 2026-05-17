@@ -2,6 +2,18 @@ import { findItem } from "./data.js";
 import { addResources } from "./inventory.js";
 
 export const EQUIPMENT_SLOTS = ["weapon", "armor", "backpack", "tool", "charm"];
+export const WEAPON_COPY_MAX = 5;
+
+const SIGNATURE_PASSIVES = {
+  ham_1: { carry: 4, lootBonus: 4 },
+  ham_2: { speed: 4, expeditionSpeedBonus: 3 },
+  ham_3: { attack: 5, defense: 3 },
+  ham_4: { luck: 5, rareBonus: 3 },
+  ham_5: { speed: 3, defense: 3, expeditionSpeedBonus: 2 },
+  ham_6: { hp: 34, injuryResist: 4 },
+  ham_7: { attack: 6, critChance: 3 },
+  ham_8: { speed: 5, critDamage: 22 }
+};
 
 const RARITY_RANK = {
   Common: 1,
@@ -19,6 +31,7 @@ export function createEquipmentFromItem(item) {
     itemId: item.id,
     level: 1,
     maxLevel: item.maxLevel ?? 90,
+    copies: 0,
     equippedBy: null,
     locked: false
   };
@@ -182,6 +195,61 @@ export function upgradeEquipmentWithFodder(state, uid) {
   return { equipment, fodder, levelsGained };
 }
 
+export function getWeaponCopies(equipment) {
+  return Math.max(0, Math.min(WEAPON_COPY_MAX, Number(equipment?.copies ?? equipment?.refine ?? 0) || 0));
+}
+
+export function getWeaponCopyStats(equipment) {
+  const item = getEquipmentTemplate(equipment);
+  const copies = getWeaponCopies(equipment);
+  if (item?.equipmentSlot !== "weapon" || copies <= 0) return {};
+
+  return {
+    critChance: copies * 5,
+    critDamage: 50 + copies * 10
+  };
+}
+
+function isValidWeaponCopy(candidate, targetEquipment) {
+  if (!candidate || !targetEquipment) return false;
+  if (candidate.uid === targetEquipment.uid || candidate.equippedBy || candidate.locked) return false;
+  const candidateItem = getEquipmentTemplate(candidate);
+  const targetItem = getEquipmentTemplate(targetEquipment);
+  return Boolean(
+    candidateItem &&
+    targetItem &&
+    targetItem.equipmentSlot === "weapon" &&
+    candidateItem.equipmentSlot === "weapon" &&
+    candidate.itemId === targetEquipment.itemId
+  );
+}
+
+export function findWeaponCopyEquipment(state, targetEquipment) {
+  return state.equipment
+    .filter((equipment) => isValidWeaponCopy(equipment, targetEquipment))
+    .sort((a, b) => getWeaponCopies(a) - getWeaponCopies(b) || (a.level ?? 1) - (b.level ?? 1))[0] ?? null;
+}
+
+export function canRefineWeapon(state, equipment) {
+  const item = getEquipmentTemplate(equipment);
+  return Boolean(item?.equipmentSlot === "weapon" && getWeaponCopies(equipment) < WEAPON_COPY_MAX && findWeaponCopyEquipment(state, equipment));
+}
+
+export function refineWeapon(state, uid) {
+  const equipment = getEquipmentByUid(state, uid);
+  if (!equipment) throw new Error("Предмет не знайдено");
+  const item = getEquipmentTemplate(equipment);
+  if (item?.equipmentSlot !== "weapon") throw new Error("Зливати копії можна тільки в зброю");
+  if (getWeaponCopies(equipment) >= WEAPON_COPY_MAX) throw new Error("Зброя вже має максимум копій");
+
+  const copy = findWeaponCopyEquipment(state, equipment);
+  if (!copy) throw new Error("Потрібна вільна копія тієї самої зброї");
+
+  equipment.copies = getWeaponCopies(equipment) + 1;
+  state.equipment = state.equipment.filter((candidate) => candidate.uid !== copy.uid);
+  return { equipment, copy };
+}
+
 export function salvageEquipment(state, uid) {
   const equipment = getEquipmentByUid(state, uid);
   if (!equipment) throw new Error("Предмет не знайдено");
@@ -203,17 +271,59 @@ export function getEquipmentStats(equipment) {
   if (!item) return {};
   const level = equipment.level ?? 1;
   const scale = 1 + (level - 1) * 0.075;
-  return Object.fromEntries(
+  return {
+    ...Object.fromEntries(
     Object.entries(item.stats ?? {}).map(([stat, value]) => [stat, Math.round(value * scale)])
-  );
+    ),
+    ...getWeaponCopyStats(equipment)
+  };
 }
 
 export function getSignatureBonus(hamster, equipment) {
   const item = equipment ? getEquipmentTemplate(equipment) : null;
   if (!item?.signatureFor || item.signatureFor !== hamster.id) return {};
-  return {
-    attack: Math.max(4, item.stars * 2),
-    hp: item.stars * 12,
-    signatureDamageBonus: 10
+  const copies = getWeaponCopies(equipment);
+  const passive = SIGNATURE_PASSIVES[item.signatureFor] ?? {};
+  const bonus = {
+    attack: Math.max(4, item.stars * 2) + copies * 2,
+    hp: item.stars * 12 + copies * 8,
+    signatureDamageBonus: 10 + copies * 4
   };
+
+  for (const [stat, value] of Object.entries(passive)) {
+    const scale = stat === "hp" || stat === "critDamage" ? copies * 8 : copies * 2;
+    bonus[stat] = (bonus[stat] ?? 0) + value + scale;
+  }
+
+  return bonus;
+}
+
+export function getSignaturePassiveText(equipment) {
+  const item = equipment ? getEquipmentTemplate(equipment) : null;
+  if (!item?.signatureFor) return "";
+  const passive = getSignatureBonus({ id: item.signatureFor }, equipment);
+  const readable = Object.entries(passive)
+    .filter(([stat]) => stat !== "signatureDamageBonus")
+    .map(([stat, value]) => `${signatureStatLabel(stat)} +${value}`)
+    .join(" · ");
+  return readable ? `Сигн. пасив: ${readable}` : "Сигн. пасив активується власником";
+}
+
+function signatureStatLabel(stat) {
+  return {
+    hp: "HP",
+    attack: "урон",
+    defense: "захист",
+    power: "сила",
+    speed: "швидк.",
+    luck: "удача",
+    carry: "вантаж",
+    stamina: "витрив.",
+    lootBonus: "лут",
+    rareBonus: "рідк.",
+    injuryResist: "травмост.",
+    expeditionSpeedBonus: "маршрут",
+    critChance: "крит шанс",
+    critDamage: "крит урон"
+  }[stat] ?? stat;
 }

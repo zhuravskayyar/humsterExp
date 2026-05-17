@@ -8,6 +8,7 @@
 }
 
 .btn {
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -15,27 +16,33 @@
   width: 100%;
   padding: 11px 14px;
   border: 2px solid rgba(76, 45, 18, 0.78);
-  border-radius: 14px;
+  border-radius: 13px;
   background:
-    repeating-linear-gradient(-35deg, rgba(255, 255, 255, 0.055) 0 2px, transparent 2px 9px),
-    radial-gradient(circle at 24% 16%, rgba(255, 244, 214, 0.28), transparent 34%),
-    linear-gradient(180deg, #E3B46C, #B7781C);
+    radial-gradient(circle at 24% 16%, rgba(255, 244, 214, 0.3), transparent 36%),
+    linear-gradient(180deg, rgba(233, 184, 66, 0.44), rgba(168, 100, 24, 0.34)),
+    var(--texture-button-panel-asset),
+    linear-gradient(180deg, #7A4D29, #4A2A1A);
+  background-size: auto, auto, 100% 100%, auto;
   box-shadow:
-    inset 0 2px 0 rgba(255, 244, 214, 0.42),
-    inset 0 -4px 0 rgba(62, 35, 21, 0.28),
+    inset 0 1px 0 rgba(255, 244, 214, 0.24),
+    inset 0 -4px 0 rgba(35, 19, 12, 0.34),
     0 5px 0 rgba(55, 35, 22, 0.28),
     0 10px 14px rgba(40, 20, 10, 0.14);
-  color: #2A1710;
+  color: #FFF0C8;
   font-size: 0.95rem;
   font-weight: 900;
   text-align: center;
+  text-shadow: 0 2px 0 rgba(31, 18, 12, 0.38);
+  overflow: hidden;
 }
 
 .btn.secondary {
-  border-color: #8F6A46;
+  border-color: rgba(143, 106, 70, 0.72);
   background:
-    var(--texture-leather),
-    linear-gradient(180deg, #765036, #4C2F22);
+    linear-gradient(180deg, rgba(246, 230, 195, 0.08), rgba(0, 0, 0, 0.12)),
+    var(--texture-button-panel-asset),
+    linear-gradient(180deg, #6B4328, #3B2115);
+  background-size: auto, 100% 100%, auto;
   color: var(--text-on-dark);
   text-shadow: 0 2px 0 rgba(0, 0, 0, 0.28);
 }
@@ -44,8 +51,10 @@
   border-color: rgba(76, 45, 18, 0.78);
   background:
     radial-gradient(circle at 32% 24%, rgba(255, 255, 255, 0.42), transparent 38%),
-    repeating-linear-gradient(-35deg, rgba(255, 255, 255, 0.075) 0 2px, transparent 2px 9px),
-    linear-gradient(180deg, #F0B63D, #B7781C);
+    linear-gradient(180deg, rgba(240, 182, 61, 0.58), rgba(168, 100, 24, 0.34)),
+    var(--texture-button-panel-asset),
+    linear-gradient(180deg, #8C572B, #4C2B18);
+  background-size: auto, auto, 100% 100%, auto;
   animation: readyActionPulse 1.8s ease-in-out infinite;
 }
 
@@ -53,17 +62,23 @@
   border-color: rgba(83, 48, 28, 0.28);
   background:
     var(--texture-paper-asset),
-    var(--texture-paper),
+    linear-gradient(180deg, rgba(246, 230, 195, 0.84), rgba(231, 197, 141, 0.58)),
+    var(--texture-cardboard-asset),
     rgba(83, 48, 28, 0.075);
-  background-size: 512px 512px, auto, auto;
+  background-size: 512px 512px, auto, 360px 360px, auto;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.34),
     0 2px 0 rgba(116, 82, 50, 0.12);
   color: var(--text-main);
+  text-shadow: none;
 }
 
 .btn.danger-btn {
-  background: var(--danger);
+  background:
+    linear-gradient(180deg, rgba(255, 244, 214, 0.12), rgba(0, 0, 0, 0.12)),
+    var(--texture-button-panel-asset),
+    var(--danger);
+  background-size: auto, 100% 100%, auto;
   color: #fff8ea;
 }
 
@@ -93,13 +108,19 @@
 }
 
 .icon-btn:not(:disabled):hover {
-  background: rgba(83, 48, 28, 0.12);
+  background:
+    var(--texture-paper-asset),
+    linear-gradient(180deg, rgba(246, 230, 195, 0.88), rgba(231, 197, 141, 0.68)),
+    var(--texture-cardboard-asset);
   border-color: rgba(83, 48, 28, 0.38);
 }
 
 .select-pill:not(:disabled):hover {
   border-color: rgba(83, 48, 28, 0.38);
-  background: rgba(83, 48, 28, 0.12);
+  background:
+    var(--texture-paper-asset),
+    linear-gradient(180deg, rgba(246, 230, 195, 0.82), rgba(207, 159, 98, 0.48)),
+    var(--texture-cardboard-asset);
 }
 
 .btn:not(:disabled):active,
@@ -125,9 +146,9 @@
   border-radius: 13px;
   background:
     var(--texture-paper-asset),
-    var(--texture-paper),
-    linear-gradient(180deg, rgba(239, 228, 196, 0.86), rgba(213, 192, 143, 0.58));
-  background-size: 512px 512px, auto, auto;
+    linear-gradient(180deg, rgba(246, 230, 195, 0.86), rgba(207, 159, 98, 0.58)),
+    var(--texture-cardboard-asset);
+  background-size: 512px 512px, auto, 320px 320px;
   color: var(--accent-2);
   font-weight: 900;
   box-shadow:
@@ -138,8 +159,9 @@
 .hero-panel .icon-btn {
   border-color: rgba(83, 48, 28, 0.22);
   background:
-    var(--texture-paper),
-    rgba(255, 244, 214, 0.34);
+    var(--texture-paper-asset),
+    linear-gradient(180deg, rgba(246, 230, 195, 0.72), rgba(207, 159, 98, 0.38)),
+    var(--texture-cardboard-asset);
   color: var(--text-main);
 }
 
@@ -149,9 +171,9 @@
   border-radius: 14px;
   background:
     var(--texture-paper-asset),
-    var(--texture-paper),
-    linear-gradient(180deg, rgba(247, 233, 196, 0.74), rgba(216, 189, 130, 0.38));
-  background-size: 512px 512px, auto, auto;
+    linear-gradient(180deg, rgba(246, 230, 195, 0.8), rgba(231, 197, 141, 0.42)),
+    var(--texture-cardboard-asset);
+  background-size: 512px 512px, auto, 320px 320px;
   color: var(--text-main);
   font-size: 0.85rem;
   font-weight: 850;
@@ -165,8 +187,9 @@
   border-color: rgba(183, 120, 28, 0.7);
   background:
     radial-gradient(circle at 28% 22%, rgba(255, 255, 255, 0.42), transparent 36%),
-    var(--texture-paper),
-    linear-gradient(180deg, rgba(247, 200, 76, 0.36), rgba(79, 117, 84, 0.12));
+    linear-gradient(180deg, rgba(247, 200, 76, 0.36), rgba(79, 117, 84, 0.12)),
+    var(--texture-cardboard-asset);
+  background-size: auto, auto, 320px 320px;
   color: var(--accent);
 }
 
