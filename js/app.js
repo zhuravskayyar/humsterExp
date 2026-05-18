@@ -1,5 +1,5 @@
 import { loadData, dataStore, findZone } from "./data.js";
-import { abandonBossBattle, performBattleAction, startBossBattle } from "./battle.js";
+import { abandonBossBattle, performBattleAction, startBossBattle } from "./battle.js?v=34";
 import { canAfford, collectPassiveIncome, spendResources, upgradeColony } from "./colony.js";
 import * as equipmentApi from "./equipment.js?v=24";
 import { launchExpedition, updateExpeditionStatuses, claimExpedition } from "./expeditions.js?v=24";
@@ -10,7 +10,7 @@ import { exportSave, importSave, loadGame, resetGame, saveGame } from "./save.js
 import { gameState, runtimeState } from "./state.js";
 import { claimQuest, resetDailyQuestsIfNeeded, syncQuestProgress } from "./quests.js";
 import { hitDummy, processOfflineTraining, upgradeDummy, getDummyConfig, startAutoAttack, stopAutoAttack } from "./training.js";
-import { closeModal, openModal, pushToast, renderApp, updateLiveTimers, updateTrainingArena } from "./ui.js?v=32";
+import { closeModal, openModal, pushToast, renderApp, updateLiveTimers, updateTrainingArena } from "./ui.js?v=33";
 
 const {
   equipItem,
@@ -887,7 +887,7 @@ function maybeStartRandomBossAfterExpedition(expedition) {
   if (!expedition || gameState.battle?.active?.status === "active") return null;
   if (Math.random() > BOSS_AMBUSH_CHANCE) return null;
 
-  const bosses = dataStore.bosses ?? [];
+  const bosses = (dataStore.bosses ?? []).filter((entry) => (gameState.battle?.wins?.[entry.id] ?? 0) <= 0);
   const boss = bosses[Math.floor(Math.random() * bosses.length)];
   if (!boss) return null;
 

@@ -1700,12 +1700,15 @@ function renderBattleScreen(state) {
   if (active?.status === "active") return renderActiveBattleScreen(state, active);
 
   const bosses = dataStore.bosses ?? [];
-  const selectedBoss = bosses.find((boss) => boss.id === runtimeState.selectedBossId) ?? bosses[0];
+  const unbeatenBosses = bosses.filter((boss) => (state.battle?.wins?.[boss.id] ?? 0) <= 0);
+  const selectedBoss = unbeatenBosses.find((boss) => boss.id === runtimeState.selectedBossId) ?? unbeatenBosses[0];
   const selectedIds = runtimeState.selectedBossHamsterIds ?? [];
   const available = state.hamsters.filter((hamster) => hamster.status === "available");
   const maxTeam = selectedBoss?.maxTeam ?? 3;
   const canStart = Boolean(selectedBoss && selectedIds.length > 0 && selectedIds.length <= maxTeam);
   const result = state.battle?.lastResult;
+  const bossCleared = result?.status === "won" || (bosses.length > 0 && unbeatenBosses.length === 0);
+  const clearedResult = result ?? { status: "won", title: "Боса переможено", rewards: {} };
 
   return `
     <main class="screen battle-screen">
@@ -1716,13 +1719,15 @@ function renderBattleScreen(state) {
         </div>
       </div>
 
-      ${result ? renderBattleResult(result) : ""}
+      ${result ? renderBattleResult(result) : bossCleared ? renderBattleResult(clearedResult) : ""}
 
-      <section class="battle-boss-list">
-        ${bosses.map((boss) => renderBossSelectCard(state, boss, selectedBoss?.id === boss.id)).join("")}
-      </section>
+      ${bossCleared ? "" : `
+        <section class="battle-boss-list">
+          ${unbeatenBosses.map((boss) => renderBossSelectCard(state, boss, selectedBoss?.id === boss.id)).join("")}
+        </section>
+      `}
 
-      ${selectedBoss ? `
+      ${selectedBoss && !bossCleared ? `
         <section class="section battle-setup-panel">
           <div class="section-header">
             <h2>Загін</h2>
@@ -1776,15 +1781,17 @@ function renderBossTeamPill(state, hamster, selected, teamFull) {
 
 function renderActiveBattleScreen(state, battle) {
   const boss = dataStore.bosses.find((entry) => entry.id === battle.bossId);
-  const currentHamster = state.hamsters.find((hamster) => hamster.id === battle.currentHamsterId);
+  const bossTurn = battle.phase === "boss";
+  const currentHamster = bossTurn ? null : state.hamsters.find((hamster) => hamster.id === battle.currentHamsterId);
   const intent = getBossIntentLabel(battle.bossIntent);
+  const canUseHamsterAction = Boolean(currentHamster && !bossTurn);
   return `
     <main class="screen battle-screen">
       <div class="battle-arena">
-        <section class="battle-field">
+        <section class="battle-field ${bossTurn ? "is-boss-turn" : "is-player-turn"}">
           <div class="battle-turn-chip">
-            <span>${escapeHtml(currentHamster?.name ?? "Загін")}</span>
-            <strong>${intent}</strong>
+            <span>${escapeHtml(bossTurn ? boss?.name ?? "Бос" : currentHamster?.name ?? "Загін")}</span>
+            <strong>${bossTurn ? `Хід боса: ${intent}` : `Бос: ${intent}`}</strong>
           </div>
 
           <div class="battle-team-lane">
@@ -1800,8 +1807,9 @@ function renderActiveBattleScreen(state, battle) {
           </div>
 
           <div class="battle-skill-wheel" aria-label="Дії бою">
-            <button class="battle-skill battle-skill-attack" data-action="battle-action" data-battle-action="attack" title="Удар" ${currentHamster ? "" : "disabled"}>${svgIcon("weapon")}</button>
-            <button class="battle-skill battle-skill-guard" data-action="battle-action" data-battle-action="guard" title="Захист" ${currentHamster ? "" : "disabled"}>${svgIcon("armor")}</button>
+            <button class="battle-skill battle-skill-boss ${bossTurn ? "is-ready-action" : ""}" data-action="battle-action" data-battle-action="boss-turn" title="Хід боса" ${bossTurn ? "" : "disabled"}>${svgIcon("danger")}</button>
+            <button class="battle-skill battle-skill-attack" data-action="battle-action" data-battle-action="attack" title="Удар" ${canUseHamsterAction ? "" : "disabled"}>${svgIcon("weapon")}</button>
+            <button class="battle-skill battle-skill-guard" data-action="battle-action" data-battle-action="guard" title="Захист" ${canUseHamsterAction ? "" : "disabled"}>${svgIcon("armor")}</button>
             <button class="battle-skill battle-skill-retreat" data-action="abandon-battle" title="Відступ">${svgIcon("close")}</button>
           </div>
 
