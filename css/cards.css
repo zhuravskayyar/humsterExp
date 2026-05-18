@@ -1130,6 +1130,15 @@
   margin-top: 5px;
 }
 
+.equipment-stat-tags {
+  gap: 5px;
+}
+
+.equipment-stat-tags .tag {
+  background: rgba(57, 125, 76, 0.15);
+  color: #397D4C;
+}
+
 .character-equipment-actions {
   display: flex;
   flex-wrap: wrap;
@@ -1589,6 +1598,574 @@
   margin: 0;
   font-size: 0.76rem;
   font-weight: 850;
+}
+
+/* ── Boss battle ─────────────────────────────────── */
+.battle-screen {
+  display: block;
+}
+
+.battle-boss-list,
+.battle-arena,
+.battle-setup-panel {
+  display: grid;
+  gap: 10px;
+}
+
+.battle-boss-card {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px;
+  border: 1px solid rgba(83, 48, 28, 0.15);
+  border-radius: 12px;
+  background:
+    linear-gradient(180deg, rgba(255, 244, 214, 0.42), rgba(255, 255, 255, 0.16)),
+    var(--texture-paper),
+    rgba(255, 255, 255, 0.16);
+  color: var(--text-main);
+  text-align: left;
+}
+
+.battle-boss-card.is-active {
+  border-color: rgba(164, 59, 45, 0.52);
+  box-shadow: 0 0 0 2px rgba(164, 59, 45, 0.1);
+}
+
+.battle-boss-mark,
+.battle-boss-avatar {
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  background: rgba(164, 59, 45, 0.14);
+  color: #8E2F24;
+}
+
+.battle-boss-mark {
+  width: 48px;
+  height: 48px;
+  overflow: hidden;
+}
+
+.battle-boss-thumb {
+  display: block;
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+  object-position: center;
+}
+
+.battle-boss-copy {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.battle-boss-copy strong,
+.battle-action-panel strong,
+.battle-fighter strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.battle-boss-copy small {
+  color: var(--text-muted);
+  font-size: 0.76rem;
+  font-weight: 850;
+}
+
+.battle-team-grid {
+  display: grid;
+  gap: 8px;
+}
+
+.battle-field {
+  position: relative;
+  min-height: min(64dvh, 560px);
+  overflow: hidden;
+  border: 2px solid rgba(83, 48, 28, 0.2);
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 78% 36%, rgba(164, 59, 45, 0.1), transparent 22%),
+    radial-gradient(circle at 24% 48%, rgba(57, 125, 76, 0.12), transparent 24%),
+    linear-gradient(180deg, rgba(255, 244, 214, 0.58), rgba(207, 159, 98, 0.34)),
+    var(--texture-paper);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.36);
+}
+
+.battle-turn-chip {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  z-index: 4;
+  display: inline-flex;
+  max-width: 64%;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 9px;
+  border: 1px solid rgba(83, 48, 28, 0.18);
+  border-radius: 999px;
+  background: rgba(255, 244, 214, 0.86);
+  box-shadow: 0 5px 14px rgba(83, 48, 28, 0.12);
+  color: var(--text-main);
+  transform: translateX(-50%);
+}
+
+.battle-turn-chip span,
+.battle-turn-chip strong {
+  overflow: hidden;
+  font-size: 0.72rem;
+  font-weight: 900;
+  line-height: 1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.battle-turn-chip strong {
+  color: #8E2F24;
+}
+
+.battle-team-lane {
+  position: absolute;
+  top: 16px;
+  bottom: 14px;
+  left: 8px;
+  z-index: 2;
+  display: grid;
+  width: min(34%, 132px);
+  grid-template-rows: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.battle-boss-unit {
+  position: absolute;
+  right: 0;
+  top: 76px;
+  z-index: 1;
+  width: 58%;
+  height: 58%;
+  min-height: 220px;
+}
+
+.battle-boss-hp {
+  position: absolute;
+  top: -34px;
+  right: 14px;
+  left: 10px;
+  z-index: 3;
+  display: grid;
+  gap: 4px;
+}
+
+.battle-boss-hp > strong {
+  overflow: hidden;
+  color: var(--text-main);
+  font-size: 0.78rem;
+  font-weight: 950;
+  line-height: 1;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.battle-boss-sprite {
+  position: absolute;
+  right: -10%;
+  bottom: 0;
+  display: block;
+  width: 270px;
+  height: 270px;
+  max-width: 122%;
+  max-height: 100%;
+  object-fit: contain;
+  object-position: center bottom;
+  filter: drop-shadow(0 12px 12px rgba(55, 35, 20, 0.22));
+}
+
+.battle-boss-sprite.boss-frames {
+  overflow: visible;
+}
+
+.boss-frame {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  object-fit: contain;
+  object-position: center bottom;
+}
+
+.boss-frame-count-4 .boss-frame {
+  animation-duration: 1100ms;
+  animation-iteration-count: infinite;
+  animation-timing-function: steps(1, end);
+}
+
+.boss-frame-count-4 .boss-frame-1 {
+  opacity: 1;
+  animation-name: bossFrame4A;
+}
+
+.boss-frame-count-4 .boss-frame-2 {
+  animation-name: bossFrame4B;
+}
+
+.boss-frame-count-4 .boss-frame-3 {
+  animation-name: bossFrame4C;
+}
+
+.boss-frame-count-4 .boss-frame-4 {
+  animation-name: bossFrame4D;
+}
+
+.boss-pose-attack .boss-frame {
+  animation-duration: 620ms;
+}
+
+.boss-pose-damage .boss-frame {
+  animation-duration: 520ms;
+}
+
+@keyframes bossFrame4A {
+  0%, 24.99% { opacity: 1; }
+  25%, 100% { opacity: 0; }
+}
+
+@keyframes bossFrame4B {
+  0%, 24.99% { opacity: 0; }
+  25%, 49.99% { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
+
+@keyframes bossFrame4C {
+  0%, 49.99% { opacity: 0; }
+  50%, 74.99% { opacity: 1; }
+  75%, 100% { opacity: 0; }
+}
+
+@keyframes bossFrame4D {
+  0%, 74.99% { opacity: 0; }
+  75%, 100% { opacity: 1; }
+}
+
+.battle-boss-fallback {
+  display: grid;
+  place-items: center;
+  border-radius: 18px;
+  background: rgba(164, 59, 45, 0.14);
+  color: #8E2F24;
+}
+
+.battle-boss-stage,
+.battle-action-panel,
+.battle-result {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: var(--border);
+  border-radius: var(--radius);
+  background:
+    var(--texture-paper-asset),
+    linear-gradient(180deg, rgba(246, 230, 195, 0.76), rgba(207, 159, 98, 0.5)),
+    var(--texture-cardboard-asset),
+    var(--card);
+  background-size: 512px 512px, auto, 420px 420px, auto;
+}
+
+.battle-boss-stage {
+  grid-template-columns: 66px minmax(0, 1fr);
+  align-items: center;
+}
+
+.battle-boss-avatar {
+  width: 66px;
+  height: 66px;
+}
+
+.battle-boss-avatar svg {
+  width: 34px;
+  height: 34px;
+}
+
+.battle-boss-state {
+  min-width: 0;
+}
+
+.battle-boss-state h2 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.battle-hp {
+  position: relative;
+  height: 20px;
+  overflow: hidden;
+  border: 1px solid rgba(83, 48, 28, 0.24);
+  border-radius: 999px;
+  background: rgba(83, 48, 28, 0.12);
+}
+
+.battle-hp span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #397D4C, #74B66A);
+}
+
+.battle-hp-boss span {
+  background: linear-gradient(90deg, #8E2F24, #D15A3F);
+}
+
+.battle-hp strong {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: #2d1a11;
+  font-size: 0.68rem;
+  font-weight: 950;
+  text-shadow: 0 1px 0 rgba(255, 244, 214, 0.5);
+}
+
+.battle-team-status {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.battle-fighter {
+  position: relative;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: 5px;
+  min-width: 0;
+  overflow: hidden;
+  padding: 5px;
+  border: 2px solid rgba(83, 48, 28, 0.2);
+  border-radius: 12px;
+  background:
+    linear-gradient(180deg, rgba(255, 244, 214, 0.48), rgba(255, 255, 255, 0.14)),
+    rgba(255, 255, 255, 0.16);
+}
+
+.battle-fighter.is-active {
+  border-color: rgba(244, 197, 66, 0.74);
+  box-shadow: 0 0 0 2px rgba(244, 197, 66, 0.16);
+}
+
+.battle-fighter.is-down {
+  opacity: 0.48;
+}
+
+.battle-fighter.has-sprite {
+  padding-inline: 4px;
+}
+
+.battle-fighter strong {
+  overflow: hidden;
+  font-size: 0.68rem;
+  line-height: 1;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.battle-fighter-art {
+  display: grid;
+  min-height: 0;
+  overflow: hidden;
+  place-items: center;
+}
+
+.battle-fighter-art img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center bottom;
+}
+
+.battle-fighter-art span {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  color: var(--accent-2);
+}
+
+.battle-fighter-art .battle-hamster-sprite {
+  position: relative;
+  display: block;
+  width: min(142px, 132%);
+  height: auto;
+  max-width: 132%;
+  aspect-ratio: var(--sprite-aspect, 1.5);
+  filter: drop-shadow(0 7px 7px rgba(55, 35, 20, 0.2));
+}
+
+.battle-hamster-sprite-layer {
+  position: absolute;
+  inset: 0;
+  display: block;
+  background-position: 0 0;
+  background-repeat: no-repeat;
+  background-size: auto 100%;
+}
+
+.battle-hamster-idle.sprite-frames-4 {
+  animation: battleSprite4 var(--idle-duration, 570ms) linear infinite;
+}
+
+.battle-hamster-attack {
+  opacity: 0;
+}
+
+.battle-hamster-sprite.is-attacking .battle-hamster-attack.sprite-frames-4 {
+  animation:
+    battleSprite4 var(--attack-duration, 500ms) linear 1,
+    battleSpriteAttackVisibility var(--attack-duration, 500ms) linear 1 forwards;
+}
+
+.battle-hamster-sprite.is-attacking .battle-hamster-attack.sprite-frames-5 {
+  animation:
+    battleSprite5 var(--attack-duration, 500ms) linear 1,
+    battleSpriteAttackVisibility var(--attack-duration, 500ms) linear 1 forwards;
+}
+
+.battle-hamster-sprite.is-attacking .battle-hamster-attack.sprite-frames-6 {
+  animation:
+    battleSprite6 var(--attack-duration, 500ms) linear 1,
+    battleSpriteAttackVisibility var(--attack-duration, 500ms) linear 1 forwards;
+}
+
+@keyframes battleSprite4 {
+  0%, 24.99% { background-position-x: 0; }
+  25%, 49.99% { background-position-x: -100%; }
+  50%, 74.99% { background-position-x: -200%; }
+  75%, 100% { background-position-x: -300%; }
+}
+
+@keyframes battleSprite5 {
+  0%, 19.99% { background-position-x: 0; }
+  20%, 39.99% { background-position-x: -100%; }
+  40%, 59.99% { background-position-x: -200%; }
+  60%, 79.99% { background-position-x: -300%; }
+  80%, 100% { background-position-x: -400%; }
+}
+
+@keyframes battleSprite6 {
+  0%, 16.66% { background-position-x: 0; }
+  16.67%, 33.32% { background-position-x: -100%; }
+  33.33%, 49.99% { background-position-x: -200%; }
+  50%, 66.65% { background-position-x: -300%; }
+  66.66%, 83.32% { background-position-x: -400%; }
+  83.33%, 100% { background-position-x: -500%; }
+}
+
+@keyframes battleSpriteAttackVisibility {
+  0%, 92% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+.battle-skill-wheel {
+  position: absolute;
+  right: 18px;
+  bottom: 18px;
+  z-index: 5;
+  width: 126px;
+  height: 112px;
+}
+
+.battle-skill {
+  position: absolute;
+  display: grid;
+  width: 54px;
+  height: 54px;
+  place-items: center;
+  border: 3px solid currentColor;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 35% 26%, rgba(255, 255, 255, 0.78), rgba(255, 255, 255, 0.24) 34%, rgba(255, 255, 255, 0.08)),
+    rgba(255, 244, 214, 0.7);
+  box-shadow: 0 7px 13px rgba(83, 48, 28, 0.18);
+  cursor: pointer;
+}
+
+.battle-skill:disabled {
+  cursor: default;
+  filter: grayscale(0.8);
+  opacity: 0.5;
+}
+
+.battle-skill svg {
+  width: 25px;
+  height: 25px;
+}
+
+.battle-skill-attack {
+  left: 0;
+  bottom: 14px;
+  color: #D8242F;
+}
+
+.battle-skill-guard {
+  right: 0;
+  bottom: 0;
+  color: #98D416;
+}
+
+.battle-skill-retreat {
+  right: 6px;
+  top: 0;
+  color: #E8D600;
+}
+
+.battle-action-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 8px;
+}
+
+.battle-action-row .btn {
+  min-width: 0;
+  min-height: 42px;
+  padding: 8px 9px;
+  font-size: 0.78rem;
+}
+
+.battle-log {
+  position: absolute;
+  right: 150px;
+  bottom: 16px;
+  left: calc(min(34%, 132px) + 14px);
+  z-index: 5;
+  display: grid;
+  gap: 5px;
+}
+
+.battle-log span {
+  overflow: hidden;
+  padding: 7px 9px;
+  border-radius: 10px;
+  background: rgba(83, 48, 28, 0.08);
+  color: var(--text-muted);
+  font-size: 0.76rem;
+  font-weight: 850;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.battle-result.is-won {
+  border-color: rgba(57, 125, 76, 0.34);
+}
+
+.battle-result.is-lost {
+  border-color: rgba(164, 59, 45, 0.34);
 }
 
 .equipment-inline {

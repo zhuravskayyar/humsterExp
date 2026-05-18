@@ -1,4 +1,5 @@
 import { loadData, dataStore, findZone } from "./data.js";
+import { abandonBossBattle, performBattleAction, startBossBattle } from "./battle.js";
 import { canAfford, collectPassiveIncome, spendResources, upgradeColony } from "./colony.js";
 import * as equipmentApi from "./equipment.js?v=24";
 import { launchExpedition, updateExpeditionStatuses, claimExpedition } from "./expeditions.js?v=24";
@@ -9,7 +10,7 @@ import { exportSave, importSave, loadGame, resetGame, saveGame } from "./save.js
 import { gameState, runtimeState } from "./state.js";
 import { claimQuest, resetDailyQuestsIfNeeded, syncQuestProgress } from "./quests.js";
 import { hitDummy, processOfflineTraining, upgradeDummy, getDummyConfig, startAutoAttack, stopAutoAttack } from "./training.js";
-import { closeModal, openModal, pushToast, renderApp, updateLiveTimers, updateTrainingArena } from "./ui.js?v=26";
+import { closeModal, openModal, pushToast, renderApp, updateLiveTimers, updateTrainingArena } from "./ui.js?v=32";
 
 const {
   equipItem,
@@ -26,6 +27,7 @@ let _hadSwController = false;
 let inactivityReminderTimer = null;
 const INACTIVITY_DELAY_MS = 2 * 60 * 60 * 1000;
 const INACTIVITY_KEY = "hamster_last_active_ms";
+const OFFLINE_RETURN_NOTIFICATION_MS = 60 * 1000;
 
 const TUTORIAL_STEP_ROUTES = [
   "base",
@@ -43,10 +45,12 @@ const MARKET_SHINY_TRADE = Object.freeze({
   cost: { gold: 90 },
   reward: { shiny: 10 }
 });
+const BOSS_AMBUSH_CHANCE = 0.35;
 
-// ── Push notification server ──────────────────────────────────────────────────
-// After deploying server/ to Render, paste your URL here (no trailing slash).
-const PUSH_SERVER = "https://humsterexp.onrender.com";
+// ── Optional push notification server ─────────────────────────────────────────
+// Offline MVP uses only local notifications. Add a server URL here later if push
+// reminders should work after the browser process is killed.
+const PUSH_SERVER = "";
 
 let _pushSub = null;
 let _pingTimer = null;
@@ -59,7 +63,7 @@ function _urlBase64ToUint8Array(base64String) {
 
 async function _initPush() {
   if (!PUSH_SERVER) { console.log("[push] disabled (PUSH_SERVER empty)"); return; }
-  if (!("serviceWorker" in navigator) || !("PushManager" in window)) { console.log("[push] not supported"); return; }
+  if (!("Notification" in window) || !("serviceWorker" in navigator) || !("PushManager" in window)) { console.log("[push] not supported"); return; }
   if (Notification.permission !== "granted") { console.log("[push] permission:", Notification.permission); return; }
   try {
     const reg = await navigator.serviceWorker.ready;
@@ -139,7 +143,8 @@ async function boot() {
   try {
     await loadData();
     const state = loadGame(dataStore);
-    processPassiveUpdates(state);
+    const offlineMs = getOfflineMs(state);
+    processPassiveUpdates(state, { forceExpeditionNotification: offlineMs >= OFFLINE_RETURN_NOTIFICATION_MS });
     _checkInactivityOnBoot(state);
     resetDailyQuestsIfNeeded(state);
     syncQuestProgress(state);
@@ -405,10 +410,13 @@ function handleVisibilityRefresh() {
 
   if (document.visibilityState === "hidden") {
     _saveTrainingPause();
+    saveGame(gameState);
     return;
   }
 
   if (document.visibilityState !== "visible") return;
+
+  const offlineMs = getOfflineMs(gameState);
 
   // Офлайн-тренування: зарахувати час відсутності
   const offlineResult = processOfflineTraining(gameState);
@@ -418,7 +426,7 @@ function handleVisibilityRefresh() {
     pushToast(`Тренування: ${offlineResult.rounds} раундів · схованки +${offlineResult.booksAwarded} · насіння +${offlineResult.goldAwarded}`);
   }
 
-  const changed = processPassiveUpdates(gameState);
+  const changed = processPassiveUpdates(gameState, { forceExpeditionNotification: offlineMs >= OFFLINE_RETURN_NOTIFICATION_MS });
   if (changed || offlineResult) {
     syncQuestProgress(gameState);
     renderApp(gameState);
@@ -527,6 +535,41 @@ function handleClick(event) {
       toggleHamster(target.dataset.hamsterId);
     }
 
+    if (action === "select-boss") {
+      runtimeState.selectedBossId = target.dataset.bossId || runtimeState.selectedBossId;
+      runtimeState.selectedBossHamsterIds = [];
+    }
+
+    if (action === "toggle-boss-hamster") {
+      toggleBossHamster(target.dataset.hamsterId);
+    }
+
+    if (action === "start-boss-battle") {
+      const battle = startBossBattle(gameState, runtimeState.selectedBossId, runtimeState.selectedBossHamsterIds);
+      pauseTrainingForBattle(battle);
+      runtimeState.selectedBossHamsterIds = [];
+      saveAndToast("Бій почався");
+    }
+
+    if (action === "battle-action") {
+      const result = performBattleAction(gameState, target.dataset.battleAction);
+      syncQuestProgress(gameState);
+      saveGame(gameState);
+      if (result?.status === "won") {
+        pushToast("Боса переможено");
+      }
+      if (result?.status === "lost") {
+        pushToast("Загін поранено");
+      }
+    }
+
+    if (action === "abandon-battle") {
+      if (confirm("Відступити з бою? Хом'яки підуть відпочивати.")) {
+        abandonBossBattle(gameState);
+        saveAndToast("Загін відступив");
+      }
+    }
+
     if (action === "open-hamster") {
       runtimeState.expandedHamsterId = target.dataset.hamsterId;
       runtimeState.activeCharacterEquipmentSlot = "weapon";
@@ -609,15 +652,21 @@ function handleClick(event) {
     }
 
     if (action === "claim-expedition") {
-      const result = claimExpedition(gameState, target.dataset.expeditionId);
+      const expeditionId = target.dataset.expeditionId;
+      const expedition = gameState.expeditions.find((candidate) => candidate.id === expeditionId);
+      const result = claimExpedition(gameState, expeditionId);
       if (result) {
         const shinyBonus = getExpeditionShinyBonus(result);
         gameState.resources.shiny = (gameState.resources.shiny ?? 0) + shinyBonus;
         result.resources.shiny = (result.resources.shiny ?? 0) + shinyBonus;
+        const ambushBattle = maybeStartRandomBossAfterExpedition(expedition);
         syncQuestProgress(gameState);
         saveGame(gameState);
         runtimeState.expeditionResult = result;
         syncExpeditionReminder();
+        if (ambushBattle) {
+          pushToast("Засідка після вилазки!");
+        }
       }
     }
 
@@ -739,6 +788,8 @@ function handleClick(event) {
       if (confirm("Скинути прогрес Hamster Expeditions?")) {
         resetGame(dataStore);
         runtimeState.selectedHamsterIds = [];
+        runtimeState.selectedBossHamsterIds = [];
+        runtimeState.selectedBossId = "rat_keeper";
         runtimeState.selectedZoneId = "kitchen";
         runtimeState.selectedDurationMs = 300000;
         runtimeState.selectedRationId = "none";
@@ -816,6 +867,57 @@ function toggleHamster(hamsterId) {
   runtimeState.selectedHamsterIds.push(hamsterId);
 }
 
+function toggleBossHamster(hamsterId) {
+  if (runtimeState.selectedBossHamsterIds.includes(hamsterId)) {
+    runtimeState.selectedBossHamsterIds = runtimeState.selectedBossHamsterIds.filter((id) => id !== hamsterId);
+    return;
+  }
+
+  const boss = dataStore.bosses.find((entry) => entry.id === runtimeState.selectedBossId) ?? dataStore.bosses[0];
+  const maxTeam = boss?.maxTeam ?? 3;
+  if (runtimeState.selectedBossHamsterIds.length >= maxTeam) {
+    pushToast(`У бій можна взяти максимум ${maxTeam} хом'яків`);
+    return;
+  }
+
+  runtimeState.selectedBossHamsterIds.push(hamsterId);
+}
+
+function maybeStartRandomBossAfterExpedition(expedition) {
+  if (!expedition || gameState.battle?.active?.status === "active") return null;
+  if (Math.random() > BOSS_AMBUSH_CHANCE) return null;
+
+  const bosses = dataStore.bosses ?? [];
+  const boss = bosses[Math.floor(Math.random() * bosses.length)];
+  if (!boss) return null;
+
+  const availableIds = gameState.hamsters
+    .filter((hamster) => hamster.status === "available")
+    .map((hamster) => hamster.id);
+  const expeditionIds = (expedition.hamsterIds ?? []).filter((id) => availableIds.includes(id));
+  const teamIds = [...new Set([...expeditionIds, ...availableIds])].slice(0, boss.maxTeam ?? 3);
+  if (!teamIds.length) return null;
+
+  try {
+    const battle = startBossBattle(gameState, boss.id, teamIds);
+    pauseTrainingForBattle(battle);
+    runtimeState.selectedBossId = boss.id;
+    runtimeState.selectedBossHamsterIds = [];
+    navigate("battle");
+    return battle;
+  } catch (error) {
+    console.warn("[battle] random ambush skipped", error);
+    return null;
+  }
+}
+
+function pauseTrainingForBattle(battle) {
+  if (!runtimeState.trainingHamsterId || !battle?.hamsterIds?.includes(runtimeState.trainingHamsterId)) return;
+  stopAutoAttack();
+  gameState.training.activeHamsterId = null;
+  runtimeState.trainingHamsterId = null;
+}
+
 function getExpeditionShinyBonus(result) {
   const base = {
     rare_find: 7,
@@ -830,14 +932,21 @@ function getExpeditionShinyBonus(result) {
   return base + durationBonus;
 }
 
-function processPassiveUpdates(state) {
+function getOfflineMs(state) {
+  const lastSeenAt = Number(state?.lastSeenAt ?? 0);
+  return lastSeenAt > 0 ? Math.max(0, Date.now() - lastSeenAt) : 0;
+}
+
+function processPassiveUpdates(state, options = {}) {
   const completedExpeditions = updateExpeditionStatuses(state);
   const changedHamsters = recoverHamsters(state);
   const passiveRewards = collectPassiveIncome(state);
   const dailyQuestsReset = resetDailyQuestsIfNeeded(state);
 
   if (completedExpeditions.length) {
-    void notifyAboutCompletedExpeditions(completedExpeditions);
+    void notifyAboutCompletedExpeditions(completedExpeditions, {
+      forceSystemNotification: Boolean(options.forceExpeditionNotification)
+    });
   }
 
   if (completedExpeditions.length || changedHamsters || passiveRewards || dailyQuestsReset) {
@@ -1022,28 +1131,38 @@ function syncInactivityReminder() {
   }, Math.min(remaining, 2147483647));
 }
 
-async function showInactivityNotification() {
-  if (!gameState) return;
-  if (!( "Notification" in window) || Notification.permission !== "granted" || !("serviceWorker" in navigator)) return;
-  // Don't show if an expedition is already active
-  if (gameState.expeditions?.some((e) => e.status === "active")) return;
+async function showLocalNotification(title, options = {}) {
+  if (!("Notification" in window) || Notification.permission !== "granted" || !("serviceWorker" in navigator)) return;
   try {
-    const reg = await navigator.serviceWorker.ready;
-    await reg.showNotification("Хом'яки сумують!", {
-      body: "Ви давно не відправляли загони в похід. Час зібратися!",
+    const registration = await navigator.serviceWorker.ready;
+    await registration.showNotification(title, {
       icon: "./icons/icon-192.png",
       badge: "./icons/icon-192.png",
-      tag: "inactivity-reminder",
-      renotify: false,
-      data: { url: "./#play" }
+      ...options,
+      data: { url: "./#play", ...(options.data ?? {}) }
     });
   } catch (error) {
-    console.error("Inactivity notification error", error);
+    console.error("Notification error", error);
   }
 }
 
-async function notifyAboutCompletedExpeditions(expeditions) {
+async function showInactivityNotification() {
+  if (!gameState) return;
+  // Don't show if an expedition is already active
+  if (gameState.expeditions?.some((e) => e.status === "active")) return;
+  await showLocalNotification("Хом'яки сумують!", {
+    body: "Ви давно не відправляли загони в похід. Час зібратися!",
+    tag: "inactivity-reminder",
+    renotify: false
+  });
+}
+
+async function notifyAboutCompletedExpeditions(expeditions, options = {}) {
   if (!expeditions.length) return;
+
+  const body = expeditions.length === 1
+    ? `Загін повернувся з ${findZone(expeditions[0].zoneId)?.name ?? "маршруту"}.`
+    : `Повернулися ${expeditions.length} загони. Час забрати трофеї.`;
 
   if (document.visibilityState === "visible") {
     if (expeditions.length === 1) {
@@ -1051,30 +1170,14 @@ async function notifyAboutCompletedExpeditions(expeditions) {
     } else {
       pushToast(`Готово ${expeditions.length} експедиції`);
     }
-    return;
+    if (!options.forceSystemNotification) return;
   }
 
-  if (!("Notification" in window) || Notification.permission !== "granted" || !("serviceWorker" in navigator)) {
-    return;
-  }
-
-  try {
-    const registration = await navigator.serviceWorker.ready;
-    const body = expeditions.length === 1
-      ? `Загін повернувся з ${findZone(expeditions[0].zoneId)?.name ?? "маршруту"}.`
-      : `Повернулися ${expeditions.length} загони. Час забрати трофеї.`;
-
-    await registration.showNotification("Експедиція завершена", {
-      body,
-      icon: "./icons/icon-192.png",
-      badge: "./icons/icon-192.png",
-      tag: "expedition-ready",
-      renotify: expeditions.length > 1,
-      data: { url: "./#play" }
-    });
-  } catch (error) {
-    console.error("Notification error", error);
-  }
+  await showLocalNotification("Експедиція завершена", {
+    body,
+    tag: expeditions.length === 1 ? `expedition-ready-${expeditions[0].id}` : "expedition-ready",
+    renotify: expeditions.length > 1 || options.forceSystemNotification
+  });
 }
 
 function isStandaloneMode() {

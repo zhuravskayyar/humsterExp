@@ -1,4 +1,4 @@
-export const SAVE_VERSION = 6;
+export const SAVE_VERSION = 7;
 
 export const DEFAULT_EQUIPMENT_SLOTS = Object.freeze({
   weapon: null,
@@ -15,6 +15,8 @@ export const runtimeState = {
   selectedZoneId: "kitchen",
   selectedDurationMs: 300000,
   selectedHamsterIds: [],
+  selectedBossId: "rat_keeper",
+  selectedBossHamsterIds: [],
   selectedRationId: "none",
   modal: null,
   toasts: [],
@@ -35,9 +37,10 @@ export function createDefaultState(data) {
     expeditionsStarted: 0,
     foodCollected: 0,
     cleanReturns: 0,
-    rareItemsFound: 0,
-    gachaPulls: 0,
-    fiveStarPulls: 0
+      rareItemsFound: 0,
+      gachaPulls: 0,
+      fiveStarPulls: 0,
+      bossesDefeated: 0
   };
 
   return {
@@ -71,6 +74,13 @@ export function createDefaultState(data) {
       { itemId: "old_thread", quantity: 2 }
     ],
     expeditions: [],
+    battle: {
+      active: null,
+      wins: {},
+      attempts: 0,
+      lastResult: null
+    },
+    lastSeenAt: now,
     quests: structuredClone(data.quests).map((quest) => ({
       ...quest,
       completed: false,
@@ -140,6 +150,15 @@ export function mergeWithDefaults(savedState, data) {
   merged.equipment = Array.isArray(savedState.equipment) ? mergeEquipment(savedState.equipment, data.items) : defaults.equipment;
   merged.inventory = Array.isArray(savedState.inventory) ? savedState.inventory : defaults.inventory;
   merged.expeditions = Array.isArray(savedState.expeditions) ? savedState.expeditions : [];
+  merged.battle = {
+    ...defaults.battle,
+    ...(savedState.battle ?? {}),
+    wins: {
+      ...defaults.battle.wins,
+      ...(savedState.battle?.wins ?? {})
+    }
+  };
+  merged.lastSeenAt = typeof savedState.lastSeenAt === "number" ? savedState.lastSeenAt : defaults.lastSeenAt;
   merged.quests = mergeQuests(defaults.quests, savedState.quests);
   merged.questsLastResetAt = typeof savedState.questsLastResetAt === "number" ? savedState.questsLastResetAt : defaults.questsLastResetAt;
   merged.dailyQuestBaselines = {

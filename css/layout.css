@@ -43,15 +43,31 @@
   position: absolute;
   left: 0;
   right: 0;
-  top: 0;
+  top: 68px;
   bottom: calc(73px + env(safe-area-inset-bottom));
-  padding: 16px 14px 22px;
+  padding: 10px 14px 22px;
   overflow-y: auto;
   overflow-x: hidden;
   overflow-wrap: anywhere;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
   animation: var(--screen-enter-animation);
+}
+
+.game-hud {
+  position: absolute;
+  inset: 0 0 auto;
+  z-index: 18;
+  padding: 10px 14px 8px;
+  background:
+    linear-gradient(180deg, rgba(222, 183, 119, 0.96), rgba(222, 183, 119, 0.72) 68%, rgba(222, 183, 119, 0)),
+    var(--texture-paper-asset);
+  background-size: auto, 512px 512px;
+  pointer-events: none;
+}
+
+.game-hud .resource-bar {
+  margin-bottom: 0;
 }
 
 .top-row,

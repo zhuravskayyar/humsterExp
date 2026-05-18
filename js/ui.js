@@ -202,6 +202,7 @@ export function renderApp(state) {
 
   app.classList.toggle("is-state-refresh", shouldRestoreScreenScroll);
   app.innerHTML = `
+    ${renderGameHud(state)}
     ${renderScreen(state)}
     ${renderBottomNav(state)}
     ${renderOnboardingOverlay(state)}
@@ -438,6 +439,7 @@ function renderScreen(state) {
   if (runtimeState.route === "colony") return renderColonyScreen(state);
   if (runtimeState.route === "gacha") return renderGachaScreen(state);
   if (runtimeState.route === "backpack") return renderBackpackScreen(state);
+  if (runtimeState.route === "battle") return renderBattleScreen(state);
   if (runtimeState.route === "inventory") return renderInventoryScreen(state);
   if (runtimeState.route === "quests") return renderQuestsScreen(state);
   if (runtimeState.route === "training") return renderTrainingScreen(state);
@@ -558,8 +560,6 @@ function renderBaseScreen(state) {
   const guide = renderActionGuide(state);
   return `
     <main class="screen">
-      ${renderResourceBar(state)}
-
       ${result ? `
         <div class="result-banner rarity-frame-${rarityClass(result.outcome ?? "common")}">
           <div class="card-row">
@@ -619,6 +619,7 @@ function renderHomeActionHub(state) {
   const tenCost = banner.cost.ten.shiny ?? banner.cost.ten.coins ?? 0;
   const pullBadge = shiny >= tenCost ? "x10" : shiny >= singleCost ? "x1" : "";
   const expeditionBadge = completedCount ? String(completedCount) : activeCount ? String(activeCount) : "";
+  const activeBattle = state.battle?.active?.status === "active";
 
   return `
     <section class="home-action-grid" aria-label="Швидкі дії">
@@ -643,6 +644,13 @@ function renderHomeActionHub(state) {
         subtitle: hasTraining ? "Тренується" : "Вільний",
         badge: hasTraining ? "1" : ""
       })}
+      ${activeBattle ? renderHomeActionCard({
+        route: "battle",
+        icon: "danger",
+        title: "Засідка",
+        subtitle: "Бій триває",
+        badge: "!"
+      }) : ""}
       ${renderHomeActionCard({
         route: "gacha",
         icon: "gacha",
@@ -670,7 +678,6 @@ function renderHomeActionCard({ route, icon, title, subtitle, badge = "", primar
 function renderSettingsScreen(state) {
   return `
     <main class="screen">
-      ${renderResourceBar(state)}
       <div class="top-row">
         <button class="icon-btn" data-action="toggle-settings" title="Назад">${svgIcon("close")}</button>
         <div style="flex:1">
@@ -726,7 +733,6 @@ function renderHamstersScreen(state) {
   }
   return `
     <main class="screen">
-      ${renderResourceBar(state)}
       <div class="top-row">
         <div>
           <p class="muted">${state.hamsters.length}/${dataStore.hamsters.length} у колекції</p>
@@ -765,7 +771,6 @@ function renderHamsterDetailScreen(state, hamster) {
   ];
   return `
     <main class="screen character-screen">
-      ${renderResourceBar(state, "compact")}
       <div class="top-row character-top-row">
         <button class="icon-btn" data-action="close-hamster-detail" title="Назад">${svgIcon("close")}</button>
         <div class="character-title-block">
@@ -980,6 +985,16 @@ function renderEquipmentStatsText(equipment) {
   return entries.map(([stat, value]) => formatEquipmentStat(stat, value)).join(" · ");
 }
 
+function renderEquipmentStatTags(equipment) {
+  const entries = Object.entries(getEquipmentStats(equipment));
+  if (!entries.length) return `<div class="tag-row equipment-stat-tags"><span class="tag">Без бонусів</span></div>`;
+  return `
+    <div class="tag-row equipment-stat-tags">
+      ${entries.map(([stat, value]) => `<span class="tag">${formatEquipmentStat(stat, value)}</span>`).join("")}
+    </div>
+  `;
+}
+
 function formatEquipmentStat(stat, value) {
   if (stat === "critChance" || stat === "critDamage") return `${statLabel(stat)} +${value}%`;
   return `${statLabel(stat)} +${value}`;
@@ -995,16 +1010,16 @@ function renderEquipmentUpgradeCostTags(state, equipment) {
   return `
     <span class="tag">${svgIcon("seed", "svg-icon svg-icon-xs")} ${cost.gold}</span>
     <span class="tag">${svgIcon("item", "svg-icon svg-icon-xs")} Руда ${cost.ore}</span>
-    ${needsItem ? `<span class="tag">${fodder ? "Матеріал слота є" : "Потрібен матеріал слота"}</span>` : ""}
+    ${needsItem ? `<span class="tag ${fodder ? "" : "is-missing"}" title="${fodder ? "Матеріал слота є" : "Потрібен предмет того ж слота"}">${fodder ? "Мат." : "Мат.?"}</span>` : ""}
   `;
 }
 
-function renderEquipmentUpgradeButton(state, equipment, className = "btn", label = "Прокачати") {
+function renderEquipmentUpgradeButton(state, equipment, className = "btn", label = "Lv +") {
   const maxed = equipment.level >= equipment.maxLevel;
   return `<button class="${className}" data-action="upgrade-equipment" data-equipment-uid="${equipment.uid}" ${!maxed && canUpgradeEquipment(state, equipment) ? "" : "disabled"}>${maxed ? "Максимум" : label}</button>`;
 }
 
-function renderEquipmentFodderButton(state, equipment, className = "btn ghost", label = "Поглинути") {
+function renderEquipmentFodderButton(state, equipment, className = "btn ghost", label = "Мат.") {
   const fodder = findInferiorFodderEquipment(state, equipment);
   const fodderItem = fodder ? getEquipmentTemplate(fodder) : null;
   const title = fodderItem ? `Матеріал: ${fodderItem.name} Lv ${fodder.level}` : "Потрібен гірший предмет того ж слота";
@@ -1013,9 +1028,9 @@ function renderEquipmentFodderButton(state, equipment, className = "btn ghost", 
 
 function renderEquipmentFodderTag(state, equipment) {
   const fodder = findInferiorFodderEquipment(state, equipment);
-  if (!fodder) return `<span class="tag is-missing">Немає гіршого матеріалу</span>`;
+  if (!fodder) return "";
   const item = getEquipmentTemplate(fodder);
-  return `<span class="tag">Матеріал: ${escapeHtml(item?.name ?? "предмет")} Lv ${fodder.level}</span>`;
+  return `<span class="tag" title="Матеріал: ${escapeHtml(item?.name ?? "предмет")} Lv ${fodder.level}">Мат. Lv ${fodder.level}</span>`;
 }
 
 function renderWeaponCopyTags(state, equipment) {
@@ -1025,13 +1040,14 @@ function renderWeaponCopyTags(state, equipment) {
   const crit = equipmentApi.getWeaponCopyStats?.(equipment) ?? {};
   const copy = findWeaponCopyEquipment?.(state, equipment);
   return `
-    <span class="tag">Копії ${copies}/${WEAPON_COPY_MAX}</span>
-    <span class="tag">${copies ? `Крит ${crit.critChance}% · урон +${crit.critDamage}%` : "Крит відкривається копією"}</span>
-    ${copies < WEAPON_COPY_MAX ? `<span class="tag ${copy ? "" : "is-missing"}">${copy ? "Копія є" : "Потрібна така сама зброя"}</span>` : `<span class="tag">Злиття максимум</span>`}
+    <span class="tag" title="Копії зброї">C ${copies}/${WEAPON_COPY_MAX}</span>
+    ${copies ? `<span class="tag" title="Бонус від копій">Крит ${crit.critChance}%/+${crit.critDamage}%</span>` : ""}
+    ${copies < WEAPON_COPY_MAX && copy ? `<span class="tag" title="Є вільна копія для злиття">Копія</span>` : ""}
+    ${copies >= WEAPON_COPY_MAX ? `<span class="tag">Max</span>` : ""}
   `;
 }
 
-function renderWeaponRefineButton(state, equipment, className = "btn ghost", label = "Злити копію") {
+function renderWeaponRefineButton(state, equipment, className = "btn ghost", label = "Копія") {
   const item = getEquipmentTemplate(equipment);
   if (item?.equipmentSlot !== "weapon") return "";
   const copy = findWeaponCopyEquipment?.(state, equipment);
@@ -1113,7 +1129,7 @@ function renderCharacterSlot(state, hamster, slot, equipment, activeSlot = "weap
     <button class="character-slot ${equipment ? "is-filled" : ""} ${slot === activeSlot ? "is-active" : ""}" data-action="select-character-equipment-slot" data-slot="${slot}" title="${escapeHtml(item?.name ?? quickItem?.name ?? slotLabel(slot))}">
       ${slotVisual}
       <span>${slotLabel(slot)}</span>
-      <strong>${item ? `Lv ${equipment.level}` : quickItem ? "Є предмет" : "Пусто"}</strong>
+      <strong>${item ? `Lv ${equipment.level}` : quickItem ? "Є" : "-"}</strong>
     </button>
   `;
 }
@@ -1135,7 +1151,7 @@ function renderCharacterEquipmentFocus(state, hamster, slot, equipment) {
               </div>
               <span class="tag">Lv ${equipment.level}/${equipment.maxLevel}</span>
             </div>
-            <p>${renderEquipmentStatsText(equipment)}</p>
+            ${renderEquipmentStatTags(equipment)}
             ${renderSignaturePassiveLine(equipment)}
             <div class="tag-row character-equipment-cost">
               ${renderEquipmentUpgradeCostTags(state, equipment)}
@@ -1143,7 +1159,7 @@ function renderCharacterEquipmentFocus(state, hamster, slot, equipment) {
               ${renderWeaponCopyTags(state, equipment)}
             </div>
             <div class="button-row character-equipped-actions">
-              ${renderEquipmentUpgradeButton(state, equipment, "btn", "Прокачати")}
+              ${renderEquipmentUpgradeButton(state, equipment, "btn")}
               ${renderEquipmentFodderButton(state, equipment)}
               ${renderWeaponRefineButton(state, equipment)}
               <button class="btn ghost" data-action="unequip-slot" data-hamster-id="${hamster.id}" data-slot="${slot}">Зняти</button>
@@ -1153,15 +1169,14 @@ function renderCharacterEquipmentFocus(state, hamster, slot, equipment) {
           <span class="character-equipped-empty-icon">${svgIcon(iconForItemType(slot), "svg-icon")}</span>
           <div>
             <p class="panel-label">${slotLabel(slot)}</p>
-            <strong>Слот вільний</strong>
-            <p>Немає активного предмета.</p>
+            <strong>Вільно</strong>
           </div>
         `}
       </article>
       <div class="character-equipment-option-grid">
         ${available.length
           ? available.map((entry) => renderCharacterEquipmentOption(state, hamster, slot, equipment, entry)).join("")
-          : `<div class="inventory-equipment-empty"><span>${svgIcon(iconForItemType(slot), "svg-icon")}</span><p>Немає доступних предметів</p></div>`}
+          : `<div class="inventory-equipment-empty"><span>${svgIcon(iconForItemType(slot), "svg-icon")}</span><p>Порожньо</p></div>`}
       </div>
     </div>
   `;
@@ -1183,6 +1198,7 @@ function renderCharacterEquipmentOption(state, hamster, slot, currentEquipment, 
           ${item.signatureFor ? `<span class="tag">Сигнатурна</span>` : ""}
           ${renderWeaponCopyTags(state, candidate)}
         </div>
+        ${renderEquipmentStatTags(candidate)}
         ${renderSignaturePassiveLine(candidate)}
         <div class="equipment-delta-row">
           ${renderEquipmentDelta(candidate, currentEquipment)}
@@ -1263,7 +1279,6 @@ function renderExpeditionsScreen(state) {
 
   return `
     <main class="screen">
-      ${renderResourceBar(state)}
       <div class="top-row">
         <div>
           <p class="muted">Загони ${slots} · швидкість +${colonyStats.expeditionSpeedPercent}%</p>
@@ -1340,7 +1355,6 @@ function renderColonyScreen(state) {
   const stats = getColonyStats(state);
   return `
     <main class="screen">
-      ${renderResourceBar(state)}
       <div class="top-row">
         <div>
           <p class="muted">Нора збирає припаси й пришвидшує загони</p>
@@ -1401,8 +1415,6 @@ function renderGachaScreen(state) {
       : "10 листів готові";
   return `
     <main class="screen">
-      ${renderResourceBar(state)}
-
       <section class="hero-panel hero-gacha gacha-letter-panel ${hasResults ? "is-open" : ""} ${isTutorialStep(9) ? "tutorial-target" : ""}">
         <div class="top-row">
           <div>
@@ -1610,7 +1622,6 @@ function renderInventoryScreen(state) {
   const equipmentCount = state.equipment?.length ?? 0;
   return `
     <main class="screen">
-      ${renderResourceBar(state)}
       <div class="top-row">
         <div>
           <p class="muted">${items.length} типів предметів · ${equipmentCount} спорядження в рюкзаку</p>
@@ -1661,19 +1672,17 @@ function renderBackpackScreen(state) {
 
   return `
     <main class="screen">
-      ${renderResourceBar(state)}
       <div class="top-row">
         <div>
-          <p class="muted">${equipmentCount} спорядження · ${weaponCount} зброї · ${readyCopyLabel}</p>
+          <p class="muted">${weaponCount} зброї · ${readyCopyLabel}</p>
           <h1>${t("backpack")}</h1>
         </div>
       </div>
       <section class="section backpack-summary">
         <div class="card-row">
           <span class="tag">${equippedCount}/${equipmentCount} одягнено</span>
-          <span class="tag">${readyCopies ? `Копії готові: ${readyCopies}` : "Немає готових копій"}</span>
+          <span class="tag" title="Готові злиття зброї">${readyCopies ? `Копії ${readyCopies}` : "Копій 0"}</span>
         </div>
-        <p class="muted">Зброя зливається тільки однаковими копіями 1 в 1. Кожна копія піднімає крит шанс і крит урон, максимум ${WEAPON_COPY_MAX}/5.</p>
       </section>
       <section class="section">
         <div class="section-header">
@@ -1684,6 +1693,233 @@ function renderBackpackScreen(state) {
       </section>
     </main>
   `;
+}
+
+function renderBattleScreen(state) {
+  const active = state.battle?.active;
+  if (active?.status === "active") return renderActiveBattleScreen(state, active);
+
+  const bosses = dataStore.bosses ?? [];
+  const selectedBoss = bosses.find((boss) => boss.id === runtimeState.selectedBossId) ?? bosses[0];
+  const selectedIds = runtimeState.selectedBossHamsterIds ?? [];
+  const available = state.hamsters.filter((hamster) => hamster.status === "available");
+  const maxTeam = selectedBoss?.maxTeam ?? 3;
+  const canStart = Boolean(selectedBoss && selectedIds.length > 0 && selectedIds.length <= maxTeam);
+  const result = state.battle?.lastResult;
+
+  return `
+    <main class="screen battle-screen">
+      <div class="top-row">
+        <div>
+          <p class="muted">${state.stats?.bossesDefeated ?? 0} перемог</p>
+          <h1>${t("battle")}</h1>
+        </div>
+      </div>
+
+      ${result ? renderBattleResult(result) : ""}
+
+      <section class="battle-boss-list">
+        ${bosses.map((boss) => renderBossSelectCard(state, boss, selectedBoss?.id === boss.id)).join("")}
+      </section>
+
+      ${selectedBoss ? `
+        <section class="section battle-setup-panel">
+          <div class="section-header">
+            <h2>Загін</h2>
+            <span class="tag">${selectedIds.length}/${maxTeam}</span>
+          </div>
+          <div class="battle-team-grid">
+            ${available.map((hamster) => renderBossTeamPill(state, hamster, selectedIds.includes(hamster.id), selectedIds.length >= maxTeam)).join("")}
+          </div>
+          <button class="btn ${canStart ? "is-ready-action" : ""}" data-action="start-boss-battle" ${canStart ? "" : "disabled"}>Почати бій</button>
+        </section>
+      ` : ""}
+    </main>
+  `;
+}
+
+function renderBossSelectCard(state, boss, active) {
+  const wins = state.battle?.wins?.[boss.id] ?? 0;
+  return `
+    <button class="battle-boss-card ${active ? "is-active" : ""}" data-action="select-boss" data-boss-id="${boss.id}">
+      <span class="battle-boss-mark">${renderBossSprite(boss, "portrait", "battle-boss-thumb")}</span>
+      <span class="battle-boss-copy">
+        <strong>${escapeHtml(boss.name)}</strong>
+        <small>Lv ${boss.level} · HP ${boss.hp} · ATK ${boss.attack}</small>
+      </span>
+      <span class="tag" title="Перемоги">${wins}</span>
+    </button>
+  `;
+}
+
+function renderBossTeamPill(state, hamster, selected, teamFull) {
+  const stats = getHamsterEffectiveStats(hamster, state);
+  const disabled = !selected && teamFull;
+  const portraitSrc = getHamsterPortrait(hamster);
+  return `
+    <button class="select-pill team-pill battle-team-pill ${selected ? "is-active" : ""}" data-action="toggle-boss-hamster" data-hamster-id="${hamster.id}" ${disabled ? "disabled" : ""}>
+      <span class="team-pill-avatar">
+        ${portraitSrc
+          ? `<img src="${escapeHtml(portraitSrc)}" alt="${escapeHtml(hamster.name)}" onerror="this.style.display='none'; this.nextElementSibling.style.display='grid'">`
+          : ""}
+        <span class="team-pill-avatar-fallback" style="${portraitSrc ? "display:none" : ""}">
+          ${svgIcon(iconForClass(hamster.class), "svg-icon svg-icon-xs")}
+        </span>
+      </span>
+      <span class="team-pill-copy">
+        <strong>${escapeHtml(hamster.name)}</strong>
+        <small>${svgIcon("weapon", "svg-icon svg-icon-xs")} ${stats.attack} · ${svgIcon("armor", "svg-icon svg-icon-xs")} ${stats.defense}</small>
+      </span>
+    </button>
+  `;
+}
+
+function renderActiveBattleScreen(state, battle) {
+  const boss = dataStore.bosses.find((entry) => entry.id === battle.bossId);
+  const currentHamster = state.hamsters.find((hamster) => hamster.id === battle.currentHamsterId);
+  const intent = getBossIntentLabel(battle.bossIntent);
+  return `
+    <main class="screen battle-screen">
+      <div class="battle-arena">
+        <section class="battle-field">
+          <div class="battle-turn-chip">
+            <span>${escapeHtml(currentHamster?.name ?? "Загін")}</span>
+            <strong>${intent}</strong>
+          </div>
+
+          <div class="battle-team-lane">
+            ${(battle.hamsterIds ?? []).map((id) => renderBattleFighter(state, battle, id)).join("")}
+          </div>
+
+          <div class="battle-boss-unit">
+            <div class="battle-boss-hp">
+              <strong>${escapeHtml(boss?.name ?? "Бос")}</strong>
+              ${renderBattleHpBar(battle.bossHp, battle.bossMaxHp, "boss")}
+            </div>
+            ${renderBossSprite(boss, battle.bossPose ?? "idle", "battle-boss-sprite")}
+          </div>
+
+          <div class="battle-skill-wheel" aria-label="Дії бою">
+            <button class="battle-skill battle-skill-attack" data-action="battle-action" data-battle-action="attack" title="Удар" ${currentHamster ? "" : "disabled"}>${svgIcon("weapon")}</button>
+            <button class="battle-skill battle-skill-guard" data-action="battle-action" data-battle-action="guard" title="Захист" ${currentHamster ? "" : "disabled"}>${svgIcon("armor")}</button>
+            <button class="battle-skill battle-skill-retreat" data-action="abandon-battle" title="Відступ">${svgIcon("close")}</button>
+          </div>
+
+          <section class="battle-log" aria-label="Журнал бою">
+            ${(battle.log ?? []).slice(0, 3).map((line) => `<span>${escapeHtml(line)}</span>`).join("")}
+          </section>
+        </section>
+      </div>
+    </main>
+  `;
+}
+
+function renderBattleFighter(state, battle, hamsterId) {
+  const hamster = state.hamsters.find((entry) => entry.id === hamsterId);
+  const stats = hamster ? getHamsterEffectiveStats(hamster, state) : { hp: 1 };
+  const hp = battle.hamsterHp?.[hamsterId] ?? 0;
+  const active = battle.currentHamsterId === hamsterId;
+  const hasSprite = Boolean(getHamsterSpriteConfig(hamster));
+  return `
+    <article class="battle-fighter ${hasSprite ? "has-sprite" : ""} ${active ? "is-active" : ""} ${hp <= 0 ? "is-down" : ""}">
+      ${renderBattleHpBar(hp, stats.hp, "hamster")}
+      <div class="battle-fighter-art">
+        ${renderBattleHamsterArt(battle, hamster, hp)}
+      </div>
+      <strong>${escapeHtml(hamster?.name ?? hamsterId)}</strong>
+    </article>
+  `;
+}
+
+function renderBattleHamsterArt(battle, hamster, hp) {
+  const config = getHamsterSpriteConfig(hamster);
+  if (config?.idle && config?.attack) {
+    const idleFrames = config.idle.frames ?? 1;
+    const attackFrames = config.attack.frames ?? 1;
+    const idleDuration = getSpriteDurationMs(config.idle);
+    const attackDuration = getSpriteDurationMs(config.attack);
+    const aspect = getSpriteFrameAspect(config.idle);
+    const isAttacking = hp > 0 && battle.lastHamsterAction?.type === "attack" && battle.lastHamsterAction.hamsterId === hamster?.id;
+    return `
+      <span
+        class="battle-hamster-sprite ${isAttacking ? "is-attacking" : ""}"
+        style="--sprite-aspect:${aspect};--idle-duration:${idleDuration}ms;--attack-duration:${attackDuration}ms"
+        aria-hidden="true"
+      >
+        <i class="battle-hamster-sprite-layer battle-hamster-idle sprite-frames-${idleFrames}" style="background-image:url('${escapeHtml(config.idle.src)}')"></i>
+        <i class="battle-hamster-sprite-layer battle-hamster-attack sprite-frames-${attackFrames}" style="background-image:url('${escapeHtml(config.attack.src)}')"></i>
+      </span>
+    `;
+  }
+
+  const portraitSrc = getHamsterPortrait(hamster);
+  return `
+    ${portraitSrc
+      ? `<img src="${escapeHtml(portraitSrc)}" alt="${escapeHtml(hamster?.name ?? "")}" onerror="this.style.display='none';this.nextElementSibling.style.removeProperty('display')">`
+      : ""}
+    <span style="${portraitSrc ? "display:none" : ""}">${svgIcon(iconForClass(hamster?.class), "svg-icon")}</span>
+  `;
+}
+
+function getSpriteDurationMs(config) {
+  const frames = Math.max(1, Number(config?.frames) || 1);
+  const fps = Math.max(1, Number(config?.fps) || 8);
+  return Math.round((frames / fps) * 1000);
+}
+
+function getSpriteFrameAspect(config) {
+  const frames = Math.max(1, Number(config?.frames) || 1);
+  const totalW = Number(config?.totalW) || frames;
+  const height = Number(config?.h) || 1;
+  return Number(((totalW / frames) / height).toFixed(3));
+}
+
+function renderBossSprite(boss, pose = "idle", className = "battle-boss-sprite") {
+  const src = boss?.sprites?.[pose] ?? boss?.sprites?.idle ?? boss?.sprites?.portrait;
+  if (!src) return `<span class="${className} battle-boss-fallback">${svgIcon("danger", "svg-icon")}</span>`;
+
+  if (Array.isArray(src)) {
+    return `
+      <span class="${className} boss-frames boss-pose-${pose} boss-frame-count-${src.length}">
+        ${src.map((frameSrc, index) => `<img class="boss-frame boss-frame-${index + 1}" src="${escapeHtml(frameSrc)}" alt="" aria-hidden="true" loading="eager">`).join("")}
+      </span>
+    `;
+  }
+
+  return `<img class="${className}" src="${escapeHtml(src)}" alt="" aria-hidden="true" loading="eager">`;
+}
+
+function renderBattleHpBar(current, max, type) {
+  const safeMax = Math.max(1, Number(max) || 1);
+  const safeCurrent = Math.max(0, Math.min(safeMax, Number(current) || 0));
+  const width = Math.round((safeCurrent / safeMax) * 100);
+  return `
+    <div class="battle-hp battle-hp-${type}">
+      <span style="width:${width}%"></span>
+      <strong>${safeCurrent}/${safeMax}</strong>
+    </div>
+  `;
+}
+
+function renderBattleResult(result) {
+  const won = result.status === "won";
+  return `
+    <section class="battle-result ${won ? "is-won" : "is-lost"}">
+      <strong>${escapeHtml(result.title ?? "")}</strong>
+      <div class="tag-row">
+        ${Object.entries(result.rewards ?? {}).map(([resource, amount]) => `<span class="tag">${resourceMeta[resource]?.label ?? resource} +${amount}</span>`).join("")}
+        ${result.xp ? `<span class="tag">XP +${result.xp}</span>` : ""}
+      </div>
+    </section>
+  `;
+}
+
+function getBossIntentLabel(intent) {
+  return {
+    attack: "Удар",
+    charge: "Заряд",
+    slam: "Ривок"
+  }[intent] ?? "Удар";
 }
 
 function renderInventoryEquipmentBoard(state) {
@@ -1710,14 +1946,14 @@ function renderInventoryEquipmentPanel(state, slot) {
         <span class="inventory-equipment-slot-icon">${svgIcon(iconForItemType(slot), "svg-icon")}</span>
         <div>
           <p class="panel-label">${slotLabel(slot)}</p>
-          <strong>${entries.length ? `${entries.length} предметів` : "Слот порожній"}</strong>
+          <strong>${entries.length ? `x${entries.length}` : "0"}</strong>
         </div>
-        <span class="tag">${equippedCount} одягнено</span>
+        ${entries.length ? `<span class="tag" title="Одягнено">${equippedCount}/${entries.length}</span>` : ""}
       </header>
       <div class="inventory-equipment-list">
         ${entries.length
           ? entries.map((equipment) => renderInventoryEquipmentTile(state, equipment)).join("")
-          : `<div class="inventory-equipment-empty"><span>${svgIcon(iconForItemType(slot), "svg-icon")}</span><p>Немає предметів</p></div>`}
+          : `<div class="inventory-equipment-empty"><span>${svgIcon(iconForItemType(slot), "svg-icon")}</span><p>Порожньо</p></div>`}
       </div>
     </article>
   `;
@@ -1737,19 +1973,19 @@ function renderInventoryEquipmentTile(state, equipment) {
         </div>
         <div class="tag-row">
           <span class="tag">${renderStarRating(item.stars)}</span>
-          ${item.signatureFor ? `<span class="tag">Сигнатурна</span>` : ""}
-          ${owner ? `<span class="tag">На ${escapeHtml(owner.name)}</span>` : `<span class="tag">Вільна</span>`}
+          ${item.signatureFor ? `<span class="tag">Сигн.</span>` : ""}
+          ${owner ? `<span class="tag" title="Одягнено на ${escapeHtml(owner.name)}">На ${escapeHtml(owner.name)}</span>` : `<span class="tag">Вільно</span>`}
           ${renderWeaponCopyTags(state, equipment)}
         </div>
-        <p>${renderEquipmentStatsText(equipment)}</p>
+        ${renderEquipmentStatTags(equipment)}
         ${renderSignaturePassiveLine(equipment)}
         <div class="tag-row inventory-equipment-cost">
           ${renderEquipmentUpgradeCostTags(state, equipment)}
           ${renderEquipmentFodderTag(state, equipment)}
         </div>
         <div class="button-row inventory-equipment-actions">
-          ${renderEquipmentUpgradeButton(state, equipment, "btn", "Прокачати")}
-          ${renderWeaponRefineButton(state, equipment)}
+          ${renderEquipmentUpgradeButton(state, equipment, "btn", "Lv +")}
+          ${renderWeaponRefineButton(state, equipment, "btn ghost", "Копія")}
           ${renderEquipmentFodderButton(state, equipment)}
           ${owner ? "" : `<button class="btn ghost" data-action="salvage-equipment" data-equipment-uid="${equipment.uid}">В руду</button>`}
         </div>
@@ -1761,7 +1997,6 @@ function renderInventoryEquipmentTile(state, equipment) {
 function renderQuestsScreen(state) {
   return `
     <main class="screen">
-      ${renderResourceBar(state)}
       <div class="top-row">
         <div>
           <p class="muted">Щоденні, сюжетні та досягнення</p>
@@ -1803,8 +2038,6 @@ function renderTrainingScreen(state) {
 
   return `
     <main class="screen">
-      ${renderResourceBar(state)}
-
       <div class="training-title-row">
         <h2>${t("training")}</h2>
         <span class="muted" style="font-size:0.8rem">${totalRounds} раундів</span>
@@ -1997,8 +2230,16 @@ function renderTrainingStatsTab(state, totalRounds) {
   `;
 }
 
-function renderResourceBar(state, variant = "") {
-  const className = ["resource-bar", variant === "compact" ? "resource-bar-compact" : ""].filter(Boolean).join(" ");
+function renderGameHud(state) {
+  return `
+    <header class="game-hud" aria-label="HUD">
+      ${renderResourceBar(state)}
+    </header>
+  `;
+}
+
+function renderResourceBar(state) {
+  const className = "resource-bar";
   return `
     <div class="${className}" aria-label="Ресурси">
       ${["food", "gold", "xpBooks", "ore", "shiny"].map((key) => renderResourceChip(key, state.resources[key])).join("")}
@@ -2060,6 +2301,10 @@ function getNavBadge(state, route) {
 
   if (route === "backpack") {
     return getReadyWeaponMergeCount(state) || "";
+  }
+
+  if (route === "battle") {
+    return state.battle?.active?.status === "active" ? "!" : "";
   }
 
   if (route === "gacha") {

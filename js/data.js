@@ -6,6 +6,7 @@ export const dataStore = {
   quests: [],
   buildings: [],
   gacha: { banners: [] },
+  bosses: [],
   colonyUpgrades: []
 };
 
@@ -33,6 +34,7 @@ export const i18n = {
     backpack: "Рюкзак",
     quests: "Доручення",
     colony: "Колонія",
+    battle: "Бос",
     gacha: "Гача",
     settings: "Налаштування",
     send: "Вирушати!",
@@ -40,6 +42,7 @@ export const i18n = {
     training: "Тренування",
     available: "вільний",
     in_expedition: "у вилазці",
+    in_battle: "у бою",
     injured: "поранений",
     resting: "відпочиває"
   },
@@ -51,12 +54,14 @@ export const i18n = {
     backpack: "Backpack",
     quests: "Quests",
     colony: "Colony",
+    battle: "Boss",
     gacha: "Gacha",
     settings: "Settings",
     send: "Send",
     claim: "Claim",
     available: "available",
     in_expedition: "in expedition",
+    in_battle: "in battle",
     injured: "injured",
     resting: "resting"
   },
@@ -68,12 +73,14 @@ export const i18n = {
     backpack: "Rucksack",
     quests: "Aufgaben",
     colony: "Kolonie",
+    battle: "Boss",
     gacha: "Gacha",
     settings: "Einstellungen",
     send: "Senden",
     claim: "Abholen",
     available: "frei",
     in_expedition: "auf Expedition",
+    in_battle: "im Kampf",
     injured: "verletzt",
     resting: "ruht"
   }
@@ -87,6 +94,7 @@ const files = {
   quests: "./data/quests.json",
   buildings: "./data/buildings.json",
   gacha: "./data/gacha.json",
+  bosses: "./data/bosses.json",
   colonyUpgrades: "./data/colony_upgrades.json"
 };
 
@@ -114,6 +122,10 @@ export function findZone(zoneId) {
 
 export function findItem(itemId) {
   return dataStore.items.find((item) => item.id === itemId);
+}
+
+export function findBoss(bossId) {
+  return dataStore.bosses.find((boss) => boss.id === bossId);
 }
 
 export function t(key) {

@@ -1,0 +1,39 @@
+[
+  {
+    "id": "rat_keeper",
+    "name": "Пацюк-комірник",
+    "level": 1,
+    "maxTeam": 3,
+    "hp": 420,
+    "attack": 26,
+    "defense": 6,
+    "xp": 42,
+    "description": "Сторожить мішки з насінням і б'є хвостом по всьому загону.",
+    "sprites": {
+      "portrait": "assets/images/bosses/rat_keeper/portrait/head.png",
+      "idle": [
+        "assets/images/bosses/rat_keeper/idle/idle_01.png",
+        "assets/images/bosses/rat_keeper/idle/idle_02.png",
+        "assets/images/bosses/rat_keeper/idle/idle_03.png",
+        "assets/images/bosses/rat_keeper/idle/idle_04.png"
+      ],
+      "attack": [
+        "assets/images/bosses/rat_keeper/attack/attack_01.png",
+        "assets/images/bosses/rat_keeper/attack/attack_02.png",
+        "assets/images/bosses/rat_keeper/attack/attack_03.png",
+        "assets/images/bosses/rat_keeper/attack/attack_04.png"
+      ],
+      "damage": [
+        "assets/images/bosses/rat_keeper/damage/damage_01.png",
+        "assets/images/bosses/rat_keeper/damage/damage_02.png",
+        "assets/images/bosses/rat_keeper/damage/damage_03.png",
+        "assets/images/bosses/rat_keeper/damage/damage_04.png"
+      ]
+    },
+    "reward": {
+      "gold": 120,
+      "ore": 14,
+      "shiny": 2
+    }
+  }
+]

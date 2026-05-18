@@ -3,6 +3,7 @@ import { createDefaultState, mergeWithDefaults, setGameState } from "./state.js"
 export const SAVE_KEY = "hamsterExpeditionsSave_v1";
 
 export function saveGame(state) {
+  state.lastSeenAt = Date.now();
   localStorage.setItem(SAVE_KEY, JSON.stringify(state));
 }
 
