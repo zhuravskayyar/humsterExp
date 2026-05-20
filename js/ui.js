@@ -3198,7 +3198,13 @@ function formatDuration(ms) {
 }
 
 function formatNumber(value) {
-  return new Intl.NumberFormat("uk-UA").format(value);
+  const n = Math.abs(value);
+  const sign = value < 0 ? "-" : "";
+  if (n >= 9_950_000) return sign + Math.round(n / 1_000_000) + "м";
+  if (n >= 999_500)   return sign + +(n / 1_000_000).toFixed(1) + "м";
+  if (n >= 9_950)     return sign + Math.round(n / 1000) + "к";
+  if (n >= 1000)      return sign + +(n / 1000).toFixed(1) + "к";
+  return sign + Math.round(n);
 }
 
 function renderStarRating(stars) {
