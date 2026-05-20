@@ -430,6 +430,14 @@ export function updateLiveTimers(state) {
     if (timer) timer.textContent = expedition.status === "completed" ? "Готово" : formatRemaining(expedition.endTime - Date.now());
     if (progress) progress.style.width = `${calculateProgress(expedition)}%`;
   }
+
+  for (const hamster of state.hamsters) {
+    if (!hamster.recoverAt) continue;
+    const el = document.querySelector(`[data-recover-id="${hamster.id}"]`);
+    if (!el) continue;
+    const remaining = hamster.recoverAt - Date.now();
+    el.textContent = `${t(hamster.status)} · ${formatRemaining(remaining)}`;
+  }
 }
 
 function renderScreen(state) {
@@ -816,7 +824,7 @@ function renderHamsterDetailScreen(state, hamster) {
           <h2>${escapeHtml(hamster.name)}</h2>
           <div class="tag-row character-title-tags">
             <span class="tag">Lv ${hamster.level}/${hamster.maxLevel ?? 90}</span>
-            <span class="tag status-${hamster.status}">${t(hamster.status)}</span>
+            <span class="tag status-${hamster.status}" data-recover-id="${hamster.id}">${t(hamster.status)}${hamster.recoverAt ? ` · ${formatRemaining(hamster.recoverAt - Date.now())}` : ""}</span>
             <span class="tag character-signature-tag">${signatureLabel}</span>
           </div>
         </div>
@@ -2620,7 +2628,7 @@ function renderHamsterCard(state, hamster) {
           <span class="tag">${hamster.class}</span>
           <span class="tag">Lv ${hamster.level}</span>
           <span class="tag">C${hamster.constellationLevel ?? 0}/6</span>
-          <span class="tag status-${hamster.status}">${t(hamster.status)}</span>
+          <span class="tag status-${hamster.status}" data-recover-id="${hamster.id}">${t(hamster.status)}${hamster.recoverAt ? ` · ${formatRemaining(hamster.recoverAt - Date.now())}` : ""}</span>
         </div>
         <p>${escapeHtml(hamster.trait)}</p>
         <div class="stat-grid">

@@ -20,7 +20,7 @@ export function setHamsterStatus(state, hamsterIds, status) {
       if (status === "resting") {
         hamster.recoverAt = Date.now() + 5 * 60 * 1000;
       }
-      if (status === "available") {
+      if (status === "available" || status === "in_battle") {
         delete hamster.recoverAt;
       }
     }
@@ -32,9 +32,17 @@ export function recoverHamsters(state) {
   let changed = false;
 
   for (const hamster of state.hamsters) {
-    if ((hamster.status === "injured" || hamster.status === "resting") && hamster.recoverAt && now >= hamster.recoverAt) {
-      hamster.status = "available";
-      delete hamster.recoverAt;
+    if (hamster.status === "injured" || hamster.status === "resting") {
+      // Recover if timer expired OR recoverAt is missing (old saves)
+      if (!hamster.recoverAt || now >= hamster.recoverAt) {
+        hamster.status = "available";
+        delete hamster.recoverAt;
+        changed = true;
+      }
+    } else if (hamster.status === "in_battle" && state.battle?.active?.status !== "active") {
+      // Hamster stuck in in_battle with no active battle — release as injured
+      hamster.status = "injured";
+      hamster.recoverAt = now + 5 * 60 * 1000;
       changed = true;
     }
   }
