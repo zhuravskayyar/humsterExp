@@ -21,6 +21,22 @@ If Pages is not enabled yet in the repository settings, open GitHub:
 - `Settings` -> `Pages`
 - `Source` -> `GitHub Actions`
 
+## Player stats on Render
+
+Deploy the `server` folder to Render. The server exposes:
+
+- `/stats` - dashboard page with online players, total players, sessions, and recent activity.
+- `/stats.json` - same data as JSON.
+- `/player-ping` - endpoint used by the game client.
+
+To connect the GitHub Pages client to the Render server, set this tag in `index.html`:
+
+```html
+<meta name="hamster-server-url" content="https://YOUR-RENDER-SERVICE.onrender.com">
+```
+
+Stats are stored in `server/player-stats.json` by default. Set `STATS_FILE` on Render if you want a custom path.
+
 ## Run locally
 
 Use a local web server so JSON data can be fetched without `file://` CORS issues.

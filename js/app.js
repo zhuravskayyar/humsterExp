@@ -50,10 +50,55 @@ const BOSS_AMBUSH_CHANCE = 0.35;
 // ── Optional push notification server ─────────────────────────────────────────
 // Offline MVP uses only local notifications. Add a server URL here later if push
 // reminders should work after the browser process is killed.
-const PUSH_SERVER = "";
+const SERVER_URL_STORAGE_KEY = "hamster_server_url";
+const PLAYER_ID_KEY = "hamster_player_id_v1";
+const PLAYER_SESSION_KEY = "hamster_session_id_v1";
+const PLAYER_STATS_INTERVAL_MS = 30_000;
+const APP_SERVER = resolveAppServer();
+const PUSH_SERVER = APP_SERVER;
+const STATS_SERVER = APP_SERVER;
 
 let _pushSub = null;
 let _pingTimer = null;
+let _playerStatsTimer = null;
+let _volatilePlayerId = null;
+let _volatileSessionId = null;
+
+function resolveAppServer() {
+  const candidates = [
+    window.HAMSTER_SERVER_URL,
+    document.querySelector("meta[name='hamster-server-url']")?.content,
+    getStoredServerUrl(),
+  ];
+  for (const candidate of candidates) {
+    const normalized = normalizeServerUrl(candidate);
+    if (normalized !== null) return normalized;
+  }
+
+  if (/\.onrender\.com$/i.test(window.location.hostname)) return "";
+  return null;
+}
+
+function getStoredServerUrl() {
+  try {
+    return localStorage.getItem(SERVER_URL_STORAGE_KEY) ?? "";
+  } catch {
+    return "";
+  }
+}
+
+function normalizeServerUrl(value) {
+  const raw = String(value ?? "").trim();
+  if (!raw) return null;
+  if (raw === "same-origin") return "";
+
+  try {
+    const url = new URL(raw, window.location.href);
+    return url.origin === window.location.origin && url.pathname === "/" ? "" : url.href.replace(/\/+$/, "");
+  } catch {
+    return null;
+  }
+}
 
 function _urlBase64ToUint8Array(base64String) {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
@@ -62,7 +107,7 @@ function _urlBase64ToUint8Array(base64String) {
 }
 
 async function _initPush() {
-  if (!PUSH_SERVER) { console.log("[push] disabled (PUSH_SERVER empty)"); return; }
+  if (PUSH_SERVER === null) { console.log("[push] disabled (server URL empty)"); return; }
   if (!("Notification" in window) || !("serviceWorker" in navigator) || !("PushManager" in window)) { console.log("[push] not supported"); return; }
   if (Notification.permission !== "granted") { console.log("[push] permission:", Notification.permission); return; }
   try {
@@ -110,7 +155,7 @@ async function _initPush() {
 }
 
 async function _sendPing() {
-  if (!PUSH_SERVER || !_pushSub || !gameState) return;
+  if (PUSH_SERVER === null || !_pushSub || !gameState) return;
   const active = (gameState.expeditions ?? [])
     .filter((e) => e.status === "active")
     .map((e) => ({ id: e.id, endTime: e.endTime, zoneName: findZone(e.zoneId)?.name ?? e.zoneId }));
@@ -124,10 +169,85 @@ async function _sendPing() {
 }
 
 function _startPingLoop() {
-  if (!PUSH_SERVER) return;
+  if (PUSH_SERVER === null) return;
   if (_pingTimer) clearInterval(_pingTimer);
   _pingTimer = setInterval(_sendPing, 20_000);
   void _sendPing();
+}
+
+function _startPlayerStatsLoop() {
+  if (STATS_SERVER === null) return;
+  if (_playerStatsTimer) clearInterval(_playerStatsTimer);
+  _playerStatsTimer = setInterval(_sendPlayerStatsPing, PLAYER_STATS_INTERVAL_MS);
+  void _sendPlayerStatsPing();
+}
+
+async function _sendPlayerStatsPing(options = {}) {
+  if (STATS_SERVER === null || !gameState) return;
+
+  const payload = buildPlayerStatsPayload();
+  if (!payload) return;
+
+  try {
+    await fetch(`${STATS_SERVER}/player-ping`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+      keepalive: options.keepalive === true,
+    });
+  } catch {
+    // Stats must never block gameplay.
+  }
+}
+
+function buildPlayerStatsPayload() {
+  const playerId = getOrCreatePlayerId();
+  const sessionId = getOrCreateSessionId();
+  if (!playerId || !sessionId) return null;
+
+  return {
+    playerId,
+    sessionId,
+    route: runtimeState.route,
+    playerLevel: gameState.player?.level ?? 1,
+    hamsters: gameState.hamsters?.length ?? 0,
+    activeExpeditions: gameState.expeditions?.filter((expedition) => expedition.status === "active").length ?? 0,
+    completedExpeditions: gameState.expeditions?.filter((expedition) => expedition.status === "completed").length ?? 0,
+    expeditionsStarted: gameState.stats?.expeditionsStarted ?? 0,
+    gachaPulls: gameState.stats?.gachaPulls ?? 0,
+    bossesDefeated: gameState.stats?.bossesDefeated ?? 0,
+  };
+}
+
+function getOrCreatePlayerId() {
+  try {
+    const existing = localStorage.getItem(PLAYER_ID_KEY);
+    if (existing) return existing;
+    const next = createClientId("player");
+    localStorage.setItem(PLAYER_ID_KEY, next);
+    return next;
+  } catch {
+    _volatilePlayerId = _volatilePlayerId ?? createClientId("player");
+    return _volatilePlayerId;
+  }
+}
+
+function getOrCreateSessionId() {
+  try {
+    const existing = sessionStorage.getItem(PLAYER_SESSION_KEY);
+    if (existing) return existing;
+    const next = createClientId("session");
+    sessionStorage.setItem(PLAYER_SESSION_KEY, next);
+    return next;
+  } catch {
+    _volatileSessionId = _volatileSessionId ?? createClientId("session");
+    return _volatileSessionId;
+  }
+}
+
+function createClientId(prefix) {
+  const random = window.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  return `${prefix}-${random}`;
 }
 
 const uiRefs = {
@@ -168,6 +288,7 @@ async function boot() {
     if (runtimeState.trainingHamsterId) startAutoAttack(doTrainingAttack);
     bindEvents();
     startTicker();
+    _startPlayerStatsLoop();
   } catch (error) {
     document.querySelector("#app").innerHTML = `
       <main class="boot-screen">
@@ -200,7 +321,12 @@ function initSite() {
   updateNotificationUi();
 
   window.addEventListener("visibilitychange", handleVisibilityRefresh);
-  window.addEventListener("pagehide", () => { if (gameState) saveGame(gameState); });
+  window.addEventListener("pagehide", () => {
+    if (gameState) {
+      saveGame(gameState);
+      void _sendPlayerStatsPing({ keepalive: true });
+    }
+  });
 
   if (shouldAutoLaunchGame()) {
     void startGame();
@@ -410,10 +536,12 @@ function handleVisibilityRefresh() {
   if (document.visibilityState === "hidden") {
     _saveTrainingPause();
     saveGame(gameState);
+    void _sendPlayerStatsPing({ keepalive: true });
     return;
   }
 
   if (document.visibilityState !== "visible") return;
+  void _sendPlayerStatsPing();
 
   // Офлайн-тренування: зарахувати час відсутності
   const offlineResult = processOfflineTraining(gameState);
