@@ -1,4 +1,4 @@
-const VERSION = "hamster-exp-v60";
+const VERSION = "hamster-exp-v61";
 const STATIC_CACHE = `${VERSION}-static`;
 const RUNTIME_CACHE = `${VERSION}-runtime`;
 
@@ -37,6 +37,7 @@ const APP_SHELL = [
   "./js/ui.js",
   "./js/ui.js?v=39",
   "./js/ui.js?v=40",
+  "./js/ui.js?v=61",
   "./data/buildings.json",
   "./data/bosses.json",
   "./data/colony_upgrades.json",
