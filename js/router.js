@@ -1,6 +1,6 @@
 import { runtimeState } from "./state.js";
 
-export const routes = ["base", "hamsters", "expeditions", "backpack", "battle", "colony", "gacha", "inventory", "quests", "training"];
+export const routes = ["base", "hamsters", "expeditions", "backpack", "battle", "colony", "gacha", "inventory", "quests", "training", "settings"];
 
 export function navigate(route) {
   if (!routes.includes(route)) return;

@@ -19,8 +19,8 @@
   --card: var(--cardboard-1);
   --card-bg: rgba(240, 223, 185, 0.72);
   --card-light: var(--cardboard-3);
-  --text-main: #2E1D12;
-  --text-muted: #6E4E34;
+  --text-main: #27170E;
+  --text-muted: #4F3524;
   --muted: var(--text-muted);
   --text-on-dark: #F6E7C7;
   --accent: #A86418;
@@ -69,8 +69,8 @@
     radial-gradient(circle at 72% 62%, rgba(0, 0, 0, 0.12) 0 1px, transparent 2px),
     repeating-linear-gradient(125deg, rgba(255, 255, 255, 0.04) 0 1px, transparent 1px 14px),
     repeating-linear-gradient(-38deg, rgba(255, 255, 255, 0.035) 0 2px, transparent 2px 10px);
-  --font-ui: "Nunito", "Segoe UI Variable", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-title: "Nunito", "Segoe UI Variable", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-ui: "Rubik", "Segoe UI Variable", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-title: "Rubik", "Segoe UI Variable", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   font-family: var(--font-ui);
 }
 
@@ -158,7 +158,7 @@ p {
 
 h1 {
   font-family: var(--font-title);
-  font-size: 1.65rem;
+  font-size: 1.72rem;
   font-weight: 900;
   line-height: 1.05;
 }
@@ -179,6 +179,7 @@ h3 {
 p {
   color: var(--text-muted);
   line-height: 1.45;
+  font-weight: 600;
 }
 
 strong {
@@ -187,6 +188,7 @@ strong {
 
 .muted {
   color: var(--text-muted);
+  font-weight: 650;
 }
 
 .danger {

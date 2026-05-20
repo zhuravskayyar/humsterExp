@@ -270,13 +270,13 @@
 @keyframes gachaEnvelopeIdle {
   0%,
   100% {
-    transform: translateX(-50%) translateY(4px) rotateZ(0deg);
+    transform: translateX(-50%) translateY(4px) rotateX(7deg) rotateY(-10deg) rotateZ(0deg);
   }
   35% {
-    transform: translateX(-50%) translateY(-3px) rotateZ(-0.6deg);
+    transform: translateX(-50%) translateY(-3px) rotateX(7deg) rotateY(-10deg) rotateZ(-0.6deg);
   }
   70% {
-    transform: translateX(-50%) translateY(1px) rotateZ(0.45deg);
+    transform: translateX(-50%) translateY(1px) rotateX(7deg) rotateY(-10deg) rotateZ(0.45deg);
   }
 }
 
@@ -294,37 +294,37 @@
 
 @keyframes gachaEnvelopeOpenShake {
   0% {
-    transform: translateX(-50%) translateY(4px) rotateZ(0deg) scale(1);
+    transform: translateX(-50%) translateY(4px) rotateX(7deg) rotateY(-10deg) rotateZ(0deg) scale(1);
   }
   18% {
-    transform: translateX(-50%) translateY(0) rotateZ(-2deg) scale(1.03);
+    transform: translateX(-50%) translateY(0) rotateX(7deg) rotateY(-10deg) rotateZ(-2deg) scale(1.03);
   }
   34% {
-    transform: translateX(-50%) translateY(2px) rotateZ(2deg) scale(1.02);
+    transform: translateX(-50%) translateY(2px) rotateX(7deg) rotateY(-10deg) rotateZ(2deg) scale(1.02);
   }
   52% {
-    transform: translateX(-50%) translateY(-4px) rotateZ(-1deg) scale(1.04);
+    transform: translateX(-50%) translateY(-4px) rotateX(7deg) rotateY(-10deg) rotateZ(-1deg) scale(1.04);
   }
   100% {
-    transform: translateX(-50%) translateY(2px) rotateZ(0deg) scale(1);
+    transform: translateX(-50%) translateY(2px) rotateX(7deg) rotateY(-10deg) rotateZ(0deg) scale(1);
   }
 }
 
 @keyframes gachaBoxOpenShake {
   0% {
-    transform: translateX(-50%) translateY(0) rotate(0deg);
+    transform: translateX(-50%) translateY(0) rotateX(7deg) rotateY(-10deg) rotateZ(0deg);
   }
   22% {
-    transform: translateX(-50%) translateY(4px) rotate(-2deg);
+    transform: translateX(-50%) translateY(4px) rotateX(7deg) rotateY(-10deg) rotateZ(-2deg);
   }
   46% {
-    transform: translateX(-50%) translateY(-7px) rotate(2deg);
+    transform: translateX(-50%) translateY(-7px) rotateX(7deg) rotateY(-10deg) rotateZ(2deg);
   }
   72% {
-    transform: translateX(-50%) translateY(0) rotate(-1deg);
+    transform: translateX(-50%) translateY(0) rotateX(7deg) rotateY(-10deg) rotateZ(-1deg);
   }
   100% {
-    transform: translateX(-50%) translateY(0) rotate(0deg);
+    transform: translateX(-50%) translateY(0) rotateX(7deg) rotateY(-10deg) rotateZ(0deg);
   }
 }
 
@@ -340,6 +340,33 @@
   100% {
     transform: translateX(-50%) rotateX(-68deg) translateY(-8px);
     filter: brightness(1.14);
+  }
+}
+
+@keyframes gachaBackFlapOpen {
+  0% {
+    transform: translateX(-50%) rotateX(58deg) translateZ(-18px);
+  }
+  100% {
+    transform: translateX(-50%) rotateX(112deg) translateZ(-24px) translateY(-8px);
+  }
+}
+
+@keyframes gachaLeftFlapOpen {
+  0% {
+    transform: rotateY(-44deg) rotateZ(0deg);
+  }
+  100% {
+    transform: rotateY(-94deg) rotateZ(-7deg) translateX(-6px);
+  }
+}
+
+@keyframes gachaRightFlapOpen {
+  0% {
+    transform: scaleX(-1) rotateY(-44deg);
+  }
+  100% {
+    transform: scaleX(-1) rotateY(-94deg) rotateZ(-7deg) translateX(-6px);
   }
 }
 
@@ -538,6 +565,15 @@
 
 .nav-button.is-active .nav-icon {
   animation: navNudge 1.8s ease-in-out infinite;
+}
+
+.is-performance-mode *,
+.is-performance-mode *::before,
+.is-performance-mode *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  scroll-behavior: auto !important;
+  transition-duration: 0.001ms !important;
 }
 
 .zone-card.is-active {

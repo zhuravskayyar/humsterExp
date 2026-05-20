@@ -1,5 +1,5 @@
 import { getHamsterEffectiveStats } from "./hamsters.js";
-import { canAfford, spendResources } from "./colony.js";
+import { canAfford, spendResources } from "./colony.js?v=60";
 
 // Рівні манекена. Пропорція: 4 схованки за кожні 1000 HP (як і казав).
 export const DUMMY_LEVELS = [

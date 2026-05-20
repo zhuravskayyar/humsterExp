@@ -1,6 +1,6 @@
-import { loadData, dataStore, findZone } from "./data.js";
+import { loadData, dataStore, findZone, resourceMeta } from "./data.js";
 import { abandonBossBattle, performBattleAction, startBossBattle } from "./battle.js?v=34";
-import { canAfford, collectPassiveIncome, spendResources, upgradeColony } from "./colony.js";
+import { canAfford, collectPassiveIncome, spendResources, upgradeColony } from "./colony.js?v=60";
 import * as equipmentApi from "./equipment.js?v=24";
 import { launchExpedition, updateExpeditionStatuses, claimExpedition } from "./expeditions.js?v=24";
 import { rollGacha } from "./gacha.js";
@@ -10,7 +10,8 @@ import { exportSave, importSave, loadGame, resetGame, saveGame } from "./save.js
 import { gameState, runtimeState } from "./state.js";
 import { claimQuest, resetDailyQuestsIfNeeded, syncQuestProgress } from "./quests.js";
 import { hitDummy, processOfflineTraining, upgradeDummy, getDummyConfig, startAutoAttack, stopAutoAttack } from "./training.js";
-import { closeModal, openModal, pushToast, renderApp, updateLiveTimers, updateTrainingArena } from "./ui.js?v=33";
+import { closeModal, openModal, pushToast, renderApp, updateLiveTimers, updateTrainingArena } from "./ui.js?v=40";
+import { playSound } from "./audio.js";
 
 const {
   equipItem,
@@ -27,7 +28,6 @@ let _hadSwController = false;
 let inactivityReminderTimer = null;
 const INACTIVITY_DELAY_MS = 2 * 60 * 60 * 1000;
 const INACTIVITY_KEY = "hamster_last_active_ms";
-const OFFLINE_RETURN_NOTIFICATION_MS = 60 * 1000;
 
 const TUTORIAL_STEP_ROUTES = [
   "base",
@@ -143,8 +143,7 @@ async function boot() {
   try {
     await loadData();
     const state = loadGame(dataStore);
-    const offlineMs = getOfflineMs(state);
-    processPassiveUpdates(state, { forceExpeditionNotification: offlineMs >= OFFLINE_RETURN_NOTIFICATION_MS });
+    processPassiveUpdates(state);
     _checkInactivityOnBoot(state);
     resetDailyQuestsIfNeeded(state);
     syncQuestProgress(state);
@@ -416,8 +415,6 @@ function handleVisibilityRefresh() {
 
   if (document.visibilityState !== "visible") return;
 
-  const offlineMs = getOfflineMs(gameState);
-
   // Офлайн-тренування: зарахувати час відсутності
   const offlineResult = processOfflineTraining(gameState);
   if (offlineResult) {
@@ -426,7 +423,7 @@ function handleVisibilityRefresh() {
     pushToast(`Тренування: ${offlineResult.rounds} раундів · схованки +${offlineResult.booksAwarded} · насіння +${offlineResult.goldAwarded}`);
   }
 
-  const changed = processPassiveUpdates(gameState, { forceExpeditionNotification: offlineMs >= OFFLINE_RETURN_NOTIFICATION_MS });
+  const changed = processPassiveUpdates(gameState);
   if (changed || offlineResult) {
     syncQuestProgress(gameState);
     renderApp(gameState);
@@ -487,6 +484,7 @@ function handleClick(event) {
   event.preventDefault();
   const action = target.dataset.action;
   let shouldPlayGachaOpen = false;
+  playSound("tap", gameState);
 
   try {
     if (action === "nav") {
@@ -564,9 +562,10 @@ function handleClick(event) {
     }
 
     if (action === "abandon-battle") {
-      if (confirm("Відступити з бою? Хом'яки підуть відпочивати.")) {
+      if (gameState.settings.confirmDangerActions === false || confirm("Відступити з бою? Хом'яки підуть відпочивати.")) {
         abandonBossBattle(gameState);
         saveAndToast("Загін відступив");
+        playSound("danger", gameState);
       }
     }
 
@@ -648,6 +647,7 @@ function handleClick(event) {
       runtimeState.selectedRationId = "none";
       const rationLabel = expedition.ration ? ` · пайок: ${expedition.ration.label}` : "";
       saveAndToast(`Експедицію запущено: ${findZone(expedition.zoneId).name}${rationLabel}`);
+      playSound("launch", gameState);
       syncExpeditionReminder();
     }
 
@@ -666,6 +666,9 @@ function handleClick(event) {
         syncExpeditionReminder();
         if (ambushBattle) {
           pushToast("Засідка після вилазки!");
+          playSound("danger", gameState);
+        } else {
+          playSound("reward", gameState);
         }
       }
     }
@@ -697,6 +700,7 @@ function handleClick(event) {
         const dummy = getDummyConfig(gameState);
         saveGame(gameState);
         pushToast(`Манекен покращено до рівня ${dummy.level}`);
+        playSound("upgrade", gameState);
       }
     }
 
@@ -709,14 +713,19 @@ function handleClick(event) {
     if (action === "upgrade-colony") {
       const upgrade = upgradeColony(gameState, target.dataset.upgradeId);
       saveAndToast(`Покращено: ${upgrade.name}`);
+      playSound("upgrade", gameState);
     }
 
     if (action === "collect-passive") {
       const rewards = collectPassiveIncome(gameState);
       if (rewards) {
-        saveAndToast("Пасивний дохід зібрано");
+        const summary = Object.entries(rewards)
+          .map(([key, value]) => `${resourceMeta[key]?.label ?? key} +${value}`)
+          .join(" · ");
+        saveAndToast(summary || "Пасивний дохід зібрано");
+        playSound("reward", gameState);
       } else {
-        pushToast("Пасивний дохід ще накопичується");
+        pushToast("Комора ще наповнюється");
       }
     }
 
@@ -737,6 +746,7 @@ function handleClick(event) {
       saveGame(gameState);
       runtimeState.gachaResults = results;
       shouldPlayGachaOpen = true;
+      playSound("gacha", gameState);
     }
 
     if (action === "clear-gacha-results") {
@@ -744,7 +754,7 @@ function handleClick(event) {
     }
 
     if (action === "open-settings" || action === "toggle-settings") {
-      runtimeState.showSettings = !runtimeState.showSettings;
+      navigate("settings");
     }
     if (action === "open-map") navigate("expeditions");
     if (action === "open-workshop") navigate("colony");
@@ -782,10 +792,13 @@ function handleClick(event) {
       const key = target.dataset.setting;
       gameState.settings[key] = !gameState.settings[key];
       saveGame(gameState);
+      if (key === "sound" && gameState.settings.sound) {
+        playSound("reward", gameState);
+      }
     }
 
     if (action === "reset-game") {
-      if (confirm("Скинути прогрес Hamster Expeditions?")) {
+      if (gameState.settings.confirmDangerActions === false || confirm("Скинути прогрес Hamster Expeditions?")) {
         resetGame(dataStore);
         runtimeState.selectedHamsterIds = [];
         runtimeState.selectedBossHamsterIds = [];
@@ -794,7 +807,7 @@ function handleClick(event) {
         runtimeState.selectedDurationMs = 300000;
         runtimeState.selectedRationId = "none";
         runtimeState.expandedHamsterId = null;
-        runtimeState.showSettings = false;
+        navigate("base");
         runtimeState.gachaResults = [];
         runtimeState.expeditionResult = null;
         runtimeState.onboardingStep = 0;
@@ -932,15 +945,10 @@ function getExpeditionShinyBonus(result) {
   return base + durationBonus;
 }
 
-function getOfflineMs(state) {
-  const lastSeenAt = Number(state?.lastSeenAt ?? 0);
-  return lastSeenAt > 0 ? Math.max(0, Date.now() - lastSeenAt) : 0;
-}
-
 function processPassiveUpdates(state, options = {}) {
   const completedExpeditions = updateExpeditionStatuses(state);
   const changedHamsters = recoverHamsters(state);
-  const passiveRewards = collectPassiveIncome(state);
+  const passiveRewards = state.settings?.autoCollectPassiveIncome === false ? null : collectPassiveIncome(state);
   const dailyQuestsReset = resetDailyQuestsIfNeeded(state);
 
   if (completedExpeditions.length) {
@@ -1044,7 +1052,6 @@ function restartTutorial() {
   gameState.onboarding.currentStep = 0;
   gameState.onboarding.completedAt = null;
   gameState.onboarding.skipped = false;
-  runtimeState.showSettings = false;
   runtimeState.onboardingStep = 0;
   navigate("base");
   saveGame(gameState);
@@ -1133,6 +1140,7 @@ function syncInactivityReminder() {
 
 async function showLocalNotification(title, options = {}) {
   if (!("Notification" in window) || Notification.permission !== "granted" || !("serviceWorker" in navigator)) return;
+  if (document.visibilityState === "visible") return;
   try {
     const registration = await navigator.serviceWorker.ready;
     await registration.showNotification(title, {

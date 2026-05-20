@@ -22,7 +22,6 @@ export const runtimeState = {
   toasts: [],
   expandedHamsterId: null,
   activeCharacterEquipmentSlot: "weapon",
-  showSettings: false,
   gachaResults: [],
   expeditionResult: null,
   trainingHamsterId: null,
@@ -117,7 +116,9 @@ export function createDefaultState(data) {
       language: "ua",
       sound: true,
       music: true,
-      performanceMode: false
+      performanceMode: false,
+      autoCollectPassiveIncome: true,
+      confirmDangerActions: true
     }
   };
 }

@@ -108,6 +108,24 @@ export function collectPassiveIncome(state, now = Date.now()) {
   return null;
 }
 
+export function previewPassiveIncome(state, now = Date.now()) {
+  if (!state.colony?.lastPassiveAt) {
+    return { minutes: 0, rewards: {}, capMinutes: PASSIVE_CAP_MS / 60000 };
+  }
+
+  const elapsed = Math.min(PASSIVE_CAP_MS, Math.max(0, now - state.colony.lastPassiveAt));
+  const minutes = Math.floor(elapsed / 60000);
+  const stats = getColonyStats(state);
+  const rewards = {};
+
+  for (const [resource, amountPerMin] of Object.entries(stats.passiveIncomePerMin)) {
+    const amount = Math.floor(amountPerMin * minutes);
+    if (amount > 0) rewards[resource] = amount;
+  }
+
+  return { minutes, rewards, capMinutes: PASSIVE_CAP_MS / 60000 };
+}
+
 export function getUsedExpeditionSlots(state) {
   return state.expeditions.filter((expedition) => expedition.status === "active" || expedition.status === "completed").length;
 }

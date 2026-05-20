@@ -3,7 +3,7 @@ import { createEquipmentFromItem } from "./equipment.js";
 import { getHamster, getHamsterEffectiveStats, grantHamsterXp, setHamsterStatus } from "./hamsters.js";
 import { addItem, addResources } from "./inventory.js";
 import { clamp, randomInt } from "./state.js";
-import { canAfford, getColonyStats, getMaxExpeditionSlots, getUsedExpeditionSlots, spendResources } from "./colony.js";
+import { canAfford, getColonyStats, getMaxExpeditionSlots, getUsedExpeditionSlots, spendResources } from "./colony.js?v=60";
 
 const resultLabels = {
   full_success: "Повний успіх",

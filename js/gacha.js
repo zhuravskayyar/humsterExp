@@ -1,5 +1,5 @@
 import { dataStore, findItem } from "./data.js";
-import { getColonyStats } from "./colony.js";
+import { getColonyStats } from "./colony.js?v=60";
 import { createEquipmentFromItem } from "./equipment.js";
 import { addItem, addResources } from "./inventory.js";
 import { normalizeHamster } from "./state.js";

@@ -1,4 +1,4 @@
-import { getColonyStats, getMaxExpeditionSlots, getUpgradeCost, getUpgradeLevel, getUsedExpeditionSlots, canAfford } from "./colony.js";
+import { getColonyStats, getMaxExpeditionSlots, getUpgradeCost, getUpgradeLevel, getUsedExpeditionSlots, canAfford, previewPassiveIncome } from "./colony.js?v=60";
 import { dataStore, findItem, findZone, resourceMeta, t } from "./data.js";
 import { calculateSuccessChance, calculateTeam, EXPEDITION_RATIONS, getExpeditionRation, getExpeditionRationCost } from "./expeditions.js?v=24";
 import { formatCost, getSelectedBanner } from "./gacha.js";
@@ -34,11 +34,10 @@ const WEAPON_COPY_MAX = equipmentApi.WEAPON_COPY_MAX ?? 5;
 
 const navItems = [
   { route: "base",        icon: "base",      labelKey: "base" },
-  { route: "hamsters",    icon: "hamster",   labelKey: "hamsters" },
   { route: "expeditions", icon: "map",       labelKey: "expeditions" },
-  { route: "backpack",    icon: "backpack",  labelKey: "backpack" },
   { route: "training",    icon: "power",     labelKey: "training" },
   { route: "gacha",       icon: "gacha",     labelKey: "gacha" },
+  { route: "settings",    icon: "settings",  labelKey: "settingsShort" },
 ];
 
 const MARKET_SHINY_TRADE = Object.freeze({
@@ -201,6 +200,7 @@ export function renderApp(state) {
   const modalScrollTop = app.querySelector(".modal")?.scrollTop ?? 0;
 
   app.classList.toggle("is-state-refresh", shouldRestoreScreenScroll);
+  app.classList.toggle("is-performance-mode", Boolean(state.settings?.performanceMode));
   app.innerHTML = `
     ${renderGameHud(state)}
     ${renderScreen(state)}
@@ -228,8 +228,7 @@ export function renderApp(state) {
 
 function getRenderScreenKey() {
   const parts = [
-    runtimeState.route,
-    runtimeState.showSettings ? "settings" : "main"
+    runtimeState.route
   ];
 
   if (runtimeState.route === "hamsters" && runtimeState.expandedHamsterId) {
@@ -434,6 +433,7 @@ export function updateLiveTimers(state) {
 }
 
 function renderScreen(state) {
+  if (runtimeState.route === "settings") return renderSettingsScreen(state);
   if (runtimeState.route === "hamsters") return renderHamstersScreen(state);
   if (runtimeState.route === "expeditions") return renderExpeditionsScreen(state);
   if (runtimeState.route === "colony") return renderColonyScreen(state);
@@ -543,7 +543,7 @@ function renderExpeditionGuide(selectedCount, maxTeam, canLaunch, hasFreeSlot, c
           <span class="step-pill is-done">1 Маршрут</span>
           <span class="step-pill is-done">2 Час</span>
           <span class="step-pill ${selectedCount ? "is-done" : "is-current"}">3 Загін ${selectedCount}/${maxTeam}</span>
-          <span class="step-pill ${canLaunch ? "is-current" : ""}">4 Вирушати</span>
+          <span class="step-pill ${canLaunch ? "is-current" : "is-locked"}">4 Вирушати</span>
         </div>
         <p>${status}</p>
       </div>
@@ -552,8 +552,6 @@ function renderExpeditionGuide(selectedCount, maxTeam, canLaunch, hasFreeSlot, c
 }
 
 function renderBaseScreen(state) {
-  if (runtimeState.showSettings) return renderSettingsScreen(state);
-
   const active = state.expeditions.filter((expedition) => expedition.status === "active" || expedition.status === "completed");
   const slots = `${getUsedExpeditionSlots(state)}/${getMaxExpeditionSlots(state)}`;
   const result = runtimeState.expeditionResult;
@@ -582,12 +580,14 @@ function renderBaseScreen(state) {
             <p class="home-kicker">Нора</p>
             <h1>${escapeHtml(state.player.name)}</h1>
           </div>
-          <button class="icon-btn" data-action="toggle-settings" title="${t("settings")}">${svgIcon("settings")}</button>
+          <div class="home-avatar" aria-hidden="true">
+            ${svgIcon("hamster")}
+          </div>
         </div>
         <div class="home-status-row" aria-label="Стан нори">
-          <span>${svgIcon("map", "svg-icon svg-icon-xs")} ${slots}</span>
-          <span>${svgIcon("hamster", "svg-icon svg-icon-xs")} ${state.hamsters.length}</span>
-          <span>${svgIcon("shiny", "svg-icon svg-icon-xs")} ${state.resources.shiny ?? 0}</span>
+          <span title="Зайняті загони">${svgIcon("map", "svg-icon svg-icon-xs")} ${slots}</span>
+          <span title="Хом'яки у загоні">${svgIcon("hamster", "svg-icon svg-icon-xs")} ${state.hamsters.length}</span>
+          <span title="Світяшки">${svgIcon("shiny", "svg-icon svg-icon-xs")} ${state.resources.shiny ?? 0}</span>
         </div>
       </section>
 
@@ -644,6 +644,18 @@ function renderHomeActionHub(state) {
         subtitle: hasTraining ? "Тренується" : "Вільний",
         badge: hasTraining ? "1" : ""
       })}
+      ${renderHomeActionCard({
+        route: "backpack",
+        icon: "backpack",
+        title: "Рюкзак",
+        subtitle: "Спорядження"
+      })}
+      ${renderHomeActionCard({
+        route: "inventory",
+        icon: "storage",
+        title: "Комора",
+        subtitle: "Припаси"
+      })}
       ${activeBattle ? renderHomeActionCard({
         route: "battle",
         icon: "danger",
@@ -677,36 +689,49 @@ function renderHomeActionCard({ route, icon, title, subtitle, badge = "", primar
 
 function renderSettingsScreen(state) {
   return `
-    <main class="screen">
+    <main class="screen settings-screen">
       <div class="top-row">
-        <button class="icon-btn" data-action="toggle-settings" title="Назад">${svgIcon("close")}</button>
+        <div class="settings-title-mark">${svgIcon("settings")}</div>
         <div style="flex:1">
-          <p class="muted">Нора</p>
+          <p class="muted">Керування грою</p>
           <h1>${t("settings")}</h1>
         </div>
       </div>
+      <div class="settings-grid">
+        ${renderSettingToggle({
+          icon: state.settings.sound ? "sound" : "mute",
+          title: "Звуки дій",
+          text: "Кліки, запуск вилазок, нагороди, гача та покращення мають короткі локальні ефекти.",
+          setting: "sound",
+          enabled: state.settings.sound
+        })}
+        ${renderSettingToggle({
+          icon: "speed",
+          title: "Легкий режим",
+          text: "Зменшує декоративні анімації та переходи, щоб гра менше навантажувала пристрій.",
+          setting: "performanceMode",
+          enabled: state.settings.performanceMode
+        })}
+        ${renderSettingToggle({
+          icon: "collect",
+          title: "Автозбір доходу",
+          text: "Пасивні припаси автоматично додаються під час гри та після повернення.",
+          setting: "autoCollectPassiveIncome",
+          enabled: state.settings.autoCollectPassiveIncome !== false
+        })}
+        ${renderSettingToggle({
+          icon: "alert",
+          title: "Підтвердження ризику",
+          text: "Питає підтвердження перед скиданням прогресу та відступом із бою.",
+          setting: "confirmDangerActions",
+          enabled: state.settings.confirmDangerActions !== false
+        })}
+      </div>
       <div class="stack">
         <div class="card">
-          <div class="card-row"><span>Мова гри</span><strong>Українська</strong></div>
-          <p class="muted">Тексти нори звучать українською.</p>
-        </div>
-        <div class="card">
-          <div class="card-row"><span>Навчання</span><strong>6 кроків</strong></div>
+          <div class="card-row"><span>Навчання</span><strong>10 кроків</strong></div>
           <p class="muted">Повторити короткий тур по вилазках, тренуванню, припасах і листах.</p>
           <button class="btn ghost" data-action="restart-onboarding">Показати навчання</button>
-        </div>
-        <div class="card">
-          <div class="stack">
-            <button class="btn ghost" data-action="toggle-setting" data-setting="sound">
-              ${svgIcon("power")} Звук: ${state.settings.sound ? "увімкнено" : "вимкнено"}
-            </button>
-            <button class="btn ghost" data-action="toggle-setting" data-setting="music">
-              ${svgIcon("settings")} Музика: ${state.settings.music ? "увімкнено" : "вимкнено"}
-            </button>
-            <button class="btn ghost" data-action="toggle-setting" data-setting="performanceMode">
-              ${svgIcon("power")} Режим продуктивності: ${state.settings.performanceMode ? "увімкнено" : "вимкнено"}
-            </button>
-          </div>
         </div>
         <div class="card">
           <h3>Збереження</h3>
@@ -723,6 +748,19 @@ function renderSettingsScreen(state) {
         </div>
       </div>
     </main>
+  `;
+}
+
+function renderSettingToggle({ icon, title, text, setting, enabled }) {
+  return `
+    <button class="setting-toggle ${enabled ? "is-on" : ""}" data-action="toggle-setting" data-setting="${setting}" aria-pressed="${enabled}">
+      <span class="setting-toggle-icon">${svgIcon(icon)}</span>
+      <span class="setting-toggle-copy">
+        <strong>${title}</strong>
+        <small>${text}</small>
+      </span>
+      <span class="setting-switch" aria-hidden="true"><span></span></span>
+    </button>
   `;
 }
 
@@ -1278,11 +1316,14 @@ function renderExpeditionsScreen(state) {
   const canLaunch = selectedCount > 0 && selectedCount <= maxTeam && hasFreeSlot && canAffordRation;
 
   return `
-    <main class="screen">
+    <main class="screen expedition-screen">
       <div class="top-row">
         <div>
-          <p class="muted">Загони ${slots} · швидкість +${colonyStats.expeditionSpeedPercent}%</p>
           <h1>${t("expeditions")}</h1>
+        </div>
+        <div class="expedition-status-widget" title="Вільні слоти для загонів і бонус швидкості">
+          <span>${svgIcon("map", "svg-icon svg-icon-xs")} ${slots}</span>
+          <span>${svgIcon("speed", "svg-icon svg-icon-xs")} +${colonyStats.expeditionSpeedPercent}%</span>
         </div>
       </div>
 
@@ -1320,7 +1361,7 @@ function renderExpeditionsScreen(state) {
         <div class="ration-row">
           ${renderRationOptions(state, selectedCount)}
         </div>
-        <p class="muted">Пайок витрачає крихти під час старту і тимчасово підсилює тільки цю вилазку.</p>
+        <p class="muted">Пайок додає загону сміливості на один похід.</p>
       </section>
 
       <section class="section card">
@@ -1343,7 +1384,7 @@ function renderExpeditionsScreen(state) {
           <div class="stat"><span>Лут</span><strong>+${team.lootBonus + selectedRation.lootBonus}%</strong></div>
         </div>
         <p>${selectedZone?.description ?? ""}</p>
-        <p class="muted">Бій підвищує шанс успіху і зменшує травми. Довша вилазка дає більше трофеїв, а швидкість скорочує тільки час.</p>
+        <p class="muted">Сильний загін сміливіше проходить небезпеку й частіше повертається з трофеями.</p>
         ${hasFreeSlot ? "" : `<p class="muted">Немає місця для нового загону</p>`}
         <button class="btn ${canLaunch ? "is-ready-action" : ""} ${isTutorialStep(5) ? "tutorial-target" : ""}" data-action="launch-expedition" ${canLaunch ? "" : "disabled"}>${t("send")}</button>
       </section>
@@ -1401,6 +1442,7 @@ function renderGachaScreen(state) {
   const pityCurrent = state.gacha.pity5;
   const pityPercent = Math.min(100, (pityCurrent / pityTotal) * 100);
   const softPityStart = banner.pity.softPityStart ?? banner.pity.fiveStarEvery;
+  const softPityPercent = Math.min(100, (softPityStart / pityTotal) * 100);
   const pullsToTen = Math.max(0, tenCost - shiny);
   const pullsToSingle = Math.max(0, singleCost - shiny);
   const results = runtimeState.gachaResults ?? [];
@@ -1408,70 +1450,79 @@ function renderGachaScreen(state) {
   const canTen = shiny >= tenCost;
   const hasResults = results.length > 0;
   const canTradeShiny = canAfford(state, MARKET_SHINY_TRADE.cost);
+  const totalPulls = state.stats.gachaPulls ?? 0;
+  const hamRate = banner.hamsterChance;
+  const ham5Rate = ((hamRate / 100) * (banner.hamsterStars["5"] ?? 0)).toFixed(1);
+  const ham4Rate = ((hamRate / 100) * (banner.hamsterStars["4"] ?? 0)).toFixed(1);
+  const item5Rate = (((100 - hamRate) / 100) * (banner.itemStars["5"] ?? 0)).toFixed(1);
   const needMore = !canSingle
-    ? `До 1 листа не вистачає: <b>${pullsToSingle} світяшок</b>`
+    ? `До відкриття бракує: <b>${pullsToSingle} світяшок</b>`
     : pullsToTen
-      ? `До 10 листів не вистачає: <b>${pullsToTen} світяшок</b>`
-      : "10 листів готові";
+      ? `До x10 бракує: <b>${pullsToTen} світяшок</b>`
+      : "x10 готовий";
   return `
-    <main class="screen">
-      <section class="hero-panel hero-gacha gacha-letter-panel ${hasResults ? "is-open" : ""} ${isTutorialStep(9) ? "tutorial-target" : ""}">
-        <div class="top-row">
-          <div>
-            <h1>${t("gacha")}</h1>
-            <p class="muted">${banner.name}</p>
-            <div class="featured-card">★★★★★ Тінь · головний приз</div>
-          </div>
-          <span class="shiny-counter">${svgIcon("shiny", "svg-icon svg-icon-xs")} ${shiny}</span>
+    <main class="screen gacha-screen">
+      <section class="hero-panel hero-gacha gacha-box-panel ${hasResults ? "is-open" : ""} ${isTutorialStep(9) ? "tutorial-target" : ""}">
+        <div class="gacha-top-panel">
+          <span class="gacha-chip">${svgIcon("shiny", "svg-icon svg-icon-xs")} <b>${shiny}</b> світяшок</span>
+          <span class="gacha-chip gacha-chip-soft">Гарант <b>${pityCurrent}/${pityTotal}</b></span>
+          <span class="gacha-chip gacha-chip-pulls" title="Всього відкрито за весь час">${svgIcon("gacha", "svg-icon svg-icon-xs")} <b>${totalPulls}</b></span>
         </div>
+
+        <div class="gacha-title-block">
+          <h1>Коробка з Нори</h1>
+          <p>${banner.name}. Відкривай картонну схованку, збирай хом'яків і спорядження для вилазок.</p>
+        </div>
+
         ${renderGachaBoxStage(results)}
+
         <div class="gacha-pity-box">
           <div class="gacha-pity-label">
             <span>Гарант 5★</span>
             <span>${pityCurrent} / ${pityTotal}</span>
           </div>
-          <div class="gacha-pity-bar">
-            <div class="gacha-pity-fill" style="width:${pityPercent}%"></div>
+          <div class="gacha-pity-bar-wrap">
+            <div class="gacha-pity-bar" aria-label="Прогрес гаранту ${pityCurrent} з ${pityTotal}">
+              <div class="gacha-pity-fill" style="width:${pityPercent}%"></div>
+            </div>
+            <div class="gacha-pity-marker" style="left:${softPityPercent}%" aria-hidden="true" title="М'який шанс з ${softPityStart}"></div>
           </div>
-          <div class="gacha-pity-hint">М'який шанс починається з ${softPityStart} листа</div>
+          <div class="gacha-pity-hint">М'який шанс з ${softPityStart} · до гаранту ще <b>${pityTotal - pityCurrent}</b></div>
         </div>
-        <div class="gacha-rules">
-          <span class="rule-pill">Вилазка: світяшки 2-12+</span>
-          <span class="rule-pill">Блиск у щілині: світяшки 3+</span>
-          <span class="rule-pill">Щоденні: світяшки 8</span>
-          <span class="rule-pill">${pullsToTen ? `До 10 листів: ${pullsToTen}` : "10 листів готові"}</span>
-        </div>
+
         <div class="pull-buttons gacha-action-row">
           <button class="btn pull-btn primary" data-action="pull-gacha" data-count="1" ${canSingle ? "" : "disabled"} title="${canSingle ? "" : `Потрібно ще ${pullsToSingle} світяшок`}">
-            ${svgIcon("shiny")} 1 лист · ${singleCost}
+            Відкрити · ${singleCost}
           </button>
           <button class="btn pull-btn ${canTen ? "ten-ready" : "disabled"}" data-action="pull-gacha" data-count="10" ${canTen ? "" : "disabled"} title="${canTen ? "" : `Потрібно ще ${pullsToTen} світяшок`}">
-            ${svgIcon("shiny")} 10 листів · ${tenCost}
+            Відкрити x10 · ${tenCost}
           </button>
         </div>
         <div class="need-more">${needMore}</div>
+
       </section>
+
+      <div class="gacha-rates-panel">
+        <div class="gacha-rates-row">
+          <span>Хом'як 5★</span>
+          <b class="rate-val rate-5star">${ham5Rate}%</b>
+        </div>
+        <div class="gacha-rates-row">
+          <span>Хом'як 4★</span>
+          <b class="rate-val rate-4star">${ham4Rate}%</b>
+        </div>
+        <div class="gacha-rates-row">
+          <span>Предмет 5★</span>
+          <b class="rate-val rate-5star">${item5Rate}%</b>
+        </div>
+      </div>
 
       ${renderGachaTradePanel(canTradeShiny)}
-
-      <section class="section panel">
-        <div class="section-header">
-          <h2>Шанси</h2>
-          <span class="tag">Хом'як ${banner.hamsterChance}%</span>
-        </div>
-        <div class="tag-row">
-          <span class="tag">${svgIcon("hamster", "svg-icon svg-icon-xs")} 4 зірки ${banner.hamsterStars["4"]}%</span>
-          <span class="tag">${svgIcon("hamster", "svg-icon svg-icon-xs")} 5 зірок ${banner.hamsterStars["5"]}%</span>
-          <span class="tag">${svgIcon("item", "svg-icon svg-icon-xs")} предмети 1-5 зірок</span>
-          <span class="tag">Гарант кожні ${banner.pity.fiveStarEvery}</span>
-          <span class="tag">М'який шанс ${softPityStart}+</span>
-        </div>
-      </section>
 
       ${results.length ? `
         <section class="section gacha-results-section">
           <div class="section-header">
-            <h2>Відкриті листи (${results.length})</h2>
+            <h2>Твій картонний улов (${results.length})</h2>
             <button class="select-pill" data-action="clear-gacha-results">Очистити</button>
           </div>
           <div class="gacha-result-grid">
@@ -1480,7 +1531,7 @@ function renderGachaScreen(state) {
         </section>
       ` : `
         <section class="section">
-          <div class="empty-state"><span class="empty-icon">${svgIcon("gacha", "svg-icon svg-icon-lg")}</span><p>Поштар ще не приходив.<br>Жми кнопку!</p></div>
+          <div class="empty-state"><span class="empty-icon">${svgIcon("gacha", "svg-icon svg-icon-lg")}</span><p>Коробка ще закрита.<br>Жми кнопку!</p></div>
         </section>
       `}
     </main>
@@ -1515,6 +1566,11 @@ function renderGachaBoxStage(results = []) {
 
   return `
     <div class="${stageClass}" id="gachaStage" aria-hidden="true">
+      <div class="gacha-scene-hint">Торкнись коробки або відкрий кнопкою</div>
+      <div class="gacha-floor-shadow"></div>
+      <span class="gacha-crumb c1"></span>
+      <span class="gacha-crumb c2"></span>
+      <span class="gacha-crumb c3"></span>
       ${featured ? renderGachaRewardPreview(featured) : ""}
       <div class="gacha-burst-light"></div>
       <div class="gacha-spark-field"></div>
@@ -1522,15 +1578,25 @@ function renderGachaBoxStage(results = []) {
       <div class="gacha-particles">
         ${Array.from({ length: 10 }, (_, index) => `<span style="--delay:${180 + index * 34}ms"></span>`).join("")}
       </div>
-      <div class="gacha-letter-fx"></div>
-      <div class="gacha-spark-fx"></div>
-      <div class="gacha-box">
-        <div class="gacha-box-lid"></div>
-        <div class="gacha-box-base">
-          <span class="gacha-box-seal">${svgIcon("shiny", "svg-icon svg-icon-xs")}</span>
+      <div class="gacha3d-rig">
+        <div class="gacha3d-box">
+          <div class="gacha3d-inside"></div>
+          <div class="gacha3d-face gacha3d-front">
+            <span class="gacha3d-logo">Нора<br>BOX</span>
+            <span class="gacha3d-tape t1"></span>
+            <span class="gacha3d-tape t2"></span>
+            <span class="gacha3d-bite"><i></i><i></i><i></i></span>
+          </div>
+          <div class="gacha3d-face gacha3d-back"></div>
+          <div class="gacha3d-face gacha3d-left"></div>
+          <div class="gacha3d-face gacha3d-right"></div>
+          <div class="gacha3d-face gacha3d-bottom"></div>
+          <div class="gacha3d-flap gacha3d-flap-back"></div>
+          <div class="gacha3d-flap gacha3d-flap-front"></div>
+          <div class="gacha3d-flap gacha3d-flap-left"></div>
+          <div class="gacha3d-flap gacha3d-flap-right"></div>
         </div>
       </div>
-      <div class="gacha-box-shadow"></div>
     </div>
   `;
 }
@@ -1620,46 +1686,102 @@ function renderGachaDropPreview(result) {
 function renderInventoryScreen(state) {
   const items = getInventoryGroups(state, dataStore);
   const equipmentCount = state.equipment?.length ?? 0;
+  const stats = getColonyStats(state);
+  const pending = previewPassiveIncome(state);
+  const pendingTotal = Object.values(pending.rewards).reduce((sum, value) => sum + value, 0);
+  const storageLevel = getUpgradeLevel(state, "passive_income");
+  const canTrade = canAfford(state, MARKET_SHINY_TRADE.cost);
   return `
-    <main class="screen">
+    <main class="screen storage-screen">
       <div class="top-row">
         <div>
-          <p class="muted">${items.length} типів предметів · ${equipmentCount} спорядження в рюкзаку</p>
+          <p class="muted">${items.length} видів матеріалів · комірки рівня ${storageLevel}</p>
           <h1>${t("inventory")}</h1>
         </div>
       </div>
-      <section class="section">
-        <h2>Ресурси</h2>
-        <div class="resource-bar">
-          ${Object.entries(state.resources).map(([key, value]) => renderResourceChip(key, value)).join("")}
+
+      <section class="storage-hero">
+        <div>
+          <p class="home-kicker">Запаси нори</p>
+          <h2>${pendingTotal ? `+${formatNumber(pendingTotal)} чекає збору` : "Комора впорядкована"}</h2>
+          <p>${pending.minutes ? `Назбирано за ${pending.minutes} хв. Комора тримає до ${pending.capMinutes / 60} годин доходу.` : "Кухня ще наповнює маленькі комірки. Повертайся після кількох хвилин."}</p>
         </div>
+        <button class="btn ${pendingTotal ? "is-ready-action" : "secondary"}" data-action="collect-passive" ${pendingTotal ? "" : "disabled"}>
+          ${svgIcon("collect")} Зібрати
+        </button>
       </section>
-      <section class="section">
+
+      <section class="section storage-income-card">
         <div class="section-header">
-          <h2>Рюкзак</h2>
-          <span class="tag">${equipmentCount} предметів</span>
+          <h2>Дохід нори</h2>
+          <span class="tag">${state.settings?.autoCollectPassiveIncome === false ? "ручний збір" : "автозбір"}</span>
         </div>
-        <div class="empty-state">
-          <span class="empty-icon">${svgIcon("backpack", "svg-icon svg-icon-lg")}</span>
-          <p>Усе спорядження тепер зібране в окремій вкладці рюкзака.</p>
-          <button class="btn" data-action="nav" data-route="backpack">Відкрити рюкзак</button>
+        <div class="storage-income-grid">
+          ${renderStorageIncomeChip("food", stats.passiveIncomePerMin.food ?? 0, pending.rewards.food ?? 0)}
+          ${renderStorageIncomeChip("wood", stats.passiveIncomePerMin.wood ?? 0, pending.rewards.wood ?? 0)}
+          ${renderStorageIncomeChip("gold", stats.passiveIncomePerMin.gold ?? 0, pending.rewards.gold ?? 0)}
         </div>
       </section>
+
+      <section class="section storage-resource-section">
+        <div class="section-header">
+          <h2>Баланс</h2>
+          <span class="tag">${Object.keys(state.resources ?? {}).length} ресурсів</span>
+        </div>
+        <div class="storage-resource-grid">
+          ${Object.entries(state.resources).map(([key, value]) => renderStorageResourceCard(key, value)).join("")}
+        </div>
+      </section>
+
+      <section class="section storage-market-card">
+        <div class="section-header">
+          <h2>Малий ринок</h2>
+          <span class="tag">${MARKET_SHINY_TRADE.cost.gold} насіння</span>
+        </div>
+        <div class="storage-market-row">
+          <span class="storage-market-icon">${svgIcon("market")}</span>
+          <div>
+            <strong>Обміняти насіння на світяшки</strong>
+            <p>Коли листи майже готові, комора може докинути трохи блиску.</p>
+          </div>
+          <button class="btn ${canTrade ? "" : "secondary"}" data-action="trade-market-shiny" ${canTrade ? "" : "disabled"}>
+            +${MARKET_SHINY_TRADE.reward.shiny}
+          </button>
+        </div>
+      </section>
+
       <section class="section stack">
-        <h2>Матеріали</h2>
-        ${items.length ? items.map(renderInventoryItemCard).join("") : `<div class="empty-state"><span class="empty-icon">${svgIcon("inventory", "svg-icon svg-icon-lg")}</span><p>Інвентар порожній.<br>Вилазки це виправлять.</p></div>`}
-      </section>
-      <section class="section">
         <div class="section-header">
-          <h2>Обмін</h2>
-          <span class="tag">Скоро</span>
+          <h2>Матеріали</h2>
+          <button class="select-pill" data-action="nav" data-route="backpack" title="Спорядження в рюкзаку">${svgIcon("backpack")} ${equipmentCount}</button>
         </div>
-        <div class="empty-state">
-          <span class="empty-icon">${svgIcon("market", "svg-icon svg-icon-lg")}</span>
-          <p>Тут можна буде міняти зайві припаси<br>на Світяшки та рідкісні матеріали.</p>
-        </div>
+        ${items.length ? items.map(renderInventoryItemCard).join("") : `<div class="empty-state"><span class="empty-icon">${svgIcon("inventory", "svg-icon svg-icon-lg")}</span><p>Полиці чекають перших знахідок.<br>Вилазки швидко це виправлять.</p></div>`}
       </section>
     </main>
+  `;
+}
+
+function renderStorageIncomeChip(key, perMin, pending) {
+  const meta = resourceMeta[key] ?? { label: key, icon: "item" };
+  return `
+    <div class="storage-income-chip resource-${key}">
+      <span>${svgIcon(meta.icon)} ${escapeHtml(meta.label)}</span>
+      <strong>+${formatNumber(perMin)}/хв</strong>
+      <small>${pending ? `чекає +${formatNumber(pending)}` : "накопичується"}</small>
+    </div>
+  `;
+}
+
+function renderStorageResourceCard(key, value) {
+  const meta = resourceMeta[key] ?? { label: key, icon: "item" };
+  return `
+    <article class="storage-resource-card resource-${key}">
+      <span class="storage-resource-icon">${svgIcon(meta.icon)}</span>
+      <span class="storage-resource-copy">
+        <strong>${formatNumber(value ?? 0)}</strong>
+        <small>${escapeHtml(meta.label)}</small>
+      </span>
+    </article>
   `;
 }
 
@@ -2257,23 +2379,12 @@ function renderResourceBar(state) {
 
 function renderResourceChip(key, value) {
   const meta = resourceMeta[key] ?? { label: key, icon: "item" };
-  const label = compactResourceLabel(key, meta.label);
   return `
-    <div class="resource-chip resource-${key}" title="${escapeHtml(meta.label)}">
-      <span class="resource-label">${svgIcon(meta.icon, "svg-icon svg-icon-xs")} ${label}</span>
+    <div class="resource-chip resource-${key}" title="${escapeHtml(meta.label)}" aria-label="${escapeHtml(meta.label)}: ${formatNumber(value ?? 0)}">
+      <span class="resource-icon">${svgIcon(meta.icon, "svg-icon svg-icon-xs")}</span>
       <strong class="resource-value">${formatNumber(value ?? 0)}</strong>
     </div>
   `;
-}
-
-function compactResourceLabel(key, label) {
-  return {
-    xpBooks: "Схов.",
-    shiny: "Світ.",
-    food: "Крих.",
-    gold: "Нас.",
-    ore: "Кам."
-  }[key] ?? label;
 }
 
 function renderBottomNav(state) {
@@ -2548,12 +2659,12 @@ function renderZoneCard(zone) {
           <h2>${zone.name}</h2>
           <span class="tag">Рівень ${zone.level}</span>
         </div>
-        <p>${zone.description}</p>
+        <p class="zone-description">${zone.description}</p>
         <div class="tag-row zone-stat-grid">
-          <span class="tag">Небезпека ${zone.danger}</span>
-          <span class="tag">Сила ${zone.requiredPower}</span>
-          <span class="tag">Загін до ${zone.maxTeam ?? 3}</span>
-          <span class="tag">Рідкісне ${zone.rareChance}%</span>
+          <span class="tag zone-stat-chip stat-danger">${svgIcon("danger", "svg-icon svg-icon-xs")} Небезпека <strong>${zone.danger}</strong></span>
+          <span class="tag zone-stat-chip stat-power">${svgIcon("power", "svg-icon svg-icon-xs")} Сила <strong>${zone.requiredPower}</strong></span>
+          <span class="tag zone-stat-chip stat-team">${svgIcon("hamster", "svg-icon svg-icon-xs")} Загін <strong>${zone.maxTeam ?? 3}</strong></span>
+          <span class="tag zone-stat-chip stat-rare">${svgIcon("shiny", "svg-icon svg-icon-xs")} Рідкісне <strong>${zone.rareChance}%</strong></span>
         </div>
       </div>
     </article>
@@ -2754,18 +2865,26 @@ function renderGachaResultCard(result) {
         : result.status === "equipment"
           ? "Екіпіровка"
           : "Предмет";
+  const badge = result.status === "new"
+    ? '<span class="gacha-result-badge badge-new">НОВИЙ</span>'
+    : result.status === "constellation"
+      ? `<span class="gacha-result-badge badge-const">C${result.constellationLevel}</span>`
+      : result.status === "refund"
+        ? '<span class="gacha-result-badge badge-refund">↩</span>'
+        : "";
   return `
-    <article class="gacha-result-card ${result.stars >= 5 ? "is-prize" : ""} rarity-frame-${rarityClass(result.rarity)}">
+    <article class="gacha-result-card ${result.stars >= 5 ? "is-prize" : ""} rarity-frame-${rarityClass(result.rarity)}" data-stars="${result.stars ?? 1}">
       <div class="gacha-result-art">
         ${portraitSrc
           ? `<img src="${escapeHtml(portraitSrc)}" alt="${escapeHtml(result.name)}" onerror="this.style.display='none'; this.nextElementSibling.style.display='grid'">`
           : itemImgHtml}
         <span style="${portraitSrc || itemImgHtml ? "display:none" : ""}">${svgIcon(fallbackIcon, "svg-icon svg-icon-lg")}</span>
+        ${badge}
       </div>
       <div class="gacha-result-info">
         <div class="card-row">
           <h3>${escapeHtml(result.name)}</h3>
-          <span class="tag">${renderStarRating(result.stars)}</span>
+          <span class="tag gacha-stars-tag" data-stars="${result.stars ?? 1}">${renderStarRating(result.stars)}</span>
         </div>
         <p>${extra}</p>
       </div>
